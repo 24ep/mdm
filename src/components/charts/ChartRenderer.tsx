@@ -55,6 +55,7 @@ import {
 } from 'lucide-react'
 import { getTableColumns, hasValidTableColumns } from './chartUtils'
 import { processChartData, validateChartConfig, DEFAULT_CHART_COLORS, type ChartType } from '@/lib/chart-utils'
+import DOMPurify from 'dompurify'
 
 interface ChartData {
   [key: string]: any
@@ -112,57 +113,57 @@ export function ChartRenderer({
   // Helper to get display name for an attribute (from attribute style settings)
   const getDisplayName = (attrName: string, dimKey?: string): string => {
     if (!config?.chartDimensionDisplayNames || !attrName) return attrName
-    
+
     // Try to find the display name in any dimension
     if (dimKey && config.chartDimensionDisplayNames[dimKey]?.[attrName]) {
       return config.chartDimensionDisplayNames[dimKey][attrName]
     }
-    
+
     // Search all dimensions for this attribute
     for (const dim of Object.keys(config.chartDimensionDisplayNames)) {
       if (config.chartDimensionDisplayNames[dim]?.[attrName]) {
         return config.chartDimensionDisplayNames[dim][attrName]
       }
     }
-    
+
     return attrName
   }
 
   // Helper to get attribute style settings
   const getAttributeStyle = (attrName: string, dimKey?: string): any => {
     if (!config?.chartDimensionTypeSettings || !attrName) return {}
-    
+
     // Try to find the style in any dimension
     if (dimKey && config.chartDimensionTypeSettings[dimKey]?.[attrName]?.style) {
       return config.chartDimensionTypeSettings[dimKey][attrName].style
     }
-    
+
     // Search all dimensions for this attribute
     for (const dim of Object.keys(config.chartDimensionTypeSettings)) {
       if (config.chartDimensionTypeSettings[dim]?.[attrName]?.style) {
         return config.chartDimensionTypeSettings[dim][attrName].style
       }
     }
-    
+
     return {}
   }
 
   // Helper to get attribute type settings (format, granularity, etc.)
   const getAttributeTypeSettings = (attrName: string, dimKey?: string): any => {
     if (!config?.chartDimensionTypeSettings || !attrName) return {}
-    
+
     // Try to find the settings in any dimension
     if (dimKey && config.chartDimensionTypeSettings[dimKey]?.[attrName]) {
       return config.chartDimensionTypeSettings[dimKey][attrName]
     }
-    
+
     // Search all dimensions for this attribute
     for (const dim of Object.keys(config.chartDimensionTypeSettings)) {
       if (config.chartDimensionTypeSettings[dim]?.[attrName]) {
         return config.chartDimensionTypeSettings[dim][attrName]
       }
     }
-    
+
     return {}
   }
 
@@ -171,10 +172,10 @@ export function ChartRenderer({
     // Use display name if available
     const displayName = getDisplayName(attrName, dimKey)
     if (displayName !== attrName) return displayName
-    
+
     // Fallback to type annotation if no display name
     if (!config?.chartDimensionsEffectiveTypes || !attrName) return attrName
-    
+
     // Try to find the type in any dimension
     let effectiveType: string | undefined
     if (dimKey && config.chartDimensionsEffectiveTypes[dimKey]?.[attrName]) {
@@ -188,7 +189,7 @@ export function ChartRenderer({
         }
       }
     }
-    
+
     if (effectiveType) {
       return `${attrName} [${effectiveType}]`
     }
@@ -198,7 +199,7 @@ export function ChartRenderer({
   // Number formatting function with attribute type settings support
   const formatNumber = (value: number | string, attrName?: string, dimKey?: string): string => {
     if (value === null || value === undefined || value === '') return ''
-    
+
     const num = typeof value === 'string' ? parseFloat(value) : value
     if (isNaN(num)) return String(value)
 
@@ -229,9 +230,9 @@ export function ChartRenderer({
 
     const decimals = formatConfig.decimalPlaces ?? 2
     const useSeparator = formatConfig.thousandsSeparator ?? true
-    
+
     let formatted: string
-    
+
     switch (formatConfig.type) {
       case 'currency':
         formatted = num.toFixed(decimals)
@@ -239,14 +240,14 @@ export function ChartRenderer({
           formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
         }
         return `${formatConfig.currencySymbol || '$'}${formatted}`
-      
+
       case 'percentage':
         formatted = (num * 100).toFixed(decimals)
         return `${formatted}%`
-      
+
       case 'scientific':
         return num.toExponential(decimals)
-      
+
       case 'number':
       default:
         formatted = num.toFixed(decimals)
@@ -271,52 +272,52 @@ export function ChartRenderer({
     }
 
     // Process chart data with filters using shared utilities
-    const processedData = data && data.length > 0 
+    const processedData = data && data.length > 0
       ? processChartData(data, dimensions, measures, filters)
       : (() => {
-      const ct = (chartType || type || '').toUpperCase()
-      
-      if (ct.includes('LINE')) {
-        return [
-          { name: 'Jan', sales: 1200, profit: 300 },
-          { name: 'Feb', sales: 1500, profit: 400 },
-          { name: 'Mar', sales: 1800, profit: 500 },
-          { name: 'Apr', sales: 1600, profit: 450 },
-          { name: 'May', sales: 2000, profit: 600 },
-          { name: 'Jun', sales: 2200, profit: 700 }
-        ]
-      } else if (ct.includes('PIE') || ct.includes('DONUT')) {
-        return [
-          { name: 'Desktop', value: 45, color: '#3b82f6' },
-          { name: 'Mobile', value: 35, color: '#10b981' },
-          { name: 'Tablet', value: 20, color: '#f59e0b' }
-        ]
-      } else if (ct.includes('AREA')) {
-        return [
-          { name: 'Q1', revenue: 50000, expenses: 30000 },
-          { name: 'Q2', revenue: 65000, expenses: 35000 },
-          { name: 'Q3', revenue: 75000, expenses: 40000 },
-          { name: 'Q4', revenue: 80000, expenses: 42000 }
-        ]
-      } else if (ct.includes('TABLE')) {
-        return [
-          { product: 'Product A', sales: 1000, profit: 200, growth: '+12%' },
-          { product: 'Product B', sales: 1500, profit: 300, growth: '+8%' },
-          { product: 'Product C', sales: 800, profit: 150, growth: '+15%' },
-          { product: 'Product D', sales: 2000, profit: 500, growth: '+5%' },
-          { product: 'Product E', sales: 1200, profit: 250, growth: '+20%' }
-        ]
-      } else {
-        return [
-          { name: 'Jan', sales: 1200, profit: 300 },
-          { name: 'Feb', sales: 1500, profit: 400 },
-          { name: 'Mar', sales: 1800, profit: 500 },
-          { name: 'Apr', sales: 1600, profit: 450 },
-          { name: 'May', sales: 2000, profit: 600 },
-          { name: 'Jun', sales: 2200, profit: 700 }
-        ]
-      }
-    })()
+        const ct = (chartType || type || '').toUpperCase()
+
+        if (ct.includes('LINE')) {
+          return [
+            { name: 'Jan', sales: 1200, profit: 300 },
+            { name: 'Feb', sales: 1500, profit: 400 },
+            { name: 'Mar', sales: 1800, profit: 500 },
+            { name: 'Apr', sales: 1600, profit: 450 },
+            { name: 'May', sales: 2000, profit: 600 },
+            { name: 'Jun', sales: 2200, profit: 700 }
+          ]
+        } else if (ct.includes('PIE') || ct.includes('DONUT')) {
+          return [
+            { name: 'Desktop', value: 45, color: '#3b82f6' },
+            { name: 'Mobile', value: 35, color: '#10b981' },
+            { name: 'Tablet', value: 20, color: '#f59e0b' }
+          ]
+        } else if (ct.includes('AREA')) {
+          return [
+            { name: 'Q1', revenue: 50000, expenses: 30000 },
+            { name: 'Q2', revenue: 65000, expenses: 35000 },
+            { name: 'Q3', revenue: 75000, expenses: 40000 },
+            { name: 'Q4', revenue: 80000, expenses: 42000 }
+          ]
+        } else if (ct.includes('TABLE')) {
+          return [
+            { product: 'Product A', sales: 1000, profit: 200, growth: '+12%' },
+            { product: 'Product B', sales: 1500, profit: 300, growth: '+8%' },
+            { product: 'Product C', sales: 800, profit: 150, growth: '+15%' },
+            { product: 'Product D', sales: 2000, profit: 500, growth: '+5%' },
+            { product: 'Product E', sales: 1200, profit: 250, growth: '+20%' }
+          ]
+        } else {
+          return [
+            { name: 'Jan', sales: 1200, profit: 300 },
+            { name: 'Feb', sales: 1500, profit: 400 },
+            { name: 'Mar', sales: 1800, profit: 500 },
+            { name: 'Apr', sales: 1600, profit: 450 },
+            { name: 'May', sales: 2000, profit: 600 },
+            { name: 'Jun', sales: 2200, profit: 700 }
+          ]
+        }
+      })()
 
     const commonProps = {
       data: processedData,
@@ -332,29 +333,29 @@ export function ChartRenderer({
               {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                 <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
               )}
-              <XAxis 
+              <XAxis
                 dataKey={dimensions[0] || 'name'}
                 hide={config?.xAxis?.show === false}
                 tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                 tickFormatter={(value) => formatLabelWithType(String(value), 'x')}
                 label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || dimensions[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
               />
-              <YAxis 
+              <YAxis
                 hide={config?.yAxis?.show === false}
-                domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined
                   ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
                   : undefined}
                 tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
                 tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                 label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || measures[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                 formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
                 labelFormatter={(label) => formatLabelWithType(String(label), 'x')}
               />
               {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                <Legend 
+                <Legend
                   wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                   formatter={(value) => formatLabelWithType(value, 'y')}
                 />
@@ -376,29 +377,29 @@ export function ChartRenderer({
               {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                 <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
               )}
-              <XAxis 
+              <XAxis
                 dataKey={dimensions[0] || 'name'}
                 hide={config?.xAxis?.show === false}
                 tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                 tickFormatter={(value) => formatLabelWithType(String(value), 'x')}
                 label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || dimensions[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
               />
-              <YAxis 
+              <YAxis
                 hide={config?.yAxis?.show === false}
-                domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined
                   ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
                   : undefined}
                 tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
                 tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                 label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || measures[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                 formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
                 labelFormatter={(label) => formatLabelWithType(String(label), 'x')}
               />
               {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                <Legend 
+                <Legend
                   wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                   formatter={(value) => formatLabelWithType(value, 'y')}
                 />
@@ -420,29 +421,29 @@ export function ChartRenderer({
               {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                 <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
               )}
-              <XAxis 
+              <XAxis
                 dataKey={dimensions[0] || 'name'}
                 hide={config?.xAxis?.show === false}
                 tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                 tickFormatter={(value) => formatLabelWithType(String(value), 'x')}
                 label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || dimensions[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
               />
-              <YAxis 
+              <YAxis
                 hide={config?.yAxis?.show === false}
-                domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined
                   ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
                   : undefined}
                 tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
                 tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                 label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || measures[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                 formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
                 labelFormatter={(label) => formatLabelWithType(String(label), 'x')}
               />
               {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                <Legend 
+                <Legend
                   wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                   formatter={(value) => formatLabelWithType(value, 'y')}
                 />
@@ -469,7 +470,7 @@ export function ChartRenderer({
           const style = getAttributeStyle(measure, 'y')
           return style.valueColor || COLORS[index % COLORS.length]
         }
-        
+
         return (
           <div className="w-full h-full bg-background overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
@@ -479,14 +480,14 @@ export function ChartRenderer({
                 )}
                 {config?.bar?.orientation === 'horizontal' ? (
                   <>
-                    <XAxis 
+                    <XAxis
                       type="number"
                       hide={config?.xAxis?.show === false}
                       tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                       tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                       label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || measures[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
                     />
-                    <YAxis 
+                    <YAxis
                       type="category"
                       dataKey={dimensions[0] || 'name'}
                       hide={config?.yAxis?.show === false}
@@ -497,35 +498,35 @@ export function ChartRenderer({
                   </>
                 ) : (
                   <>
-                    <XAxis 
-                      dataKey={dimensions[0] || 'name'} 
+                    <XAxis
+                      dataKey={dimensions[0] || 'name'}
                       hide={config?.xAxis?.show === false}
                       tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                       tickFormatter={(value) => formatLabelWithType(value, 'x')}
                       label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || dimensions[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
                     />
-                    <YAxis 
+                    <YAxis
                       hide={config?.yAxis?.show === false}
-                      domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                      domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined
                         ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
                         : undefined}
-                      tick={{ 
-                        fontSize: config?.yAxis?.tickFontSize ?? 12, 
-                        fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
-                        fill: config?.yAxis?.tickColor 
+                      tick={{
+                        fontSize: config?.yAxis?.tickFontSize ?? 12,
+                        fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif',
+                        fill: config?.yAxis?.tickColor
                       }}
                       tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                       label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || measures[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
                     />
                   </>
                 )}
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                   formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
                   labelFormatter={(label) => formatLabelWithType(String(label), 'x')}
                 />
                 {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                  <Legend 
+                  <Legend
                     wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                     formatter={(value) => formatLabelWithType(value, 'y')}
                     verticalAlign={(config?.legend?.position === 'top' || config?.legend?.position === 'bottom') ? config?.legend?.position : 'top'}
@@ -533,21 +534,21 @@ export function ChartRenderer({
                     layout={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? 'vertical' : 'horizontal'}
                   />
                 )}
-              {measures.map((measure, index) => {
-                const style = getAttributeStyle(measure, 'y')
-                return (
-                  <Bar
-                    key={measure}
-                    dataKey={measure}
-                    fill={(config?.series?.[measure]?.color) || style.valueColor || COLORS[index % COLORS.length]}
-                    barSize={config?.series?.[measure]?.barSize}
-                    stackId={config?.bar?.mode === 'stacked' ? 'a' : undefined}
-                    onClick={handleDataPointClick}
-                  />
-                )
-              })}
-            </BarChart>
-          </ResponsiveContainer>
+                {measures.map((measure, index) => {
+                  const style = getAttributeStyle(measure, 'y')
+                  return (
+                    <Bar
+                      key={measure}
+                      dataKey={measure}
+                      fill={(config?.series?.[measure]?.color) || style.valueColor || COLORS[index % COLORS.length]}
+                      barSize={config?.series?.[measure]?.barSize}
+                      stackId={config?.bar?.mode === 'stacked' ? 'a' : undefined}
+                      onClick={handleDataPointClick}
+                    />
+                  )
+                })}
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )
 
@@ -555,37 +556,37 @@ export function ChartRenderer({
         return (
           <div className="w-full h-full bg-background overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
-            <LineChart {...commonProps}>
+              <LineChart {...commonProps}>
                 {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                   <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
                 )}
-                <XAxis 
-                  dataKey={dimensions[0] || 'name'} 
+                <XAxis
+                  dataKey={dimensions[0] || 'name'}
                   hide={config?.xAxis?.show === false}
                   tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                   tickFormatter={(value) => formatLabelWithType(value, 'x')}
                   label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || dimensions[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
                 />
-                <YAxis 
+                <YAxis
                   hide={config?.yAxis?.show === false}
-                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined
                     ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
                     : undefined}
-                  tick={{ 
-                    fontSize: config?.yAxis?.tickFontSize ?? 12, 
-                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
-                    fill: config?.yAxis?.tickColor 
+                  tick={{
+                    fontSize: config?.yAxis?.tickFontSize ?? 12,
+                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif',
+                    fill: config?.yAxis?.tickColor
                   }}
                   tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                   label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || measures[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                   formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
                   labelFormatter={(label) => formatLabelWithType(String(label), 'x')}
                 />
                 {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                  <Legend 
+                  <Legend
                     wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                     formatter={(value) => formatLabelWithType(value, 'y')}
                     verticalAlign={(config?.legend?.position === 'top' || config?.legend?.position === 'bottom') ? config?.legend?.position : 'top'}
@@ -593,22 +594,22 @@ export function ChartRenderer({
                     layout={(config?.legend?.position === 'left' || config?.legend?.position === 'right') ? 'vertical' : 'horizontal'}
                   />
                 )}
-              {measures.map((measure, index) => {
-                const style = getAttributeStyle(measure, 'y')
-                return (
-                  <Line
-                    key={measure}
-                    type={(config?.line?.curve === 'linear') ? 'linear' : 'monotone'}
-                    dataKey={measure}
-                    stroke={(config?.series?.[measure]?.color) || style.valueColor || COLORS[index % COLORS.length]}
-                    strokeWidth={config?.series?.[measure]?.strokeWidth || 2}
-                    dot={config?.series?.[measure]?.showDots === false ? false : { r: config?.series?.[measure]?.dotRadius || 4 }}
-                    onClick={(e: any) => {/* noop or custom */}}
-                  />
-                )
-              })}
-            </LineChart>
-          </ResponsiveContainer>
+                {measures.map((measure, index) => {
+                  const style = getAttributeStyle(measure, 'y')
+                  return (
+                    <Line
+                      key={measure}
+                      type={(config?.line?.curve === 'linear') ? 'linear' : 'monotone'}
+                      dataKey={measure}
+                      stroke={(config?.series?.[measure]?.color) || style.valueColor || COLORS[index % COLORS.length]}
+                      strokeWidth={config?.series?.[measure]?.strokeWidth || 2}
+                      dot={config?.series?.[measure]?.showDots === false ? false : { r: config?.series?.[measure]?.dotRadius || 4 }}
+                      onClick={(e: any) => {/* noop or custom */ }}
+                    />
+                  )
+                })}
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         )
 
@@ -627,23 +628,23 @@ export function ChartRenderer({
                 innerRadius={config?.pie?.innerRadius ?? (chartType === 'DONUT' ? 40 : 0)}
                 fill="#8884d8"
                 dataKey={measures[0] || 'value'}
-                onClick={(e: any) => {/* noop or custom */}}
+                onClick={(e: any) => {/* noop or custom */ }}
               >
                 {data.map((entry, index) => {
                   const measure = measures[0] || 'value'
                   const style = getAttributeStyle(measure, 'y')
                   const seriesColor = config?.series?.[measure]?.color
                   return (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={seriesColor || style.valueColor || (config?.series?.colors?.[index]) || COLORS[index % COLORS.length]} 
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={seriesColor || style.valueColor || (config?.series?.colors?.[index]) || COLORS[index % COLORS.length]}
                     />
                   )
                 })}
               </Pie>
               <Tooltip formatter={(value: any) => formatNumber(value, measures[0], 'y')} />
               {config?.legend?.show !== false && (
-                <Legend 
+                <Legend
                   formatter={(value) => formatLabelWithType(value, 'x')}
                   fontSize={config?.legend?.fontSize ?? 12}
                   fontFamily={config?.legend?.fontFamily ?? 'Roboto, sans-serif'}
@@ -661,28 +662,28 @@ export function ChartRenderer({
               {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                 <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
               )}
-              <XAxis 
-                dataKey={config?.xKey || dimensions[0] || 'x'} 
+              <XAxis
+                dataKey={config?.xKey || dimensions[0] || 'x'}
                 hide={config?.xAxis?.show === false}
                 tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                 tickFormatter={(value) => formatLabelWithType(String(value), 'x')}
                 label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || dimensions[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
               />
-              <YAxis 
-                dataKey={config?.yKey || measures[0] || 'y'} 
+              <YAxis
+                dataKey={config?.yKey || measures[0] || 'y'}
                 hide={config?.yAxis?.show === false}
                 tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
                 tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                 label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || measures[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
               />
-              <Tooltip 
+              <Tooltip
                 cursor={{ strokeDasharray: '3 3' }}
                 contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                 formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
                 labelFormatter={(label) => formatLabelWithType(String(label), 'x')}
               />
               {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                <Legend 
+                <Legend
                   wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                   formatter={(value) => formatLabelWithType(value, 'y')}
                 />
@@ -697,23 +698,23 @@ export function ChartRenderer({
           <ResponsiveContainer width="100%" height={300}>
             <RadarChart data={data}>
               <PolarGrid />
-              <PolarAngleAxis 
+              <PolarAngleAxis
                 dataKey={config?.angleKey || dimensions[0] || 'name'}
                 tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
               />
-              <PolarRadiusAxis 
+              <PolarRadiusAxis
                 tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
                 tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
               />
-              <Radar 
-                name={title} 
-                dataKey={config?.valueKey || measures[0] || 'value'} 
-                stroke="#8884d8" 
-                fill="#8884d8" 
-                fillOpacity={0.6} 
+              <Radar
+                name={title}
+                dataKey={config?.valueKey || measures[0] || 'value'}
+                stroke="#8884d8"
+                fill="#8884d8"
+                fillOpacity={0.6}
               />
               {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                <Legend 
+                <Legend
                   wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                   formatter={(value) => formatLabelWithType(value, 'y')}
                 />
@@ -738,8 +739,11 @@ export function ChartRenderer({
 
       case 'HTML': {
         const html = config?.html || ''
+        const sanitizedHtml = typeof window !== 'undefined'
+          ? DOMPurify.sanitize(html)
+          : html
         return (
-          <div className="w-full h-full overflow-auto" dangerouslySetInnerHTML={{ __html: html }} />
+          <div className="w-full h-full overflow-auto" dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
         )
       }
 
@@ -826,7 +830,7 @@ export function ChartRenderer({
           <svg viewBox="0 0 100 100" className="w-full h-full">
             <defs>
               <marker id="arrowhead" markerWidth={headSize} markerHeight={headSize} refX="0" refY="2" orient="auto">
-                <polygon points={`0 0, 0 ${headSize}, ${headSize} ${headSize/2}`} fill={color} />
+                <polygon points={`0 0, 0 ${headSize}, ${headSize} ${headSize / 2}`} fill={color} />
               </marker>
             </defs>
             <g transform={`rotate(${rotation},50,50)`}>
@@ -896,7 +900,7 @@ export function ChartRenderer({
                 .replace(/stroke="(?!none)[^"]*"/gi, 'stroke="currentColor"')
               // Ensure root svg doesn't force its own color
               // (optional - keep as-is; most cases covered by replacements)
-            } catch {}
+            } catch { }
           }
           return (
             <div className="w-full h-full flex items-center justify-center">
@@ -1011,27 +1015,27 @@ export function ChartRenderer({
                 {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                   <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
                 )}
-                <XAxis 
+                <XAxis
                   dataKey={dimensions[0] || 'name'}
                   hide={config?.xAxis?.show === false}
                   tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                   tickFormatter={(value) => formatLabelWithType(String(value), 'x')}
                   label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || dimensions[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
                 />
-                <YAxis 
+                <YAxis
                   domain={[minY, maxY]}
                   hide={config?.yAxis?.show === false}
                   tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
                   tickFormatter={(value) => formatNumber(value, measures[0], 'y')}
                   label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || measures[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                   formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
                   labelFormatter={(label) => formatLabelWithType(String(label), 'x')}
                 />
                 {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                  <Legend 
+                  <Legend
                     wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                     formatter={(value) => formatLabelWithType(value, 'y')}
                   />
@@ -1117,29 +1121,29 @@ export function ChartRenderer({
               {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                 <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
               )}
-              <XAxis 
+              <XAxis
                 type="number"
                 hide={config?.xAxis?.show === false}
                 tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                 tickFormatter={(value) => formatNumber(value, measures[0], 'x')}
                 label={config?.xAxis?.title ? { value: formatLabelWithType(config?.xAxis?.title || measures[0] || '', 'x'), position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
               />
-              <YAxis 
-                dataKey={dimensions[0] || 'name'} 
-                type="category" 
+              <YAxis
+                dataKey={dimensions[0] || 'name'}
+                type="category"
                 width={80}
                 hide={config?.yAxis?.show === false}
                 tick={{ fontSize: config?.yAxis?.tickFontSize ?? 12, fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.yAxis?.tickColor }}
                 tickFormatter={(value) => formatLabelWithType(String(value), 'y')}
                 label={config?.yAxis?.title ? { value: formatLabelWithType(config?.yAxis?.title || dimensions[0] || '', 'y'), angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                 formatter={(value: any, name: string) => [formatNumber(value, name, 'x'), formatLabelWithType(name, 'x')]}
                 labelFormatter={(label) => formatLabelWithType(String(label), 'y')}
               />
               {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                <Legend 
+                <Legend
                   wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                   formatter={(value) => formatLabelWithType(value, 'x')}
                 />
@@ -1187,7 +1191,7 @@ export function ChartRenderer({
                   const rec = src.find(d => d[dimensions[0] || 'x'] === xVal && d[dimensions[1] || 'y'] === yVal)
                   const v = Number(rec ? rec[measures[0] || 'value'] : 0)
                   return (
-                    <rect key={`${xi}-${yi}`} x={xi*cellW + 2} y={yi*cellH + 2} width={cellW - 4} height={cellH - 4} fill={colorFor(v)} rx={2} />
+                    <rect key={`${xi}-${yi}`} x={xi * cellW + 2} y={yi * cellH + 2} width={cellW - 4} height={cellH - 4} fill={colorFor(v)} rx={2} />
                   )
                 })
               ))}
@@ -1272,8 +1276,8 @@ export function ChartRenderer({
                 const v = Number(rec ? rec[valKey] : 0)
                 return (
                   <g key={`${ri}-${ci}`}>
-                    <rect x={ci*cellW} y={ri*cellH} width={cellW} height={cellH} fill={colorFor(v)} stroke="#e5e7eb" />
-                    <text x={ci*cellW + 25} y={ri*cellH + 28} textAnchor="middle" fontSize={8} fill="#334155" style={{ fontFamily: 'Roboto, sans-serif' }}>{name}</text>
+                    <rect x={ci * cellW} y={ri * cellH} width={cellW} height={cellH} fill={colorFor(v)} stroke="#e5e7eb" />
+                    <text x={ci * cellW + 25} y={ri * cellH + 28} textAnchor="middle" fontSize={8} fill="#334155" style={{ fontFamily: 'Roboto, sans-serif' }}>{name}</text>
                   </g>
                 )
               }))}
@@ -1321,63 +1325,62 @@ export function ChartRenderer({
           )
         }
 
-        case 'TABLE':
-          // For table charts, use common function to get selected columns
-          // measures contains the columns (from chartDimensions.columns) - required
-          // dimensions contains the rows (from chartDimensions.rows) - optional, but should also be shown as columns
-          const columns = getTableColumns(measures, dimensions)
-          
-          // If no columns selected, show empty state
-          if (!hasValidTableColumns(columns)) {
-            return (
-              <div className="w-full h-full bg-background flex items-center justify-center p-4">
-                <div className="text-center text-sm text-muted-foreground">
-                  No columns selected. Please configure columns in chart settings.
-                </div>
-              </div>
-            )
-          }
+      case 'TABLE':
+        // For table charts, use common function to get selected columns
+        // measures contains the columns (from chartDimensions.columns) - required
+        // dimensions contains the rows (from chartDimensions.rows) - optional, but should also be shown as columns
+        const columns = getTableColumns(measures, dimensions)
 
+        // If no columns selected, show empty state
+        if (!hasValidTableColumns(columns)) {
           return (
-            <div className="w-full h-full bg-background overflow-hidden">
-              <div className="overflow-auto h-full">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b bg-muted">
-                      {columns.map((col, index) => (
-                        <th key={index} className="text-left p-3 font-medium text-xs text-muted-foreground uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                          {col.charAt(0).toUpperCase() + col.slice(1)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {processedData.slice(0, 100).map((row, rowIndex) => (
-                      <tr key={rowIndex} className="border-b hover:bg-muted/50 transition-colors">
-                        {columns.map((col, colIndex) => (
-                          <td key={colIndex} className="p-3 text-sm text-foreground" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                            {col === 'growth' ? (
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                (row as any)[col]?.startsWith('+') ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
-                              }`}>
-                                {(row as any)[col]}
-                              </span>
-                            ) : (
-                              (row as any)[col] !== undefined ? String((row as any)[col]) : '-'
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {processedData.length > 100 && (
-                  <div className="text-xs text-muted-foreground p-3 text-center border-t border-border" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                    Showing first 100 rows of {processedData.length} total
-                  </div>
-                )}
+            <div className="w-full h-full bg-background flex items-center justify-center p-4">
+              <div className="text-center text-sm text-muted-foreground">
+                No columns selected. Please configure columns in chart settings.
               </div>
             </div>
+          )
+        }
+
+        return (
+          <div className="w-full h-full bg-background overflow-hidden">
+            <div className="overflow-auto h-full">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b bg-muted">
+                    {columns.map((col, index) => (
+                      <th key={index} className="text-left p-3 font-medium text-xs text-muted-foreground uppercase tracking-wide" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                        {col.charAt(0).toUpperCase() + col.slice(1)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {processedData.slice(0, 100).map((row, rowIndex) => (
+                    <tr key={rowIndex} className="border-b hover:bg-muted/50 transition-colors">
+                      {columns.map((col, colIndex) => (
+                        <td key={colIndex} className="p-3 text-sm text-foreground" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                          {col === 'growth' ? (
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${(row as any)[col]?.startsWith('+') ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                              }`}>
+                              {(row as any)[col]}
+                            </span>
+                          ) : (
+                            (row as any)[col] !== undefined ? String((row as any)[col]) : '-'
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {processedData.length > 100 && (
+                <div className="text-xs text-muted-foreground p-3 text-center border-t border-border" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                  Showing first 100 rows of {processedData.length} total
+                </div>
+              )}
+            </div>
+          </div>
         )
 
       case 'AREA':
@@ -1388,31 +1391,31 @@ export function ChartRenderer({
                 {(config?.xAxis?.showGrid ?? config?.showGrid ?? true) && (
                   <CartesianGrid strokeDasharray={config?.grid?.dash ?? '3 3'} stroke={config?.grid?.color ?? '#f0f0f0'} />
                 )}
-                <XAxis 
-                  dataKey={dimensions[0] || 'name'} 
+                <XAxis
+                  dataKey={dimensions[0] || 'name'}
                   hide={config?.xAxis?.show === false}
                   tick={{ fontSize: config?.xAxis?.tickFontSize ?? 12, fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fill: config?.xAxis?.tickColor }}
                   label={config?.xAxis?.title ? { value: config?.xAxis?.title, position: 'insideBottom', offset: -5, style: { fontFamily: config?.xAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.xAxis?.titleFontSize ?? 12) + 'px', fill: config?.xAxis?.titleColor } } : undefined}
                 />
-                <YAxis 
+                <YAxis
                   hide={config?.yAxis?.show === false}
-                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined 
+                  domain={config?.yAxis?.min !== undefined || config?.yAxis?.max !== undefined
                     ? [config?.yAxis?.min ?? 'dataMin', config?.yAxis?.max ?? 'dataMax']
                     : undefined}
-                  tick={{ 
-                    fontSize: config?.yAxis?.tickFontSize ?? 12, 
-                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', 
-                    fill: config?.yAxis?.tickColor 
+                  tick={{
+                    fontSize: config?.yAxis?.tickFontSize ?? 12,
+                    fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif',
+                    fill: config?.yAxis?.tickColor
                   }}
                   tickFormatter={(value) => formatNumber(value)}
                   label={config?.yAxis?.title ? { value: config?.yAxis?.title, angle: -90, position: 'insideLeft', style: { fontFamily: config?.yAxis?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.yAxis?.titleFontSize ?? 12) + 'px', fill: config?.yAxis?.titleColor } } : undefined}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                   formatter={(value: any) => formatNumber(value)}
                 />
                 {(config?.legend?.show ?? config?.showLegend ?? true) && (
-                  <Legend 
+                  <Legend
                     wrapperStyle={{ fontFamily: config?.legend?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.legend?.fontSize ?? 12) + 'px', color: config?.legend?.color }}
                     formatter={(value) => formatLabelWithType(value)}
                     verticalAlign={(config?.legend?.position === 'top' || config?.legend?.position === 'bottom') ? config?.legend?.position : 'top'}
@@ -1429,7 +1432,7 @@ export function ChartRenderer({
                     stroke={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
                     fill={(config?.series?.[measure]?.color) || COLORS[index % COLORS.length]}
                     fillOpacity={config?.series?.[measure]?.fillOpacity || 0.6}
-                    onClick={(e: any) => {/* noop or custom */}}
+                    onClick={(e: any) => {/* noop or custom */ }}
                   />
                 ))}
               </AreaChart>
@@ -1485,7 +1488,7 @@ export function ChartRenderer({
                 cornerRadius={10}
                 fill={COLORS[0]}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ fontFamily: config?.tooltip?.fontFamily ?? 'Roboto, sans-serif', fontSize: (config?.tooltip?.fontSize ?? 12) + 'px' }}
                 formatter={(value: any, name: string) => [formatNumber(value, name, 'y'), formatLabelWithType(name, 'y')]}
               />

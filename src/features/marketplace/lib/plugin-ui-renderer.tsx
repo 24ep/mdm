@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { PluginDefinition } from '../types'
 import { pluginLoader } from './plugin-loader'
 import { Loader } from 'lucide-react'
+import DOMPurify from 'dompurify'
 
 export interface PluginUIRendererProps {
   plugin: PluginDefinition
@@ -59,13 +60,19 @@ export function PluginUIRenderer({
         )
       } else if (plugin.uiType === 'web_component' && plugin.uiConfig?.webComponentTag) {
         // Render web component
+        const rawHtml = `<${plugin.uiConfig.webComponentTag} 
+          installation-id="${installationId || ''}"
+          config='${JSON.stringify(config)}'
+        ></${plugin.uiConfig.webComponentTag}>`
+
+        const sanitizedHtml = typeof window !== 'undefined'
+          ? DOMPurify.sanitize(rawHtml, { CUSTOM_ELEMENT_HANDLING: { tagNameCheck: () => true, attributeNameCheck: () => true } as any })
+          : rawHtml
+
         setComponent(
           <div
             dangerouslySetInnerHTML={{
-              __html: `<${plugin.uiConfig.webComponentTag} 
-                installation-id="${installationId || ''}"
-                config='${JSON.stringify(config)}'
-              ></${plugin.uiConfig.webComponentTag}>`,
+              __html: sanitizedHtml,
             }}
           />
         )

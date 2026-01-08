@@ -2,7 +2,12 @@
     "name": "Default",
     "description": "Default theme configuration extracted from globals.css - standard shadcn/ui design with no custom effects.",
     "themeMode": "light",
-    "tags": ["light", "default", "shadcn", "css-variables"],
+    "tags": [
+        "light",
+        "default",
+        "shadcn",
+        "css-variables"
+    ],
     "config": {
         "applicationName": "Unified Data Platform",
         "applicationLogo": "",
@@ -125,11 +130,11 @@
                 "borderWidth": "0px",
                 "borderColor": "transparent",
                 "backgroundColor": "transparent",
-                "textColor": "#64748b",
+                "textColor": "#020817",
                 "borderRadius": "calc(0.75rem - 4px)",
-                "padding": "0.375rem 0.5rem",
+                "padding": "0.5rem 0.75rem",
                 "fontSize": "0.875rem",
-                "fontWeight": "400",
+                "fontWeight": "500",
                 "transition": "all 200ms ease-out"
             },
             "vertical-tab-menu-hover": {
@@ -138,9 +143,9 @@
                 "backgroundColor": "#f1f5f9",
                 "textColor": "#020817",
                 "borderRadius": "calc(0.75rem - 4px)",
-                "padding": "0.375rem 0.5rem",
+                "padding": "0.5rem 0.75rem",
                 "fontSize": "0.875rem",
-                "fontWeight": "400",
+                "fontWeight": "500",
                 "transition": "all 200ms ease-out"
             },
             "vertical-tab-menu-active": {
@@ -149,7 +154,7 @@
                 "backgroundColor": "#f1f5f9",
                 "textColor": "#020817",
                 "borderRadius": "calc(0.75rem - 4px)",
-                "padding": "0.375rem 0.5rem",
+                "padding": "0.5rem 0.75rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "600",
                 "backdropFilter": "",

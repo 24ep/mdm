@@ -140,6 +140,18 @@ export function DeploymentTab({
         </div>
       </div>
 
+      <div className="flex items-center space-x-2 pt-2">
+        <Switch
+          id="chatbot-enabled"
+          checked={formData.chatbotEnabled !== false}
+          onCheckedChange={(checked) => setFormData({ ...formData, chatbotEnabled: checked })}
+        />
+        <Label htmlFor="chatbot-enabled">Enable Chatbot Embed</Label>
+      </div>
+      <p className="text-[10px] text-muted-foreground pb-4">
+        Toggle to quickly enable or disable the chatbot widget without unpublishing. When disabled, the widget scripts will refuse to render.
+      </p>
+
       <div className="space-y-2">
         <Label>Deployment Type</Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

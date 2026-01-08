@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { CodeEditor } from '@/components/ui/code-editor'
 import { Loader2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import DOMPurify from 'dompurify'
 
 interface FileViewerProps {
   fileId: string
@@ -25,7 +26,7 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
   const loadFileContent = async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
       // Check file type and load accordingly
       if (mimeType?.startsWith('image/')) {
@@ -42,13 +43,13 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
 
       // Fetch file content for text-based files
       const response = await fetch(`/api/admin/storage/files/${fileId}/content`)
-      
+
       if (!response.ok) {
         throw new Error('Failed to load file content')
       }
 
       const data = await response.json()
-      
+
       if (mimeType === 'text/csv' || fileName.endsWith('.csv')) {
         // Parse CSV
         const lines = data.content.split('\n').filter((line: string) => line.trim())
@@ -57,7 +58,7 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
           const result: string[] = []
           let current = ''
           let inQuotes = false
-          
+
           for (let i = 0; i < line.length; i++) {
             const char = line[i]
             if (char === '"') {
@@ -76,7 +77,7 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
       } else {
         setContent(data.content)
       }
-      
+
       setLoading(false)
     } catch (err: any) {
       setError(err.message || 'Failed to load file')
@@ -107,13 +108,13 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
     if (fileName.endsWith('.json')) return 'json'
     if (fileName.endsWith('.xml')) return 'xml'
     if (fileName.endsWith('.yaml') || fileName.endsWith('.yml')) return 'yaml'
-    
+
     if (mimeType?.includes('javascript')) return 'javascript'
     if (mimeType?.includes('json')) return 'json'
     if (mimeType?.includes('xml')) return 'xml'
     if (mimeType?.includes('html')) return 'html'
     if (mimeType?.includes('css')) return 'css'
-    
+
     return 'plaintext'
   }
 
@@ -138,8 +139,8 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-gray-50 dark:bg-gray-900">
         {publicUrl ? (
-          <img 
-            src={publicUrl} 
+          <img
+            src={publicUrl}
             alt={fileName}
             className="max-w-full max-h-[600px] object-contain"
           />
@@ -155,7 +156,7 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
     return (
       <div className="w-full h-[600px]">
         {publicUrl ? (
-          <iframe 
+          <iframe
             src={publicUrl}
             className="w-full h-full border-0"
             title={fileName}
@@ -178,8 +179,8 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
             {csvData.length > 0 && (
               <tr>
                 {csvData[0].map((header, idx) => (
-                  <th 
-                    key={idx} 
+                  <th
+                    key={idx}
                     className="border px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >
                     {header || `Column ${idx + 1}`}
@@ -192,8 +193,8 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
             {csvData.slice(1).map((row, rowIdx) => (
               <tr key={rowIdx} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 {row.map((cell, cellIdx) => (
-                  <td 
-                    key={cellIdx} 
+                  <td
+                    key={cellIdx}
                     className="border px-4 py-2 text-sm text-gray-600 dark:text-gray-400"
                   >
                     {cell}
@@ -234,11 +235,15 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
       return html
     }
 
+    const sanitizedHtml = typeof window !== 'undefined'
+      ? DOMPurify.sanitize(markdownToHtml(content))
+      : markdownToHtml(content)
+
     return (
       <ScrollArea className="h-[600px] w-full border rounded-lg p-6">
-        <div 
+        <div
           className="prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: markdownToHtml(content) }}
+          dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
         />
       </ScrollArea>
     )
@@ -247,7 +252,7 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
   // Code files - show with code editor
   const language = getLanguageFromMimeType(mimeType, fileName)
   const isCodeFile = [
-    'javascript', 'typescript', 'python', 'java', 'cpp', 'c', 'csharp', 
+    'javascript', 'typescript', 'python', 'java', 'cpp', 'c', 'csharp',
     'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'scala', 'r', 'bash',
     'sql', 'html', 'css', 'json', 'xml', 'yaml'
   ].includes(language)
@@ -257,7 +262,7 @@ export function FileViewer({ fileId, fileName, mimeType, publicUrl }: FileViewer
       <div className="border rounded-lg overflow-hidden">
         <CodeEditor
           value={content}
-          onChange={() => {}} // Read-only for viewing
+          onChange={() => { }} // Read-only for viewing
           language={language}
           height="600px"
           readOnly={true}

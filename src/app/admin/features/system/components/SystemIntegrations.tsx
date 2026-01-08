@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { 
+import {
   Settings,
   CheckCircle,
   XCircle,
@@ -21,10 +21,88 @@ import {
   Lock,
   Search,
   Eye,
-  EyeOff
+  EyeOff,
+  Database,
+  Mail,
+  Cloud,
+  Shield,
+  BarChart3,
+  type LucideIcon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { SYSTEM_CONFIG_INTEGRATIONS, type IntegrationConfig } from '../../integration/components/IntegrationList'
+
+// Integration configuration types
+export interface IntegrationConfig {
+  id: string
+  name: string
+  type: string
+  description: string
+  icon: LucideIcon
+  category: 'authentication' | 'storage' | 'monitoring' | 'communication' | 'ai' | 'security'
+  status: 'active' | 'inactive' | 'error' | 'pending'
+  isConfigured: boolean
+  config?: Record<string, any>
+}
+
+// System-level integrations (single instance per system)
+const SYSTEM_CONFIG_INTEGRATIONS: Omit<IntegrationConfig, 'id' | 'isConfigured' | 'status' | 'config'>[] = [
+  {
+    name: 'HashiCorp Vault',
+    type: 'vault',
+    description: 'Secrets management and encryption',
+    icon: Lock,
+    category: 'security'
+  },
+  {
+    name: 'Elasticsearch',
+    type: 'elasticsearch',
+    description: 'Search and log analytics',
+    icon: Search,
+    category: 'monitoring'
+  },
+  {
+    name: 'SigNoz',
+    type: 'signoz',
+    description: 'APM and observability platform',
+    icon: BarChart3,
+    category: 'monitoring'
+  },
+  {
+    name: 'SMTP Email',
+    type: 'smtp',
+    description: 'Email notifications and alerts',
+    icon: Mail,
+    category: 'communication'
+  },
+  {
+    name: 'Azure AD SSO',
+    type: 'azure-ad',
+    description: 'Single sign-on with Microsoft Azure',
+    icon: Shield,
+    category: 'authentication'
+  },
+  {
+    name: 'Google OAuth',
+    type: 'google-auth',
+    description: 'Sign in with Google',
+    icon: Cloud,
+    category: 'authentication'
+  },
+  {
+    name: 'Langfuse',
+    type: 'langfuse',
+    description: 'LLM observability and analytics',
+    icon: BarChart3,
+    category: 'ai'
+  },
+  {
+    name: 'ServiceDesk',
+    type: 'servicedesk',
+    description: 'IT service management integration',
+    icon: Server,
+    category: 'communication'
+  }
+]
 
 export function SystemIntegrations() {
   const [integrations, setIntegrations] = useState<IntegrationConfig[]>([])
@@ -47,8 +125,8 @@ export function SystemIntegrations() {
       if (response.ok) {
         const data = await response.json()
         const merged = SYSTEM_CONFIG_INTEGRATIONS.map(integration => {
-          const saved = data.integrations?.find((i: any) => 
-            i.name?.toLowerCase() === integration.name.toLowerCase() || 
+          const saved = data.integrations?.find((i: any) =>
+            i.name?.toLowerCase() === integration.name.toLowerCase() ||
             i.type?.toLowerCase() === integration.type.toLowerCase()
           )
           return {
@@ -108,7 +186,7 @@ export function SystemIntegrations() {
 
       if (response.ok) {
         toast.success(`${integration.name} ${enabled ? 'enabled' : 'disabled'}`)
-        
+
         // Clear cache for specific integration types
         if (integration.type === 'signoz') {
           try {
@@ -118,7 +196,7 @@ export function SystemIntegrations() {
             // Silently fail if module not available
           }
         }
-        
+
         loadIntegrations()
       } else {
         const error = await response.json().catch(() => ({}))
@@ -148,7 +226,7 @@ export function SystemIntegrations() {
 
       if (response.ok) {
         toast.success(`${selectedIntegration.name} configured successfully`)
-        
+
         // Clear cache for specific integration types
         if (selectedIntegration.type === 'signoz') {
           try {
@@ -158,7 +236,7 @@ export function SystemIntegrations() {
             // Silently fail if module not available
           }
         }
-        
+
         setShowConfigDialog(false)
         loadIntegrations()
       } else {
@@ -384,8 +462,8 @@ export function SystemIntegrations() {
         {integrations.map(integration => {
           const Icon = integration.icon
           return (
-            <Card 
-              key={integration.id} 
+            <Card
+              key={integration.id}
               className="cursor-pointer hover:shadow-lg transition-shadow"
             >
               <CardHeader>
@@ -462,7 +540,7 @@ export function SystemIntegrations() {
 
           <div className="space-y-4 py-4">
             {selectedIntegration && renderConfigForm(getConfigFields(selectedIntegration.type))}
-            
+
             <div className="flex items-center justify-between p-4 bg-muted rounded-md">
               <div>
                 <Label htmlFor="enable-integration" className="text-sm font-medium">

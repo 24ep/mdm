@@ -18,11 +18,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const paramValidation = validateParams(resolvedParams, z.object({
       id: commonSchemas.id,
     }))
-    
+
     if (!paramValidation.success) {
       return addSecurityHeaders(paramValidation.response)
     }
-    
+
     const { id } = paramValidation.data
     logger.apiRequest('GET', `/api/users/${id}`)
     const { rows } = await query(`
@@ -43,14 +43,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ) as spaces
       FROM public.users u
       LEFT JOIN spaces s ON u.default_space_id = s.id
-      WHERE u.id = $1 
+      WHERE u.id = $1::uuid
       LIMIT 1
     `, [id])
     if (!rows.length) {
       logger.warn('User not found', { userId: id })
       return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }))
     }
-    
+
     const duration = Date.now() - startTime
     logger.apiResponse('GET', `/api/users/${id}`, 200, duration)
     return addSecurityHeaders(NextResponse.json({ user: rows[0] }))
@@ -71,14 +71,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const paramValidation = validateParams(resolvedParams, z.object({
       id: commonSchemas.id,
     }))
-    
+
     if (!paramValidation.success) {
       return addSecurityHeaders(paramValidation.response)
     }
-    
+
     const { id } = paramValidation.data
     logger.apiRequest('PUT', `/api/users/${id}`)
-    
+
     const bodySchema = z.object({
       email: z.string().email().optional(),
       name: z.string().min(1).optional(),
@@ -91,12 +91,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         role: z.string(),
       })).optional(),
     })
-    
+
     const bodyValidation = await validateBody(request, bodySchema)
     if (!bodyValidation.success) {
       return addSecurityHeaders(bodyValidation.response)
     }
-    
+
     const { email, name, role, is_active, password, default_space_id, spaces } = bodyValidation.data
 
     const sets: string[] = []
@@ -104,7 +104,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (email) { values.push(email); sets.push(`email = $${values.length}`) }
     if (name) { values.push(name); sets.push(`name = $${values.length}`) }
-    if (typeof is_active === 'boolean') { values.push(is_active); sets.push(`is_active = $${values.length}`) }
+    if (typeof is_active === 'boolean') { values.push(is_active); sets.push(`is_active = $${values.length}::boolean`) }
     if (role) {
       values.push(role); sets.push(`role = $${values.length}`)
     }
@@ -114,9 +114,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       values.push(hashed)
       sets.push(`password = $${values.length}`)
     }
-    if (default_space_id !== undefined) { 
-      values.push(default_space_id); 
-      sets.push(`default_space_id = $${values.length}`) 
+    if (default_space_id !== undefined) {
+      values.push(default_space_id);
+      sets.push(`default_space_id = $${values.length}::uuid`)
     }
 
     if (!sets.length) {
@@ -124,11 +124,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Get current data for audit log
-    const currentDataResult = await query('SELECT * FROM users WHERE id = $1', [id])
+    const currentDataResult = await query('SELECT * FROM users WHERE id = $1::uuid', [id])
     const currentData = currentDataResult.rows[0]
 
     values.push(id)
-    const sql = `UPDATE public.users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length} RETURNING id, email, name, role, is_active, created_at, updated_at`
+    const sql = `UPDATE public.users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length}::uuid RETURNING id, email, name, role, is_active, created_at, updated_at`
 
     const { rows } = await query(sql, values)
     if (!rows.length) {
@@ -139,13 +139,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Handle space memberships if provided
     if (spaces && Array.isArray(spaces)) {
       // Remove existing space memberships
-      await query('DELETE FROM space_members WHERE user_id = $1', [id])
-      
+      await query('DELETE FROM space_members WHERE user_id = $1::uuid', [id])
+
       // Add new space memberships
       for (const space of spaces) {
         if (space.id && space.role) {
           await query(
-            'INSERT INTO space_members (user_id, space_id, role) VALUES ($1, $2, $3)',
+            'INSERT INTO space_members (user_id, space_id, role) VALUES ($1::uuid, $2::uuid, $3)',
             [id, space.id, space.role]
           )
         }
@@ -184,20 +184,20 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const paramValidation = validateParams(resolvedParams, z.object({
       id: commonSchemas.id,
     }))
-    
+
     if (!paramValidation.success) {
       return addSecurityHeaders(paramValidation.response)
     }
-    
+
     const { id } = paramValidation.data
     logger.apiRequest('DELETE', `/api/users/${id}`)
-    
-    const { rows } = await query('DELETE FROM public.users WHERE id = $1 RETURNING id', [id])
+
+    const { rows } = await query('DELETE FROM public.users WHERE id = $1::uuid RETURNING id', [id])
     if (!rows.length) {
       logger.warn('User not found for deletion', { userId: id })
       return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }))
     }
-    
+
     const duration = Date.now() - startTime
     logger.apiResponse('DELETE', `/api/users/${id}`, 200, duration)
     return addSecurityHeaders(NextResponse.json({ success: true }))

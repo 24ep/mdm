@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Eye, 
-  EyeOff, 
-  Copy, 
-  Download, 
-  Maximize2, 
+import {
+  Eye,
+  EyeOff,
+  Copy,
+  Download,
+  Maximize2,
   Minimize2,
   ChevronDown,
   ChevronUp,
@@ -28,12 +29,12 @@ interface CellOutputProps {
   className?: string
 }
 
-export function CellOutput({ 
-  output, 
-  executionCount, 
-  isCollapsed = false, 
+export function CellOutput({
+  output,
+  executionCount,
+  isCollapsed = false,
   onToggleCollapse,
-  className 
+  className
 }: CellOutputProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -94,8 +95,8 @@ export function CellOutput({
 
   const renderImageOutput = (imageData: any) => (
     <div className="border border-border rounded overflow-hidden">
-      <img 
-        src={imageData.data || imageData.url} 
+      <img
+        src={imageData.data || imageData.url}
         alt={imageData.title || 'Output image'}
         className="max-w-full h-auto"
       />
@@ -142,9 +143,11 @@ export function CellOutput({
   )
 
   const renderHTMLOutput = (html: string) => (
-    <div 
+    <div
       className="prose max-w-none dark:prose-invert"
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{
+        __html: typeof window !== 'undefined' ? DOMPurify.sanitize(html) : html
+      }}
     />
   )
 
@@ -211,7 +214,7 @@ export function CellOutput({
 
     // Check for result (ExecutionResult format)
     if (output.result !== undefined && output.result !== null) {
-      const resultStr = typeof output.result === 'object' 
+      const resultStr = typeof output.result === 'object'
         ? JSON.stringify(output.result, null, 2)
         : String(output.result)
       return renderTextOutput(resultStr)
@@ -227,12 +230,12 @@ export function CellOutput({
 
   // Check if output has any content to display
   const hasContent = output && (
-    output.error || 
-    output.stderr || 
-    output.stdout || 
+    output.error ||
+    output.stderr ||
+    output.stdout ||
     (output.result !== undefined && output.result !== null) ||
-    (output as any).output || 
-    (output.images && output.images.length > 0) || 
+    (output as any).output ||
+    (output.images && output.images.length > 0) ||
     ((output as any).tables && (output as any).tables.length > 0) ||
     ((output as any).charts && (output as any).charts.length > 0) ||
     (output as any).html
@@ -269,7 +272,7 @@ export function CellOutput({
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center gap-1">
           <Button
             size="sm"
@@ -283,12 +286,12 @@ export function CellOutput({
               <ChevronDown className="h-3 w-3" />
             )}
           </Button>
-          
+
           <Button
             size="sm"
             variant="ghost"
             onClick={() => copyToClipboard(
-              (output as any).output || 
+              (output as any).output ||
               ((output as any).error ? (typeof (output as any).error === 'string' ? (output as any).error : (output as any).error.message) : '') ||
               ''
             )}
@@ -296,12 +299,12 @@ export function CellOutput({
           >
             <Copy className="h-3 w-3" />
           </Button>
-          
+
           <Button
             size="sm"
             variant="ghost"
             onClick={() => downloadOutput(
-              (output as any).output || 
+              (output as any).output ||
               ((output as any).error ? (typeof (output as any).error === 'string' ? (output as any).error : (output as any).error.message) : '') ||
               '',
               `output_${Date.now()}.txt`
@@ -315,7 +318,7 @@ export function CellOutput({
 
       {/* Output Content */}
       {isExpanded && (
-        <div 
+        <div
           className="p-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
           onMouseEnter={() => setShowScrollbar(true)}
           onMouseLeave={() => setShowScrollbar(false)}

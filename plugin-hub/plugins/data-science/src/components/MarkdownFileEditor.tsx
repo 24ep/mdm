@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import DOMPurify from 'dompurify'
 
 export function MarkdownFileEditor({ fileName }: { fileName: string }) {
   const [content, setContent] = useState<string>('# New Document')
@@ -18,14 +19,16 @@ export function MarkdownFileEditor({ fileName }: { fileName: string }) {
         <div className="p-2 prose max-w-none dark:prose-invert text-sm">
           <div
             dangerouslySetInnerHTML={{
-              __html: (content || '')
-                .replace(/\n/g, '<br>')
-                .replace(/# (.*)/g, '<h1 class="text-2xl font-bold mb-2">$1</h1>')
-                .replace(/## (.*)/g, '<h2 class="text-xl font-semibold mb-2">$1</h2>')
-                .replace(/### (.*)/g, '<h3 class="text-lg font-medium mb-1">$1</h3>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/`(.*?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-xs font-mono">$1</code>')
+              __html: typeof window !== 'undefined'
+                ? DOMPurify.sanitize((content || '')
+                  .replace(/\n/g, '<br>')
+                  .replace(/# (.*)/g, '<h1 class="text-2xl font-bold mb-2">$1</h1>')
+                  .replace(/## (.*)/g, '<h2 class="text-xl font-semibold mb-2">$1</h2>')
+                  .replace(/### (.*)/g, '<h3 class="text-lg font-medium mb-1">$1</h3>')
+                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                  .replace(/`(.*?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-xs font-mono">$1</code>'))
+                : (content || '')
             }}
           />
         </div>

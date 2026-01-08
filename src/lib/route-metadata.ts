@@ -253,13 +253,7 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     category: 'system',
     description: 'API configuration and keys',
   },
-  '/system/integrations': {
-    name: 'Integration Hub',
-    icon: 'Workflow',
-    color: '#8b5cf6',
-    category: 'system',
-    description: 'Third-party integrations',
-  },
+
 
   // System - Configuration
   '/system/settings': {
@@ -297,7 +291,7 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     category: 'system',
     description: 'Export and import data',
   },
-  
+
   // Other Routes
   '/dashboard': {
     name: 'Dashboard',

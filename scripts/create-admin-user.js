@@ -14,24 +14,33 @@ if (!process.env.DATABASE_URL) {
 
 async function createAdminUser() {
   const client = await pool.connect()
-  
+
   try {
     console.log('🚀 Creating admin user...')
 
     // Check if admin user already exists
     const existingUser = await client.query(`
       SELECT * FROM public.users 
-      WHERE email = $1 OR role IN ('SUPER_ADMIN', 'ADMIN')
+      WHERE email = $1
       LIMIT 1
     `, ['admin@example.com'])
 
-    if (existingUser.rows.length > 0) {
-      console.log(`✅ Admin user already exists: ${existingUser.rows[0].email} (Role: ${existingUser.rows[0].role})`)
-      return existingUser.rows[0]
-    }
-
     // Hash password
-    const hashedPassword = await bcrypt.hash('admin123', 12)
+    const hashedPassword = await bcrypt.hash('password123', 12)
+
+    if (existingUser.rows.length > 0) {
+      console.log(`✅ Admin user already exists. Updating password...`)
+
+      const updatedUser = await client.query(`
+        UPDATE public.users 
+        SET password = $2, role = 'ADMIN', updated_at = NOW()
+        WHERE email = $1
+        RETURNING *
+      `, ['admin@example.com', hashedPassword])
+
+      console.log(`✅ Updated admin user password to: password123`)
+      return updatedUser.rows[0]
+    }
 
     // Create admin user
     const userId = randomUUID()
@@ -50,7 +59,7 @@ async function createAdminUser() {
     const adminUser = result.rows[0]
     console.log(`✅ Created admin user:`)
     console.log(`   Email: ${adminUser.email}`)
-    console.log(`   Password: admin123`)
+    console.log(`   Password: password123`)
     console.log(`   Role: ${adminUser.role}`)
     console.log(`   ID: ${adminUser.id}`)
 

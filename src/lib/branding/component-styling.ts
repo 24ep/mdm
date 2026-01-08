@@ -297,10 +297,26 @@ export function applyComponentStyling(branding: BrandingConfig) {
         const mutedHsl = rgbaToHsl(bgColor)
         componentCSS += `      --muted: ${mutedHsl} !important;\n`
       }
+      // For card, ensure white background by default if not set
+      // This prevents issues where cards might inherit colors or show up blue in some contexts
+      if (componentId === 'card') {
+        const bgColor = componentStyle.backgroundColor && componentStyle.backgroundColor.trim()
+          ? componentStyle.backgroundColor.trim()
+          : '#ffffff'
+
+        componentCSS += `      background: ${bgColor} !important;\n`
+        componentCSS += `      background-color: ${bgColor} !important;\n`
+        componentCSS += `      background-image: none !important;\n`
+        componentCSS += `      --card: ${bgColor} !important;\n`
+        componentCSS += `      --popover: ${bgColor} !important;\n`
+      }
       // For iconButton, aggressively override Tailwind's background classes
       // This ensures transparent backgrounds properly override hover states and other Tailwind utilities
       if (componentId === 'iconButton') {
-        const bgColor = componentStyle.backgroundColor.trim()
+        const bgColor = componentStyle.backgroundColor && componentStyle.backgroundColor.trim()
+          ? componentStyle.backgroundColor.trim()
+          : 'transparent'
+
         componentCSS += `      background: ${bgColor} !important;\n`
         componentCSS += `      background-color: ${bgColor} !important;\n`
         componentCSS += `      background-image: none !important;\n`
@@ -479,6 +495,14 @@ export function applyComponentStyling(branding: BrandingConfig) {
         // Also directly override inline styles with !important
         componentCSS += `      color: ${componentStyle.textColor.trim()} !important;\n`
       }
+    }
+    // Specific logic for iconButton text color default
+    if (componentId === 'iconButton') {
+      const textColor = componentStyle.textColor && componentStyle.textColor.trim()
+        ? componentStyle.textColor.trim()
+        : '#000000'
+
+      componentCSS += `      color: ${textColor} !important;\n`
     }
     // Individual border sides (take precedence over general border properties)
     // When individual side colors are set, ensure corresponding widths and styles are also set

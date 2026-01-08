@@ -10,14 +10,14 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Settings, 
-  Database, 
-  Mail, 
-  Shield, 
-  Server, 
-  Key, 
-  Globe, 
+import {
+  Settings,
+  Database,
+  Mail,
+  Shield,
+  Server,
+  Key,
+  Globe,
   Bell,
   Save,
   RefreshCw,
@@ -37,38 +37,39 @@ export function SystemSettings() {
     siteName: '',
     siteDescription: '',
     siteUrl: '',
+    faviconUrl: '',
     supportEmail: '',
-    
+
     // Database
     dbHost: '',
     dbPort: 5432,
     dbName: '',
     dbUser: '',
     dbPassword: '',
-    
+
     // Email
     smtpHost: '',
     smtpPort: 587,
     smtpUser: '',
     smtpPassword: '',
     smtpSecure: false,
-    
+
     // Security
     sessionTimeout: 24,
     maxLoginAttempts: 5,
     passwordMinLength: 8,
     requireTwoFactor: false,
-    
+
     // UI Protection
     disableRightClick: false,
     secureLoginPage: true,
-    
+
     // Features
     allowRegistration: true,
     allowGuestAccess: false,
     enableNotifications: true,
     enableAnalytics: false,
-    
+
     // Storage
     maxFileSize: 10485760, // 10MB
     allowedFileTypes: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx'],
@@ -93,6 +94,7 @@ export function SystemSettings() {
           ...prev,
           // Expect flat key/value map from API
           sessionTimeout: data.sessionTimeout ? Number(data.sessionTimeout) : prev.sessionTimeout,
+          faviconUrl: data.faviconUrl || prev.faviconUrl,
           disableRightClick: data.disableRightClick !== undefined ? data.disableRightClick : prev.disableRightClick,
           secureLoginPage: data.secureLoginPage !== undefined ? data.secureLoginPage : prev.secureLoginPage,
         }))
@@ -117,6 +119,7 @@ export function SystemSettings() {
             sessionTimeout: String(settings.sessionTimeout),
             disableRightClick: settings.disableRightClick,
             secureLoginPage: settings.secureLoginPage,
+            faviconUrl: settings.faviconUrl,
           }
         }),
       })
@@ -137,7 +140,7 @@ export function SystemSettings() {
 
   const testConnection = async (type: 'database' | 'email') => {
     setTestResults({ ...testResults, [type]: 'pending' })
-    
+
     try {
       const response = await fetch(`/api/admin/test-connection/${type}`, {
         method: 'POST',
@@ -213,459 +216,486 @@ export function SystemSettings() {
       </div>
 
       <div className="w-full">
-      <Tabs defaultValue="general">
-        <TabsList className="inline-flex h-auto w-auto justify-start bg-transparent border-b border-border p-0 gap-6">
-          <TabsTrigger 
-            value="general" 
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Globe className="h-4 w-4" />
-            General
-          </TabsTrigger>
-          <TabsTrigger 
-            value="database"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Database className="h-4 w-4" />
-            Database
-          </TabsTrigger>
-          <TabsTrigger 
-            value="email"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Mail className="h-4 w-4" />
-            Email
-          </TabsTrigger>
-          <TabsTrigger 
-            value="security"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Shield className="h-4 w-4" />
-            Security
-          </TabsTrigger>
-          <TabsTrigger 
-            value="sso"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Key className="h-4 w-4" />
-            SSO
-          </TabsTrigger>
-          <TabsTrigger 
-            value="features"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Bell className="h-4 w-4" />
-            Features
-          </TabsTrigger>
-          <TabsTrigger 
-            value="integrations"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Server className="h-4 w-4" />
-            Integrations
-          </TabsTrigger>
-          <TabsTrigger 
-            value="storage"
-            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Database className="h-4 w-4" />
-            Storage
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="general">
+          <TabsList className="inline-flex h-auto w-auto justify-start bg-transparent border-b border-border p-0 gap-6">
+            <TabsTrigger
+              value="general"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Globe className="h-4 w-4" />
+              General
+            </TabsTrigger>
+            <TabsTrigger
+              value="database"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Database className="h-4 w-4" />
+              Database
+            </TabsTrigger>
+            <TabsTrigger
+              value="email"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </TabsTrigger>
+            <TabsTrigger
+              value="security"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Shield className="h-4 w-4" />
+              Security
+            </TabsTrigger>
+            <TabsTrigger
+              value="sso"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Key className="h-4 w-4" />
+              SSO
+            </TabsTrigger>
+            <TabsTrigger
+              value="features"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Bell className="h-4 w-4" />
+              Features
+            </TabsTrigger>
+            <TabsTrigger
+              value="integrations"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Server className="h-4 w-4" />
+              Integrations
+            </TabsTrigger>
+            <TabsTrigger
+              value="storage"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Database className="h-4 w-4" />
+              Storage
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                General Settings
-              </CardTitle>
-              <CardDescription>
-                Basic site configuration and information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="siteName">Site Name</Label>
-                  <Input
-                    id="siteName"
-                    value={settings.siteName}
-                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                    placeholder="My Application"
-                  />
+          <TabsContent value="general" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  General Settings
+                </CardTitle>
+                <CardDescription>
+                  Basic site configuration and information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="siteName">Site Name</Label>
+                    <Input
+                      id="siteName"
+                      value={settings.siteName}
+                      onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                      placeholder="My Application"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="siteUrl">Site URL</Label>
+                    <Input
+                      id="siteUrl"
+                      value={settings.siteUrl}
+                      onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
+                      placeholder="https://myapp.com"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="siteUrl">Site URL</Label>
-                  <Input
-                    id="siteUrl"
-                    value={settings.siteUrl}
-                    onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
-                    placeholder="https://myapp.com"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="siteDescription">Site Description</Label>
-                <Textarea
-                  id="siteDescription"
-                  value={settings.siteDescription}
-                  onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
-                  placeholder="Brief description of your application"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="supportEmail">Support Email</Label>
-                <Input
-                  id="supportEmail"
-                  type="email"
-                  value={settings.supportEmail}
-                  onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-                  placeholder="support@myapp.com"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="database" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                Database Configuration
-              </CardTitle>
-              <CardDescription>
-                Database connection settings and configuration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="dbHost">Database Host</Label>
-                  <Input
-                    id="dbHost"
-                    value={settings.dbHost}
-                    onChange={(e) => setSettings({ ...settings, dbHost: e.target.value })}
-                    placeholder="localhost"
-                  />
+                  <Label htmlFor="faviconUrl">Favicon URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="faviconUrl"
+                      value={settings.faviconUrl}
+                      onChange={(e) => setSettings({ ...settings, faviconUrl: e.target.value })}
+                      placeholder="https://example.com/favicon.ico"
+                    />
+                    {settings.faviconUrl && (
+                      <div className="h-10 w-10 flex items-center justify-center border rounded bg-muted/20 shrink-0">
+                        <img
+                          src={settings.faviconUrl}
+                          alt="Favicon preview"
+                          className="max-h-6 max-w-6"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    URL to your favicon image (.ico, .png, .svg). You can place the file in the <code>public</code> folder and reference it here (e.g., <code>/logo/my-icon.png</code>).
+                  </p>
                 </div>
-                <div>
-                  <Label htmlFor="dbPort">Port</Label>
-                  <Input
-                    id="dbPort"
-                    type="number"
-                    value={settings.dbPort}
-                    onChange={(e) => setSettings({ ...settings, dbPort: parseInt(e.target.value) })}
-                    placeholder="5432"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="dbName">Database Name</Label>
-                  <Input
-                    id="dbName"
-                    value={settings.dbName}
-                    onChange={(e) => setSettings({ ...settings, dbName: e.target.value })}
-                    placeholder="myapp_db"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dbUser">Username</Label>
-                  <Input
-                    id="dbUser"
-                    value={settings.dbUser}
-                    onChange={(e) => setSettings({ ...settings, dbUser: e.target.value })}
-                    placeholder="postgres"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="dbPassword">Password</Label>
-                <Input
-                  id="dbPassword"
-                  type="password"
-                  value={settings.dbPassword}
-                  onChange={(e) => setSettings({ ...settings, dbPassword: e.target.value })}
-                  placeholder="Database password"
-                />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => testConnection('database')}
-                  disabled={testResults.database === 'pending'}
-                >
-                  {getTestIcon('database')}
-                  <span className="ml-2">Test Connection</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="email" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                Email Configuration
-              </CardTitle>
-              <CardDescription>
-                SMTP settings for email notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="smtpHost">SMTP Host</Label>
-                  <Input
-                    id="smtpHost"
-                    value={settings.smtpHost}
-                    onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
-                    placeholder="smtp.gmail.com"
+                  <Label htmlFor="siteDescription">Site Description</Label>
+                  <Textarea
+                    id="siteDescription"
+                    value={settings.siteDescription}
+                    onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
+                    placeholder="Brief description of your application"
+                    rows={3}
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="smtpPort">Port</Label>
+                  <Label htmlFor="supportEmail">Support Email</Label>
                   <Input
-                    id="smtpPort"
-                    type="number"
-                    value={settings.smtpPort}
-                    onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}
-                    placeholder="587"
+                    id="supportEmail"
+                    type="email"
+                    value={settings.supportEmail}
+                    onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                    placeholder="support@myapp.com"
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="smtpUser">Username</Label>
-                  <Input
-                    id="smtpUser"
-                    value={settings.smtpUser}
-                    onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
-                    placeholder="your-email@gmail.com"
-                  />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="database" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Database Configuration
+                </CardTitle>
+                <CardDescription>
+                  Database connection settings and configuration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dbHost">Database Host</Label>
+                    <Input
+                      id="dbHost"
+                      value={settings.dbHost}
+                      onChange={(e) => setSettings({ ...settings, dbHost: e.target.value })}
+                      placeholder="localhost"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dbPort">Port</Label>
+                    <Input
+                      id="dbPort"
+                      type="number"
+                      value={settings.dbPort}
+                      onChange={(e) => setSettings({ ...settings, dbPort: parseInt(e.target.value) })}
+                      placeholder="5432"
+                    />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dbName">Database Name</Label>
+                    <Input
+                      id="dbName"
+                      value={settings.dbName}
+                      onChange={(e) => setSettings({ ...settings, dbName: e.target.value })}
+                      placeholder="myapp_db"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="dbUser">Username</Label>
+                    <Input
+                      id="dbUser"
+                      value={settings.dbUser}
+                      onChange={(e) => setSettings({ ...settings, dbUser: e.target.value })}
+                      placeholder="postgres"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="smtpPassword">Password</Label>
+                  <Label htmlFor="dbPassword">Password</Label>
                   <Input
-                    id="smtpPassword"
+                    id="dbPassword"
                     type="password"
-                    value={settings.smtpPassword}
-                    onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
-                    placeholder="App password"
+                    value={settings.dbPassword}
+                    onChange={(e) => setSettings({ ...settings, dbPassword: e.target.value })}
+                    placeholder="Database password"
                   />
                 </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="smtpSecure"
-                  checked={settings.smtpSecure}
-                  onCheckedChange={(checked) => setSettings({ ...settings, smtpSecure: checked })}
-                />
-                <Label htmlFor="smtpSecure">Use SSL/TLS</Label>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => testConnection('email')}
-                  disabled={testResults.email === 'pending'}
-                >
-                  {getTestIcon('email')}
-                  <span className="ml-2">Test Email</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Security Settings
-              </CardTitle>
-              <CardDescription>
-                Security and authentication configuration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="sessionTimeout">Session Timeout (hours)</Label>
-                  <Input
-                    id="sessionTimeout"
-                    type="number"
-                    value={settings.sessionTimeout}
-                    onChange={(e) => setSettings({ ...settings, sessionTimeout: parseInt(e.target.value) })}
-                    placeholder="24"
-                  />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => testConnection('database')}
+                    disabled={testResults.database === 'pending'}
+                  >
+                    {getTestIcon('database')}
+                    <span className="ml-2">Test Connection</span>
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="maxLoginAttempts">Max Login Attempts</Label>
-                  <Input
-                    id="maxLoginAttempts"
-                    type="number"
-                    value={settings.maxLoginAttempts}
-                    onChange={(e) => setSettings({ ...settings, maxLoginAttempts: parseInt(e.target.value) })}
-                    placeholder="5"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="passwordMinLength">Minimum Password Length</Label>
-                <Input
-                  id="passwordMinLength"
-                  type="number"
-                  value={settings.passwordMinLength}
-                  onChange={(e) => setSettings({ ...settings, passwordMinLength: parseInt(e.target.value) })}
-                  placeholder="8"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="requireTwoFactor"
-                  checked={settings.requireTwoFactor}
-                  onCheckedChange={(checked) => setSettings({ ...settings, requireTwoFactor: checked })}
-                />
-                <Label htmlFor="requireTwoFactor">Require Two-Factor Authentication</Label>
-              </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <div className="pt-4 border-t">
-                <h4 className="text-sm font-medium mb-4">UI Protection</h4>
+          <TabsContent value="email" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  Email Configuration
+                </CardTitle>
+                <CardDescription>
+                  SMTP settings for email notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="smtpHost">SMTP Host</Label>
+                    <Input
+                      id="smtpHost"
+                      value={settings.smtpHost}
+                      onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                      placeholder="smtp.gmail.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="smtpPort">Port</Label>
+                    <Input
+                      id="smtpPort"
+                      type="number"
+                      value={settings.smtpPort}
+                      onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}
+                      placeholder="587"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="smtpUser">Username</Label>
+                    <Input
+                      id="smtpUser"
+                      value={settings.smtpUser}
+                      onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                      placeholder="your-email@gmail.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="smtpPassword">Password</Label>
+                    <Input
+                      id="smtpPassword"
+                      type="password"
+                      value={settings.smtpPassword}
+                      onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
+                      placeholder="App password"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="smtpSecure"
+                    checked={settings.smtpSecure}
+                    onCheckedChange={(checked) => setSettings({ ...settings, smtpSecure: checked })}
+                  />
+                  <Label htmlFor="smtpSecure">Use SSL/TLS</Label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => testConnection('email')}
+                    disabled={testResults.email === 'pending'}
+                  >
+                    {getTestIcon('email')}
+                    <span className="ml-2">Test Email</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Security Settings
+                </CardTitle>
+                <CardDescription>
+                  Security and authentication configuration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="sessionTimeout">Session Timeout (hours)</Label>
+                    <Input
+                      id="sessionTimeout"
+                      type="number"
+                      value={settings.sessionTimeout}
+                      onChange={(e) => setSettings({ ...settings, sessionTimeout: parseInt(e.target.value) })}
+                      placeholder="24"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="maxLoginAttempts">Max Login Attempts</Label>
+                    <Input
+                      id="maxLoginAttempts"
+                      type="number"
+                      value={settings.maxLoginAttempts}
+                      onChange={(e) => setSettings({ ...settings, maxLoginAttempts: parseInt(e.target.value) })}
+                      placeholder="5"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="passwordMinLength">Minimum Password Length</Label>
+                  <Input
+                    id="passwordMinLength"
+                    type="number"
+                    value={settings.passwordMinLength}
+                    onChange={(e) => setSettings({ ...settings, passwordMinLength: parseInt(e.target.value) })}
+                    placeholder="8"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="requireTwoFactor"
+                    checked={settings.requireTwoFactor}
+                    onCheckedChange={(checked) => setSettings({ ...settings, requireTwoFactor: checked })}
+                  />
+                  <Label htmlFor="requireTwoFactor">Require Two-Factor Authentication</Label>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <h4 className="text-sm font-medium mb-4">UI Protection</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="disableRightClick">Disable Application Right-Click</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Prevent right-click context menu throughout the application
+                        </p>
+                      </div>
+                      <Switch
+                        id="disableRightClick"
+                        checked={settings.disableRightClick}
+                        onCheckedChange={(checked) => setSettings({ ...settings, disableRightClick: checked })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="secureLoginPage">Secure Login Page</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Disable DevTools (F12) and Right-Click on login page
+                        </p>
+                      </div>
+                      <Switch
+                        id="secureLoginPage"
+                        checked={settings.secureLoginPage}
+                        onCheckedChange={(checked) => setSettings({ ...settings, secureLoginPage: checked })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sso" className="space-y-6">
+            <SSOConfiguration />
+          </TabsContent>
+
+          <TabsContent value="features" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Feature Settings
+                </CardTitle>
+                <CardDescription>
+                  Enable or disable system features
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="disableRightClick">Disable Application Right-Click</Label>
+                      <Label htmlFor="allowRegistration">Allow User Registration</Label>
                       <p className="text-sm text-muted-foreground">
-                        Prevent right-click context menu throughout the application
+                        Allow new users to register accounts
                       </p>
                     </div>
                     <Switch
-                      id="disableRightClick"
-                      checked={settings.disableRightClick}
-                      onCheckedChange={(checked) => setSettings({ ...settings, disableRightClick: checked })}
+                      id="allowRegistration"
+                      checked={settings.allowRegistration}
+                      onCheckedChange={(checked) => setSettings({ ...settings, allowRegistration: checked })}
                     />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="secureLoginPage">Secure Login Page</Label>
+                      <Label htmlFor="allowGuestAccess">Allow Guest Access</Label>
                       <p className="text-sm text-muted-foreground">
-                        Disable DevTools (F12) and Right-Click on login page
+                        Allow users to access without accounts
                       </p>
                     </div>
                     <Switch
-                      id="secureLoginPage"
-                      checked={settings.secureLoginPage}
-                      onCheckedChange={(checked) => setSettings({ ...settings, secureLoginPage: checked })}
+                      id="allowGuestAccess"
+                      checked={settings.allowGuestAccess}
+                      onCheckedChange={(checked) => setSettings({ ...settings, allowGuestAccess: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="enableNotifications">Enable Notifications</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Send email and in-app notifications
+                      </p>
+                    </div>
+                    <Switch
+                      id="enableNotifications"
+                      checked={settings.enableNotifications}
+                      onCheckedChange={(checked) => setSettings({ ...settings, enableNotifications: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="enableAnalytics">Enable Analytics</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Track usage and performance metrics
+                      </p>
+                    </div>
+                    <Switch
+                      id="enableAnalytics"
+                      checked={settings.enableAnalytics}
+                      onCheckedChange={(checked) => setSettings({ ...settings, enableAnalytics: checked })}
                     />
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="sso" className="space-y-6">
-          <SSOConfiguration />
-        </TabsContent>
+          <TabsContent value="integrations" className="space-y-6">
+            <SystemIntegrations />
+          </TabsContent>
 
-        <TabsContent value="features" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Feature Settings
-              </CardTitle>
-              <CardDescription>
-                Enable or disable system features
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="allowRegistration">Allow User Registration</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow new users to register accounts
-                    </p>
-                  </div>
-                  <Switch
-                    id="allowRegistration"
-                    checked={settings.allowRegistration}
-                    onCheckedChange={(checked) => setSettings({ ...settings, allowRegistration: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="allowGuestAccess">Allow Guest Access</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow users to access without accounts
-                    </p>
-                  </div>
-                  <Switch
-                    id="allowGuestAccess"
-                    checked={settings.allowGuestAccess}
-                    onCheckedChange={(checked) => setSettings({ ...settings, allowGuestAccess: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="enableNotifications">Enable Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Send email and in-app notifications
-                    </p>
-                  </div>
-                  <Switch
-                    id="enableNotifications"
-                    checked={settings.enableNotifications}
-                    onCheckedChange={(checked) => setSettings({ ...settings, enableNotifications: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="enableAnalytics">Enable Analytics</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Track usage and performance metrics
-                    </p>
-                  </div>
-                  <Switch
-                    id="enableAnalytics"
-                    checked={settings.enableAnalytics}
-                    onCheckedChange={(checked) => setSettings({ ...settings, enableAnalytics: checked })}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6">
-          <SystemIntegrations />
-        </TabsContent>
-
-        <TabsContent value="storage" className="space-y-6">
-          <StorageConnections />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="storage" className="space-y-6">
+            <StorageConnections />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

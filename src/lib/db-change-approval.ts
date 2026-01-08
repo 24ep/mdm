@@ -125,7 +125,7 @@ class DatabaseChangeApproval {
     try {
       // Determine if approval is required
       const requiresApproval = await this.checkRequiresApproval(request.changeType, request.spaceId)
-      
+
       const status: ChangeRequestStatus = requiresApproval ? 'pending' : 'approved'
 
       const result = await query(`
@@ -410,7 +410,7 @@ class DatabaseChangeApproval {
           SELECT * FROM public.approval_rules
           WHERE space_id = $1 
             AND enabled = true
-            AND $2 = ANY(change_types::text[])
+            AND change_types @> to_jsonb($2::text)
           ORDER BY created_at DESC
           LIMIT 1
         `, [spaceId, changeType])
@@ -425,7 +425,7 @@ class DatabaseChangeApproval {
         SELECT * FROM public.approval_rules
         WHERE space_id IS NULL
           AND enabled = true
-          AND $1 = ANY(change_types::text[])
+          AND change_types @> to_jsonb($1::text)
         ORDER BY created_at DESC
         LIMIT 1
       `, [changeType])

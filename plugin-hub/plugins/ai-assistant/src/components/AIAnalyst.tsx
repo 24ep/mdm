@@ -97,14 +97,14 @@ export function AIAnalyst() {
   // Authentication
   const { data: session, status } = useSession()
   const router = useRouter()
-  
+
   // View state - either 'sessions' or 'chat'
   const [currentView, setCurrentView] = useState<'sessions' | 'chat'>('sessions')
-  
+
   // Sidebar state (Open WebUI style)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(280)
-  
+
   // Chat state
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -128,12 +128,12 @@ export function AIAnalyst() {
   const [showReportDrawer, setShowReportDrawer] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  
+
   // File attachment state
   const [attachments, setAttachments] = useState<Array<{ id: string; file: File; url: string; name: string; type: string; size: number; uploadedFile?: any }>>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
-  
+
   // MCP server state - stored per model
   const [mcpServersByModel, setMcpServersByModel] = useState<Record<string, Array<{
     id: string
@@ -147,10 +147,10 @@ export function AIAnalyst() {
     cache?: boolean
   }>>>({})
   const [showMcpConfig, setShowMcpConfig] = useState(false)
-  
+
   // Get MCP servers for current model
   const mcpServers = selectedModel ? (mcpServersByModel[selectedModel] || []) : []
-  
+
   // Set MCP servers for current model
   const setMcpServers = (servers: Array<{
     id: string
@@ -170,13 +170,13 @@ export function AIAnalyst() {
       }))
     }
   }
-  
+
   // Error and loading states
   const [error, setError] = useState<string | null>(null)
   const [isLoadingSpaces, setIsLoadingSpaces] = useState(false)
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
-  
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -185,13 +185,13 @@ export function AIAnalyst() {
         e.preventDefault()
         setShowNewChatDialog(true)
       }
-      
+
       // Ctrl/Cmd + K for clear chat (when in chat view)
       if ((e.ctrlKey || e.metaKey) && e.key === 'k' && currentView === 'chat') {
         e.preventDefault()
         clearChat()
       }
-      
+
       // Escape to go back to sessions
       if (e.key === 'Escape' && currentView === 'chat') {
         e.preventDefault()
@@ -214,7 +214,7 @@ export function AIAnalyst() {
 
   useEffect(() => {
     if (!session) return
-    
+
     loadSpaces()
     loadModels()
     loadConfiguredProviders()
@@ -345,7 +345,7 @@ export function AIAnalyst() {
 
         // Create preview URL
         const url = URL.createObjectURL(file)
-        
+
         // Upload file to server if space is selected
         let uploadedFile: any = null
         if (selectedSpace) {
@@ -413,7 +413,7 @@ export function AIAnalyst() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if ((!input.trim() && attachments.length === 0) || isLoading) return
-    
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -433,13 +433,13 @@ export function AIAnalyst() {
         }
       } : undefined
     }
-    
+
     setMessages(prev => [...prev, userMessage])
     const currentInput = input.trim()
     const currentAttachments = [...attachments]
     setInput('')
     clearAttachments()
-    
+
     setIsLoading(true)
     try {
       // Call AI analysis API with attachments and MCP servers
@@ -450,7 +450,7 @@ export function AIAnalyst() {
         currentAttachments,
         mcpServers.filter(s => s.enabled)
       )
-      
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -461,9 +461,9 @@ export function AIAnalyst() {
           data: analysisResult.analysis.data
         } : undefined
       }
-      
+
       setMessages(prev => [...prev, aiMessage])
-      
+
       // Add to analysis results if applicable
       if (analysisResult.title && analysisResult.insights) {
         setAnalysisResults(prev => [...prev, {
@@ -478,7 +478,7 @@ export function AIAnalyst() {
     } catch (error) {
       console.error('Error in AI analysis:', error)
       toast.error('Failed to get AI response')
-      
+
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -496,7 +496,7 @@ export function AIAnalyst() {
       toast('Chat is already empty')
       return
     }
-    
+
     if (confirm('Are you sure you want to clear the chat? This action cannot be undone.')) {
       setMessages([])
       setAnalysisResults([])
@@ -519,8 +519,8 @@ export function AIAnalyst() {
 
 
   const performAIAnalysis = async (
-    query: string, 
-    spaceId: string, 
+    query: string,
+    spaceId: string,
     modelId: string,
     attachments: Array<{ id: string; file: File; url: string; name: string; type: string; size: number; uploadedFile?: any }> = [],
     mcpServers: Array<any> = []
@@ -691,7 +691,7 @@ export function AIAnalyst() {
         charts: analysisResults.filter(r => r.type === 'chart').map(r => r.data),
         tables: analysisResults.filter(r => r.type === 'table').map(r => r.data)
       }
-      
+
       setReportData(report)
     } catch (error) {
       console.error('Error generating report:', error)
@@ -703,7 +703,7 @@ export function AIAnalyst() {
 
   const generateRecommendations = (results: AnalysisResult[]) => {
     const recommendations = []
-    
+
     if (results.some(r => r.type === 'chart')) {
       recommendations.push({
         type: 'visualization',
@@ -712,7 +712,7 @@ export function AIAnalyst() {
         priority: 'medium'
       })
     }
-    
+
     if (results.some(r => r.type === 'table')) {
       recommendations.push({
         type: 'data_quality',
@@ -721,7 +721,7 @@ export function AIAnalyst() {
         priority: 'high'
       })
     }
-    
+
     if (results.length > 3) {
       recommendations.push({
         type: 'automation',
@@ -730,7 +730,7 @@ export function AIAnalyst() {
         priority: 'low'
       })
     }
-    
+
     return recommendations
   }
 
@@ -806,7 +806,7 @@ export function AIAnalyst() {
     <div className="h-full flex flex-col bg-background text-foreground overflow-hidden">
       <div className="flex flex-1 min-h-0">
         {/* Sidebar - Open WebUI Style */}
-        <div 
+        <div
           className={cn(
             "border-r border-border transition-all duration-300 flex flex-col",
             sidebarOpen ? "w-[280px]" : "w-0 overflow-hidden"
@@ -941,7 +941,7 @@ export function AIAnalyst() {
                 <Bot className="h-16 w-16 text-primary mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">Welcome to AI Analyst</h3>
                 <p className="text-muted-foreground mb-6">Start a new conversation to begin analyzing your data</p>
-                <Button 
+                <Button
                   onClick={() => setShowNewChatDialog(true)}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
@@ -951,7 +951,7 @@ export function AIAnalyst() {
               </div>
             </div>
           ) : (
-            <ChatView 
+            <ChatView
               messages={messages}
               input={input}
               setInput={setInput}
@@ -1031,13 +1031,13 @@ export function AIAnalyst() {
 }
 
 // Chat Sessions List Component
-function ChatSessionsList({ 
-  chatSessions, 
-  currentUser, 
-  onChatSelect, 
+function ChatSessionsList({
+  chatSessions,
+  currentUser,
+  onChatSelect,
   onNewChat,
   isLoading
-}: { 
+}: {
   chatSessions: ChatSession[]
   currentUser: any
   onChatSelect: (chatId: string) => void
@@ -1095,9 +1095,9 @@ function ChatSessionsList({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {chatSessions.map(chat => (
-                <Card 
-                  key={chat.id} 
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                <Card
+                  key={chat.id}
+                  className="cursor-pointer hover:shadow-lg transition-shadow h-full flex flex-col"
                   onClick={() => onChatSelect(chat.id)}
                 >
                   <CardHeader className="pb-3">
@@ -1142,23 +1142,23 @@ function ChatSessionsList({
 }
 
 // Chat View Component
-function ChatView({ 
-  messages, 
-  input, 
-  setInput, 
-  isLoading, 
-  onSubmit, 
+function ChatView({
+  messages,
+  input,
+  setInput,
+  isLoading,
+  onSubmit,
   messagesEndRef,
   textareaRef,
-  showReportDrawer, 
-  reportData, 
-  isGeneratingReport, 
-  spaces, 
-  analysisResults, 
-  onExportReport, 
-  selectedExport, 
-  setSelectedExport, 
-  showExportDialog, 
+  showReportDrawer,
+  reportData,
+  isGeneratingReport,
+  spaces,
+  analysisResults,
+  onExportReport,
+  selectedExport,
+  setSelectedExport,
+  showExportDialog,
   setShowExportDialog,
   attachments,
   onFileSelect,
@@ -1247,95 +1247,95 @@ function ChatView({
         <div className="flex-1 flex flex-col overflow-hidden">
           <ScrollArea className="flex-1 px-6 py-5 pb-28">
             <div className="max-w-4xl mx-auto">
-            {messages.length === 0 ? (
-              <div className="text-center py-16 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6 transition-transform duration-200 ease-out hover:scale-110">
-                  <Bot className="h-8 w-8 text-primary" />
+              {messages.length === 0 ? (
+                <div className="text-center py-16 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6 transition-transform duration-200 ease-out hover:scale-110">
+                    <Bot className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">How can I help you today?</h3>
+                  <p className="text-muted-foreground mb-8">Start a conversation to analyze your data, create visualizations, or generate insights</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                    {[
+                      "Analyze sales trends",
+                      "Create data visualizations",
+                      "Generate insights report",
+                      "Compare metrics"
+                    ].map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setInput(suggestion)}
+                        className="px-4 py-3 text-left text-sm rounded-lg bg-muted/50 hover:bg-muted border border-border text-foreground hover:text-foreground transition-all duration-200 ease-out transform hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">How can I help you today?</h3>
-                <p className="text-muted-foreground mb-8">Start a conversation to analyze your data, create visualizations, or generate insights</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                  {[
-                    "Analyze sales trends",
-                    "Create data visualizations",
-                    "Generate insights report",
-                    "Compare metrics"
-                  ].map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setInput(suggestion)}
-                      className="px-4 py-3 text-left text-sm rounded-lg bg-muted/50 hover:bg-muted border border-border text-foreground hover:text-foreground transition-all duration-200 ease-out transform hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
+              ) : (
+                <div className="space-y-5">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={cn(
+                        "flex gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-200",
+                        message.role === 'user' ? "justify-end" : "justify-start"
+                      )}
                     >
-                      {suggestion}
-                    </button>
+                      {message.role === 'assistant' && (
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110 ring-2 ring-primary/20">
+                          <Bot className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                      )}
+                      <div
+                        className={cn(
+                          "max-w-[85%] rounded-2xl px-4 py-3 transition-all duration-200 ease-out",
+                          message.role === 'user'
+                            ? "bg-primary text-primary-foreground rounded-br-sm hover:shadow-md"
+                            : "bg-card border border-border text-foreground rounded-bl-sm hover:shadow-md"
+                        )}
+                      >
+                        {message.role === 'assistant' ? (
+                          <div className="prose prose-invert prose-sm max-w-none">
+                            <MarkdownRenderer content={message.content} />
+                          </div>
+                        ) : (
+                          <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
+                        )}
+                        {message.analysis && (
+                          <div className="mt-4">
+                            <AnalysisVisualization analysis={message.analysis} />
+                          </div>
+                        )}
+                        <div className={cn(
+                          "text-xs mt-2 opacity-60",
+                          message.role === 'user' ? "text-primary-foreground/70" : "text-muted-foreground"
+                        )}>
+                          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      {message.role === 'user' && (
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110 ring-2 ring-secondary/20">
+                          <User className="h-5 w-5 text-secondary-foreground" />
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex gap-4 group animate-in fade-in slide-in-from-bottom-2 duration-200",
-                      message.role === 'user' ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    {message.role === 'assistant' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110 ring-2 ring-primary/20">
+                  {isLoading && (
+                    <div className="flex gap-4 justify-start">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                         <Bot className="h-5 w-5 text-primary-foreground" />
                       </div>
-                    )}
-                    <div
-                      className={cn(
-                        "max-w-[85%] rounded-2xl px-4 py-3 transition-all duration-200 ease-out",
-                        message.role === 'user'
-                          ? "bg-primary text-primary-foreground rounded-br-sm hover:shadow-md"
-                          : "bg-card border border-border text-foreground rounded-bl-sm hover:shadow-md"
-                      )}
-                    >
-                      {message.role === 'assistant' ? (
-                        <div className="prose prose-invert prose-sm max-w-none">
-                          <MarkdownRenderer content={message.content} />
+                      <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          <span className="text-sm text-muted-foreground">Thinking...</span>
                         </div>
-                      ) : (
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</div>
-                      )}
-                      {message.analysis && (
-                        <div className="mt-4">
-                          <AnalysisVisualization analysis={message.analysis} />
-                        </div>
-                      )}
-                      <div className={cn(
-                        "text-xs mt-2 opacity-60",
-                        message.role === 'user' ? "text-primary-foreground/70" : "text-muted-foreground"
-                      )}>
-                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                    {message.role === 'user' && (
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center transition-transform duration-200 ease-out group-hover:scale-110 ring-2 ring-secondary/20">
-                        <User className="h-5 w-5 text-secondary-foreground" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="flex gap-4 justify-start">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                      <Bot className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                        <span className="text-sm text-muted-foreground">Thinking...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -1369,7 +1369,7 @@ function ChatView({
                 </div>
               </div>
             )}
-            
+
             <form onSubmit={onSubmit} className="relative">
               <div className="relative flex items-center rounded-xl border border-border bg-background shadow-lg focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 focus-within:shadow-xl transition-all duration-200 ease-out min-h-[64px] overflow-hidden">
                 <input
@@ -1405,8 +1405,8 @@ function ChatView({
                   disabled={isLoading}
                   rows={1}
                 />
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isLoading || (!input.trim() && attachments.length === 0)}
                   size="sm"
                   className="h-full px-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-none border-0 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-out hover:scale-105 active:scale-95 hover:shadow-lg flex-shrink-0"
@@ -1446,7 +1446,7 @@ function ChatView({
                 </div>
               </div>
             </form>
-            
+
             {/* MCP Server Configuration */}
             {showMcpConfig && (
               <div className="mt-2 p-3 bg-card border border-border rounded-lg animate-in slide-in-from-bottom-2 fade-in duration-200">
@@ -1573,7 +1573,7 @@ function ChatView({
               Real-time analysis report
             </p>
           </div>
-          
+
           <ScrollArea className="flex-1 p-4">
             {reportData ? (
               <div className="space-y-6">
@@ -1653,12 +1653,12 @@ function ChatView({
                         <div key={index} className="bg-primary/10 border border-primary/20 p-3 rounded-lg">
                           <div className="flex items-center justify-between mb-1">
                             <h6 className="font-medium text-sm text-foreground">{rec.title}</h6>
-                            <Badge 
+                            <Badge
                               variant="outline"
                               className={cn(
                                 "text-xs border-border",
-                                rec.priority === 'high' ? "text-destructive" : 
-                                rec.priority === 'medium' ? "text-[hsl(var(--warning))]" : "text-muted-foreground"
+                                rec.priority === 'high' ? "text-destructive" :
+                                  rec.priority === 'medium' ? "text-[hsl(var(--warning))]" : "text-muted-foreground"
                               )}
                             >
                               {rec.priority}
@@ -1673,7 +1673,7 @@ function ChatView({
 
                 {/* Export Button */}
                 <div className="pt-4 border-t border-border">
-                  <Button 
+                  <Button
                     onClick={() => onExportReport(reportData)}
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                     variant="default"

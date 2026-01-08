@@ -1,6 +1,7 @@
 import React from 'react'
 import { Image as ImageIcon, Video as VideoIcon } from 'lucide-react'
 import { computeWidgetStyle, WidgetStyleProps } from './widgetStyles'
+import DOMPurify from 'dompurify'
 
 interface BasicWidgetProps extends WidgetStyleProps {
   widget: {
@@ -13,7 +14,7 @@ interface BasicWidgetProps extends WidgetStyleProps {
 
 export function TextWidget({ props, style }: { props: BasicWidgetProps; style: React.CSSProperties }) {
   return (
-    <div 
+    <div
       className="w-full h-full flex items-center p-2"
       style={style}
     >
@@ -31,9 +32,9 @@ export function ImageWidget({ props, style }: { props: BasicWidgetProps; style: 
   return (
     <div className="w-full h-full flex items-center justify-center p-2" style={style}>
       {(props as any).imageUrl ? (
-        <img 
-          src={(props as any).imageUrl} 
-          alt={(props as any).imageAlt || 'Image'} 
+        <img
+          src={(props as any).imageUrl}
+          alt={(props as any).imageAlt || 'Image'}
           className="max-w-full max-h-full object-contain"
           style={{ objectFit: (props as any).objectFit || 'contain' }}
         />
@@ -51,7 +52,7 @@ export function VideoWidget({ props, style }: { props: BasicWidgetProps; style: 
   return (
     <div className="w-full h-full flex items-center justify-center p-2" style={style}>
       {(props as any).videoUrl ? (
-        <video 
+        <video
           src={(props as any).videoUrl}
           controls
           autoPlay={(props as any).autoplay}
@@ -73,7 +74,7 @@ export function IframeWidget({ props, style }: { props: BasicWidgetProps; style:
   return (
     <div className="w-full h-full p-2" style={style}>
       {(props as any).iframeUrl ? (
-        <iframe 
+        <iframe
           src={(props as any).iframeUrl}
           className="w-full h-full border-0 rounded"
           allowFullScreen={(props as any).allowFullscreen}
@@ -92,7 +93,7 @@ export function IframeWidget({ props, style }: { props: BasicWidgetProps; style:
 export function LinkWidget({ props, style }: { props: BasicWidgetProps; style: React.CSSProperties }) {
   return (
     <div className="w-full h-full flex items-center justify-center p-2" style={style}>
-      <a 
+      <a
         href={(props as any).linkUrl || '#'}
         target={(props as any).target || '_self'}
         className="text-primary hover:underline"
@@ -127,18 +128,23 @@ export function ButtonWidget({ props, style }: { props: BasicWidgetProps; style:
 }
 
 export function HtmlWidget({ props, style }: { props: BasicWidgetProps; style: React.CSSProperties }) {
+  // Sanitize HTML to prevent XSS attacks
+  const sanitizedHtml = typeof window !== 'undefined'
+    ? DOMPurify.sanitize((props as any).html || '<p>HTML content</p>')
+    : (props as any).html || '<p>HTML content</p>'
+
   return (
-    <div 
+    <div
       className="w-full h-full overflow-auto p-2"
       style={style}
-      dangerouslySetInnerHTML={{ __html: (props as any).html || '<p>HTML content</p>' }}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   )
 }
 
 export function ContainerWidget({ props, style }: { props: BasicWidgetProps; style: React.CSSProperties }) {
   return (
-    <div 
+    <div
       className="w-full h-full p-2"
       style={style}
     >
@@ -152,7 +158,7 @@ export function EmbedWidget({ props, style }: { props: BasicWidgetProps; style: 
   return (
     <div className="w-full h-full p-2" style={style}>
       {(props as any).embedUrl || (props as any).iframeUrl ? (
-        <iframe 
+        <iframe
           src={(props as any).embedUrl || (props as any).iframeUrl}
           className="w-full h-full border-0 rounded"
           allowFullScreen={(props as any).allowFullscreen}

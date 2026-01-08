@@ -700,7 +700,16 @@ export function UserManagement() {
                         )}
                       </TableCell>
                       <TableCell className="h-16">
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => openEditDialog(user)}
+                            title="Edit User"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -877,30 +886,30 @@ export function UserManagement() {
                     <p className="text-xs text-muted-foreground">Select allowed methods. Leave empty to allow all configured methods.</p>
                     <div className="flex flex-wrap gap-2 p-3 border rounded-md">
                       {['email', 'azure-ad', 'google'].map((method) => {
-                         const isSelected = editForm.allowedLoginMethods?.includes(method)
-                         return (
-                           <div 
-                             key={method}
-                             className={cn(
-                               "cursor-pointer px-3 py-1.5 rounded-full text-sm border transition-colors select-none",
-                               isSelected 
-                                 ? "bg-primary text-primary-foreground border-primary" 
-                                 : "bg-background hover:bg-muted border-input"
-                             )}
-                             onClick={() => {
-                               setEditForm(prev => {
-                                 const current = prev.allowedLoginMethods || []
-                                 if (current.includes(method)) {
-                                   return { ...prev, allowedLoginMethods: current.filter(m => m !== method) }
-                                 } else {
-                                   return { ...prev, allowedLoginMethods: [...current, method] }
-                                 }
-                               })
-                             }}
-                           >
-                             {method === 'email' ? 'Email/Password' : method === 'azure-ad' ? 'Azure AD' : 'Google'}
-                           </div>
-                         )
+                        const isSelected = editForm.allowedLoginMethods?.includes(method)
+                        return (
+                          <div
+                            key={method}
+                            className={cn(
+                              "cursor-pointer px-3 py-1.5 rounded-full text-sm border transition-colors select-none",
+                              isSelected
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background hover:bg-muted border-input"
+                            )}
+                            onClick={() => {
+                              setEditForm(prev => {
+                                const current = prev.allowedLoginMethods || []
+                                if (current.includes(method)) {
+                                  return { ...prev, allowedLoginMethods: current.filter(m => m !== method) }
+                                } else {
+                                  return { ...prev, allowedLoginMethods: [...current, method] }
+                                }
+                              })
+                            }}
+                          >
+                            {method === 'email' ? 'Email/Password' : method === 'azure-ad' ? 'Azure AD' : 'Google'}
+                          </div>
+                        )
                       })}
                     </div>
                   </div>
@@ -1083,30 +1092,30 @@ export function UserManagement() {
                 <p className="text-xs text-muted-foreground">Select allowed methods. Leave empty to allow all configured methods.</p>
                 <div className="flex flex-wrap gap-2 p-3 border rounded-md">
                   {['email', 'azure-ad', 'google'].map((method) => {
-                     const isSelected = createForm.allowedLoginMethods.includes(method)
-                     return (
-                       <div 
-                         key={method}
-                         className={cn(
-                           "cursor-pointer px-3 py-1.5 rounded-full text-sm border transition-colors select-none",
-                           isSelected 
-                             ? "bg-primary text-primary-foreground border-primary" 
-                             : "bg-background hover:bg-muted border-input"
-                         )}
-                         onClick={() => {
-                           setCreateForm(prev => {
-                             const current = prev.allowedLoginMethods
-                             if (current.includes(method)) {
-                               return { ...prev, allowedLoginMethods: current.filter(m => m !== method) }
-                             } else {
-                               return { ...prev, allowedLoginMethods: [...current, method] }
-                             }
-                           })
-                         }}
-                       >
-                         {method === 'email' ? 'Email/Password' : method === 'azure-ad' ? 'Azure AD' : 'Google'}
-                       </div>
-                     )
+                    const isSelected = createForm.allowedLoginMethods.includes(method)
+                    return (
+                      <div
+                        key={method}
+                        className={cn(
+                          "cursor-pointer px-3 py-1.5 rounded-full text-sm border transition-colors select-none",
+                          isSelected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background hover:bg-muted border-input"
+                        )}
+                        onClick={() => {
+                          setCreateForm(prev => {
+                            const current = prev.allowedLoginMethods
+                            if (current.includes(method)) {
+                              return { ...prev, allowedLoginMethods: current.filter(m => m !== method) }
+                            } else {
+                              return { ...prev, allowedLoginMethods: [...current, method] }
+                            }
+                          })
+                        }}
+                      >
+                        {method === 'email' ? 'Email/Password' : method === 'azure-ad' ? 'Azure AD' : 'Google'}
+                      </div>
+                    )
                   })}
                 </div>
               </div>

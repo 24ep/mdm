@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import type { Report } from '@/app/reports/page'
 
 export function exportReportsToCSV(reports: Report[], filename: string = 'reports') {
@@ -30,7 +30,7 @@ export function exportReportsToCSV(reports: Report[], filename: string = 'report
   document.body.removeChild(link)
 }
 
-export function exportReportsToExcel(reports: Report[], filename: string = 'reports') {
+export async function exportReportsToExcel(reports: Report[], filename: string = 'reports') {
   const data = reports.map(report => ({
     Name: report.name || '',
     Description: report.description || '',
@@ -44,10 +44,29 @@ export function exportReportsToExcel(reports: Report[], filename: string = 'repo
     'Embed URL': report.embed_url || '',
   }))
 
-  const worksheet = XLSX.utils.json_to_sheet(data)
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Reports')
-  XLSX.writeFile(workbook, `${filename}.xlsx`)
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Reports');
+
+  // Add headers
+  const headers = Object.keys(data[0] || {});
+  worksheet.addRow(headers);
+
+  // Add data
+  data.forEach(item => {
+    worksheet.addRow(Object.values(item));
+  });
+
+  // Generate buffer and trigger download
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}.xlsx`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 export function exportReportsToJSON(reports: Report[], filename: string = 'reports') {

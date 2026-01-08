@@ -54,11 +54,10 @@ import { UserManagement, RoleManagement, PermissionTester } from './admin/featur
 import { SystemSettings, PageTemplatesAdmin } from './admin/features/system'
 import { AuditLogs } from './admin/features/security'
 import { BackupRecovery } from './admin/features/storage'
-import { APIManagement } from './admin/features/integration'
+
 import { NotificationCenter, ThemeManager } from './admin/features/system'
 import { SecurityFeatures } from './admin/features/security'
 import { DataExportImport } from './admin/features/data'
-import { IntegrationHub } from './admin/features/integration'
 import { LogManagement } from './admin/features/analytics'
 import { DatabaseManagement } from './admin/features/data'
 import { CacheManagement, StorageManagement } from './admin/features/storage'
@@ -112,7 +111,7 @@ const getRouteForTab = (tab: string): string => {
     'notifications': '/system/notifications',
     'themes': '/system/themes',
     'export': '/system/export',
-    'integrations': '/system/integrations',
+
     'api': '/system/api',
     'space-selection': '/admin/space-selection',
   }
@@ -589,7 +588,7 @@ export default function HomePage() {
 
         {activeTab === 'audit' && <AuditLogs />}
         {activeTab === 'backup' && <BackupRecovery />}
-        {activeTab === 'api' && <APIManagement />}
+
         {activeTab === 'notifications' && <NotificationCenter />}
         {activeTab === 'themes' && <ThemeManager />}
         {activeTab === 'security' && <SecurityFeatures />}
@@ -629,7 +628,7 @@ export default function HomePage() {
             showSpaceSelector={true}
           />
         )}
-        {activeTab === 'integrations' && <IntegrationHub />}
+
         {activeTab === 'settings' && <SystemSettings />}
         {activeTab === 'space-layouts' && <SpaceLayoutsAdmin />}
         {activeTab === 'page-templates' && <PageTemplatesAdmin />}

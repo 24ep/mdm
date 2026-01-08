@@ -229,14 +229,26 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                     <div className="space-y-3 pl-4 border-l-2 border-muted">
                         <div className="text-xs font-medium text-muted-foreground/80">Layout & Sizing</div>
                         <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath={basePath} type="margin" icon={<Move className="h-3 w-3" />} placeholder="0.5rem" />
-                        <TextInput onChange={handleChange} label="Width" path={`${basePath}.width`} value={componentStyle?.width} placeholder="100%" icon={<ArrowLeftRight className="h-3 w-3" />} />
-                        <TextInput onChange={handleChange} label="Height" path={`${basePath}.height`} value={componentStyle?.height} placeholder="auto" icon={<ArrowLeftRight className="h-3 w-3" />} />
-                        <TextInput onChange={handleChange} label="Min Width" path={`${basePath}.minWidth`} value={componentStyle?.minWidth} placeholder="0" icon={<Minimize2 className="h-3 w-3" />} />
-                        <TextInput onChange={handleChange} label="Max Width" path={`${basePath}.maxWidth`} value={componentStyle?.maxWidth} placeholder="none" icon={<Maximize2 className="h-3 w-3" />} />
-                        <TextInput onChange={handleChange} label="Min Height" path={`${basePath}.minHeight`} value={componentStyle?.minHeight} placeholder="0" icon={<Minimize2 className="h-3 w-3" />} />
-                        <TextInput onChange={handleChange} label="Max Height" path={`${basePath}.maxHeight`} value={componentStyle?.maxHeight} placeholder="none" icon={<Maximize2 className="h-3 w-3" />} />
-                        <TextInput onChange={handleChange} label="Gap" path={`${basePath}.gap`} value={componentStyle?.gap} placeholder="0.5rem" icon={<Grid3x3 className="h-3 w-3" />} />
-                        <TextInput onChange={handleChange} label="Z-Index" path={`${basePath}.zIndex`} value={componentStyle?.zIndex} placeholder="0" icon={<Layers className="h-3 w-3" />} />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <TextInput onChange={handleChange} label="Width" path={`${basePath}.width`} value={componentStyle?.width} placeholder="100%" icon={<ArrowLeftRight className="h-3 w-3" />} />
+                            <TextInput onChange={handleChange} label="Height" path={`${basePath}.height`} value={componentStyle?.height} placeholder="auto" icon={<ArrowLeftRight className="h-3 w-3" />} />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <TextInput onChange={handleChange} label="Min Width" path={`${basePath}.minWidth`} value={componentStyle?.minWidth} placeholder="0" icon={<Minimize2 className="h-3 w-3" />} />
+                            <TextInput onChange={handleChange} label="Max Width" path={`${basePath}.maxWidth`} value={componentStyle?.maxWidth} placeholder="none" icon={<Maximize2 className="h-3 w-3" />} />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <TextInput onChange={handleChange} label="Min Height" path={`${basePath}.minHeight`} value={componentStyle?.minHeight} placeholder="0" icon={<Minimize2 className="h-3 w-3" />} />
+                            <TextInput onChange={handleChange} label="Max Height" path={`${basePath}.maxHeight`} value={componentStyle?.maxHeight} placeholder="none" icon={<Maximize2 className="h-3 w-3" />} />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <TextInput onChange={handleChange} label="Gap" path={`${basePath}.gap`} value={componentStyle?.gap} placeholder="0.5rem" icon={<Grid3x3 className="h-3 w-3" />} />
+                            <TextInput onChange={handleChange} label="Z-Index" path={`${basePath}.zIndex`} value={componentStyle?.zIndex} placeholder="0" icon={<Layers className="h-3 w-3" />} />
+                        </div>
                     </div>
 
                     {/* Typography */}
@@ -901,151 +913,164 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                             </TabsContent>
 
                             {/* Layout Colors Tab */}
-                            <TabsContent value="layout" className="space-y-8 mt-0">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Sparkles className="h-4 w-4 text-primary" />
-                                        <h3 className="text-sm font-semibold">Top Menu Bar</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="topMenuBackgroundColor" value={config.topMenuBackgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="topMenuTextColor" value={config.topMenuTextColor} />
-                                        <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
-                                            <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                                                <Sparkles className="h-3 w-3" />
-                                                Glassmorphism Effect (Backdrop Blur)
+                            <TabsContent value="layout" className="space-y-4 mt-0">
+                                <Tabs defaultValue="top-menu" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-4 mb-6">
+                                        <TabsTrigger value="top-menu" className="text-xs">Top Menu</TabsTrigger>
+                                        <TabsTrigger value="sidebar" className="text-xs">Sidebar</TabsTrigger>
+                                        <TabsTrigger value="sidebar-menu" className="text-xs">Sidebar Menu</TabsTrigger>
+                                        <TabsTrigger value="secondary" className="text-xs">Secondary</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="top-menu" className="space-y-6 mt-0">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Sparkles className="h-4 w-4 text-primary" />
+                                                <h3 className="text-sm font-semibold">Top Menu Bar</h3>
                                             </div>
-                                            <TextInput onChange={handleChange}
-                                                label="Backdrop Filter"
-                                                path="componentStyling.top-menu-bar.backdropFilter"
-                                                value={config.componentStyling?.['top-menu-bar']?.backdropFilter}
-                                                placeholder="blur(30px) saturate(200%)"
-                                                icon={<Sparkles className="h-3 w-3" />}
-                                            />
-                                            <div className="text-xs text-muted-foreground mt-2">
-                                                Example: <code className="px-1 py-0.5 bg-muted rounded">blur(30px) saturate(200%)</code> for frosted glass effect
-                                            </div>
-                                        </div>
-                                        <div className="p-3 bg-muted/30 rounded-lg border">
-                                            <div className="text-xs font-medium text-muted-foreground mb-2">Border & Shadow</div>
-                                            <ColorInputField onChange={handleChange} label="Border Color" path="componentStyling.top-menu-bar.borderColor" value={config.componentStyling?.['top-menu-bar']?.borderColor} />
-                                            <TextInput onChange={handleChange} label="Border Width" path="componentStyling.top-menu-bar.borderWidth" value={config.componentStyling?.['top-menu-bar']?.borderWidth} placeholder="0px 0px 0.5px 0px" />
-                                            <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.top-menu-bar.boxShadow" value={config.componentStyling?.['top-menu-bar']?.boxShadow} placeholder="0 1px 3px 0 rgba(0, 0, 0, 0.05)" />
-                                        </div>
-                                        <div className="p-3 bg-muted/30 rounded-lg border">
-                                            <div className="text-xs font-medium text-muted-foreground mb-2">Animation</div>
-                                            <TextInput onChange={handleChange} label="Transition" path="componentStyling.top-menu-bar.transition" value={config.componentStyling?.['top-menu-bar']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <Separator />
-                                <div>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Sparkles className="h-4 w-4 text-primary" />
-                                        <h3 className="text-sm font-semibold">Platform Sidebar</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="platformSidebarBackgroundColor" value={config.platformSidebarBackgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="platformSidebarTextColor" value={config.platformSidebarTextColor} />
-                                        <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
-                                            <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                                                <Sparkles className="h-3 w-3" />
-                                                Glassmorphism Effect (Backdrop Blur)
-                                            </div>
-                                            <TextInput onChange={handleChange}
-                                                label="Backdrop Filter"
-                                                path="componentStyling.platform-sidebar-primary.backdropFilter"
-                                                value={config.componentStyling?.['platform-sidebar-primary']?.backdropFilter}
-                                                placeholder="blur(30px) saturate(200%)"
-                                                icon={<Sparkles className="h-3 w-3" />}
-                                            />
-                                            <div className="text-xs text-muted-foreground mt-2">
-                                                Example: <code className="px-1 py-0.5 bg-muted rounded">blur(30px) saturate(200%)</code> for frosted glass effect
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="topMenuBackgroundColor" value={config.topMenuBackgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="topMenuTextColor" value={config.topMenuTextColor} />
+                                                <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
+                                                    <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                                                        <Sparkles className="h-3 w-3" />
+                                                        Glassmorphism Effect (Backdrop Blur)
+                                                    </div>
+                                                    <TextInput onChange={handleChange}
+                                                        label="Backdrop Filter"
+                                                        path="componentStyling.top-menu-bar.backdropFilter"
+                                                        value={config.componentStyling?.['top-menu-bar']?.backdropFilter}
+                                                        placeholder="blur(30px) saturate(200%)"
+                                                        icon={<Sparkles className="h-3 w-3" />}
+                                                    />
+                                                    <div className="text-xs text-muted-foreground mt-2">
+                                                        Example: <code className="px-1 py-0.5 bg-muted rounded">blur(30px) saturate(200%)</code> for frosted glass effect
+                                                    </div>
+                                                </div>
+                                                <div className="p-3 bg-muted/30 rounded-lg border">
+                                                    <div className="text-xs font-medium text-muted-foreground mb-2">Border & Shadow</div>
+                                                    <ColorInputField onChange={handleChange} label="Border Color" path="componentStyling.top-menu-bar.borderColor" value={config.componentStyling?.['top-menu-bar']?.borderColor} />
+                                                    <TextInput onChange={handleChange} label="Border Width" path="componentStyling.top-menu-bar.borderWidth" value={config.componentStyling?.['top-menu-bar']?.borderWidth} placeholder="0px 0px 0.5px 0px" />
+                                                    <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.top-menu-bar.boxShadow" value={config.componentStyling?.['top-menu-bar']?.boxShadow} placeholder="0 1px 3px 0 rgba(0, 0, 0, 0.05)" />
+                                                </div>
+                                                <div className="p-3 bg-muted/30 rounded-lg border">
+                                                    <div className="text-xs font-medium text-muted-foreground mb-2">Animation</div>
+                                                    <TextInput onChange={handleChange} label="Transition" path="componentStyling.top-menu-bar.transition" value={config.componentStyling?.['top-menu-bar']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-primary.transition" value={config.componentStyling?.['platform-sidebar-primary']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Platform Sidebar Menu Items</h3>
-                                    <div className="w-full">
-                                        <Tabs defaultValue="normal">
-                                            <TabsList className="grid w-full grid-cols-3">
-                                                <TabsTrigger value="normal">Normal</TabsTrigger>
-                                                <TabsTrigger value="hover">Hover</TabsTrigger>
-                                                <TabsTrigger value="active">Active</TabsTrigger>
-                                            </TabsList>
-                                            <TabsContent value="normal" className="space-y-3 mt-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-normal.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-normal.textColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.platform-sidebar-menu-normal" type="radius" placeholder="8px" />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.platform-sidebar-menu-normal" type="padding" placeholder="0.5rem 0.75rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.platform-sidebar-menu-normal.fontSize" value={config.componentStyling?.['platform-sidebar-menu-normal']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.platform-sidebar-menu-normal.fontWeight" value={config.componentStyling?.['platform-sidebar-menu-normal']?.fontWeight} placeholder="500" />
-                                                <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.platform-sidebar-menu-normal.backdropFilter" value={config.componentStyling?.['platform-sidebar-menu-normal']?.backdropFilter} placeholder="blur(10px)" />
-                                                <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.platform-sidebar-menu-normal.boxShadow" value={config.componentStyling?.['platform-sidebar-menu-normal']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-menu-normal.transition" value={config.componentStyling?.['platform-sidebar-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <BorderConfig basePath="componentStyling.platform-sidebar-menu-normal" />
-                                                <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-normal" />
-                                            </TabsContent>
-                                            <TabsContent value="hover" className="space-y-3 mt-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-hover.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-hover']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-hover.textColor" value={config.componentStyling?.['platform-sidebar-menu-hover']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.platform-sidebar-menu-hover.borderRadius" value={config.componentStyling?.['platform-sidebar-menu-hover']?.borderRadius} placeholder="8px" />
-                                                <TextInput onChange={handleChange} label="Padding" path="componentStyling.platform-sidebar-menu-hover.padding" value={config.componentStyling?.['platform-sidebar-menu-hover']?.padding} placeholder="0.5rem 0.75rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.platform-sidebar-menu-hover.fontSize" value={config.componentStyling?.['platform-sidebar-menu-hover']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.platform-sidebar-menu-hover.fontWeight" value={config.componentStyling?.['platform-sidebar-menu-hover']?.fontWeight} placeholder="500" />
-                                                <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.platform-sidebar-menu-hover.backdropFilter" value={config.componentStyling?.['platform-sidebar-menu-hover']?.backdropFilter} placeholder="blur(10px)" />
-                                                <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.platform-sidebar-menu-hover.boxShadow" value={config.componentStyling?.['platform-sidebar-menu-hover']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-menu-hover.transition" value={config.componentStyling?.['platform-sidebar-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <BorderConfig basePath="componentStyling.platform-sidebar-menu-hover" />
-                                                <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-hover" />
-                                            </TabsContent>
-                                            <TabsContent value="active" className="space-y-3 mt-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-active.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-active']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-active.textColor" value={config.componentStyling?.['platform-sidebar-menu-active']?.textColor} />
-                                                <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.platform-sidebar-menu-active.borderRadius" value={config.componentStyling?.['platform-sidebar-menu-active']?.borderRadius} placeholder="8px" />
-                                                <TextInput onChange={handleChange} label="Padding" path="componentStyling.platform-sidebar-menu-active.padding" value={config.componentStyling?.['platform-sidebar-menu-active']?.padding} placeholder="0.5rem 0.75rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.platform-sidebar-menu-active.fontSize" value={config.componentStyling?.['platform-sidebar-menu-active']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.platform-sidebar-menu-active.fontWeight" value={config.componentStyling?.['platform-sidebar-menu-active']?.fontWeight} placeholder="600" />
-                                                <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.platform-sidebar-menu-active.backdropFilter" value={config.componentStyling?.['platform-sidebar-menu-active']?.backdropFilter} placeholder="blur(10px)" />
-                                                <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.platform-sidebar-menu-active.boxShadow" value={config.componentStyling?.['platform-sidebar-menu-active']?.boxShadow} placeholder="0 1px 3px 0 rgba(0, 122, 255, 0.15)" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-menu-active.transition" value={config.componentStyling?.['platform-sidebar-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <BorderConfig basePath="componentStyling.platform-sidebar-menu-active" />
-                                                <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-active" />
-                                            </TabsContent>
-                                        </Tabs>
-                                    </div>
-                                </div>
-                                <Separator />
-                                <div>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Sparkles className="h-4 w-4 text-primary" />
-                                        <h3 className="text-sm font-semibold">Secondary Sidebar</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="secondarySidebarBackgroundColor" value={config.secondarySidebarBackgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="secondarySidebarTextColor" value={config.secondarySidebarTextColor} />
-                                        <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
-                                            <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                                                <Sparkles className="h-3 w-3" />
-                                                Glassmorphism Effect (Backdrop Blur)
+                                    </TabsContent>
+                                    <TabsContent value="sidebar" className="space-y-6 mt-0">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Sparkles className="h-4 w-4 text-primary" />
+                                                <h3 className="text-sm font-semibold">Platform Sidebar</h3>
                                             </div>
-                                            <TextInput onChange={handleChange}
-                                                label="Backdrop Filter"
-                                                path="componentStyling.platform-sidebar-secondary.backdropFilter"
-                                                value={config.componentStyling?.['platform-sidebar-secondary']?.backdropFilter}
-                                                placeholder="blur(30px) saturate(200%)"
-                                                icon={<Sparkles className="h-3 w-3" />}
-                                            />
-                                            <div className="text-xs text-muted-foreground mt-2">
-                                                Example: <code className="px-1 py-0.5 bg-muted rounded">blur(30px) saturate(200%)</code> for frosted glass effect
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="platformSidebarBackgroundColor" value={config.platformSidebarBackgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="platformSidebarTextColor" value={config.platformSidebarTextColor} />
+                                                <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
+                                                    <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                                                        <Sparkles className="h-3 w-3" />
+                                                        Glassmorphism Effect (Backdrop Blur)
+                                                    </div>
+                                                    <TextInput onChange={handleChange}
+                                                        label="Backdrop Filter"
+                                                        path="componentStyling.platform-sidebar-primary.backdropFilter"
+                                                        value={config.componentStyling?.['platform-sidebar-primary']?.backdropFilter}
+                                                        placeholder="blur(30px) saturate(200%)"
+                                                        icon={<Sparkles className="h-3 w-3" />}
+                                                    />
+                                                    <div className="text-xs text-muted-foreground mt-2">
+                                                        Example: <code className="px-1 py-0.5 bg-muted rounded">blur(30px) saturate(200%)</code> for frosted glass effect
+                                                    </div>
+                                                </div>
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-primary.transition" value={config.componentStyling?.['platform-sidebar-primary']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
                                             </div>
                                         </div>
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-secondary.transition" value={config.componentStyling?.['platform-sidebar-secondary']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                    </div>
-                                </div>
+                                    </TabsContent>
+                                    <TabsContent value="sidebar-menu" className="space-y-6 mt-0">
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Platform Sidebar Menu Items</h3>
+                                            <div className="w-full">
+                                                <Tabs defaultValue="normal">
+                                                    <TabsList className="grid w-full grid-cols-3">
+                                                        <TabsTrigger value="normal">Normal</TabsTrigger>
+                                                        <TabsTrigger value="hover">Hover</TabsTrigger>
+                                                        <TabsTrigger value="active">Active</TabsTrigger>
+                                                    </TabsList>
+                                                    <TabsContent value="normal" className="space-y-3 mt-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-normal.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-normal.textColor" value={config.componentStyling?.['platform-sidebar-menu-normal']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.platform-sidebar-menu-normal" type="radius" placeholder="8px" />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.platform-sidebar-menu-normal" type="padding" placeholder="0.5rem 0.75rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.platform-sidebar-menu-normal.fontSize" value={config.componentStyling?.['platform-sidebar-menu-normal']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.platform-sidebar-menu-normal.fontWeight" value={config.componentStyling?.['platform-sidebar-menu-normal']?.fontWeight} placeholder="500" />
+                                                        <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.platform-sidebar-menu-normal.backdropFilter" value={config.componentStyling?.['platform-sidebar-menu-normal']?.backdropFilter} placeholder="blur(10px)" />
+                                                        <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.platform-sidebar-menu-normal.boxShadow" value={config.componentStyling?.['platform-sidebar-menu-normal']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-menu-normal.transition" value={config.componentStyling?.['platform-sidebar-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <BorderConfig basePath="componentStyling.platform-sidebar-menu-normal" />
+                                                        <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-normal" />
+                                                    </TabsContent>
+                                                    <TabsContent value="hover" className="space-y-3 mt-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-hover.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-hover']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-hover.textColor" value={config.componentStyling?.['platform-sidebar-menu-hover']?.textColor} />
+                                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.platform-sidebar-menu-hover.borderRadius" value={config.componentStyling?.['platform-sidebar-menu-hover']?.borderRadius} placeholder="8px" />
+                                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.platform-sidebar-menu-hover.padding" value={config.componentStyling?.['platform-sidebar-menu-hover']?.padding} placeholder="0.5rem 0.75rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.platform-sidebar-menu-hover.fontSize" value={config.componentStyling?.['platform-sidebar-menu-hover']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.platform-sidebar-menu-hover.fontWeight" value={config.componentStyling?.['platform-sidebar-menu-hover']?.fontWeight} placeholder="500" />
+                                                        <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.platform-sidebar-menu-hover.backdropFilter" value={config.componentStyling?.['platform-sidebar-menu-hover']?.backdropFilter} placeholder="blur(10px)" />
+                                                        <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.platform-sidebar-menu-hover.boxShadow" value={config.componentStyling?.['platform-sidebar-menu-hover']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-menu-hover.transition" value={config.componentStyling?.['platform-sidebar-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <BorderConfig basePath="componentStyling.platform-sidebar-menu-hover" />
+                                                        <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-hover" />
+                                                    </TabsContent>
+                                                    <TabsContent value="active" className="space-y-3 mt-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.platform-sidebar-menu-active.backgroundColor" value={config.componentStyling?.['platform-sidebar-menu-active']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.platform-sidebar-menu-active.textColor" value={config.componentStyling?.['platform-sidebar-menu-active']?.textColor} />
+                                                        <TextInput onChange={handleChange} label="Border Radius" path="componentStyling.platform-sidebar-menu-active.borderRadius" value={config.componentStyling?.['platform-sidebar-menu-active']?.borderRadius} placeholder="8px" />
+                                                        <TextInput onChange={handleChange} label="Padding" path="componentStyling.platform-sidebar-menu-active.padding" value={config.componentStyling?.['platform-sidebar-menu-active']?.padding} placeholder="0.5rem 0.75rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.platform-sidebar-menu-active.fontSize" value={config.componentStyling?.['platform-sidebar-menu-active']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.platform-sidebar-menu-active.fontWeight" value={config.componentStyling?.['platform-sidebar-menu-active']?.fontWeight} placeholder="600" />
+                                                        <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.platform-sidebar-menu-active.backdropFilter" value={config.componentStyling?.['platform-sidebar-menu-active']?.backdropFilter} placeholder="blur(10px)" />
+                                                        <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.platform-sidebar-menu-active.boxShadow" value={config.componentStyling?.['platform-sidebar-menu-active']?.boxShadow} placeholder="0 1px 3px 0 rgba(0, 122, 255, 0.15)" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-menu-active.transition" value={config.componentStyling?.['platform-sidebar-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <BorderConfig basePath="componentStyling.platform-sidebar-menu-active" />
+                                                        <AdvancedStyling basePath="componentStyling.platform-sidebar-menu-active" />
+                                                    </TabsContent>
+                                                </Tabs>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="secondary" className="space-y-6 mt-0">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Sparkles className="h-4 w-4 text-primary" />
+                                                <h3 className="text-sm font-semibold">Secondary Sidebar</h3>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="secondarySidebarBackgroundColor" value={config.secondarySidebarBackgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="secondarySidebarTextColor" value={config.secondarySidebarTextColor} />
+                                                <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
+                                                    <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                                                        <Sparkles className="h-3 w-3" />
+                                                        Glassmorphism Effect (Backdrop Blur)
+                                                    </div>
+                                                    <TextInput onChange={handleChange}
+                                                        label="Backdrop Filter"
+                                                        path="componentStyling.platform-sidebar-secondary.backdropFilter"
+                                                        value={config.componentStyling?.['platform-sidebar-secondary']?.backdropFilter}
+                                                        placeholder="blur(30px) saturate(200%)"
+                                                        icon={<Sparkles className="h-3 w-3" />}
+                                                    />
+                                                    <div className="text-xs text-muted-foreground mt-2">
+                                                        Example: <code className="px-1 py-0.5 bg-muted rounded">blur(30px) saturate(200%)</code> for frosted glass effect
+                                                    </div>
+                                                </div>
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.platform-sidebar-secondary.transition" value={config.componentStyling?.['platform-sidebar-secondary']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                </Tabs>
                             </TabsContent>
 
                             {/* Typography Tab */}
@@ -1230,452 +1255,466 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                             </TabsContent>
 
                             {/* Components Tab */}
-                            <TabsContent value="components" className="space-y-8 mt-0">
-                                {/* Text Input */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Text Input Fields</h3>
-                                    <div className="space-y-3">
-                                        <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
-                                            <div className="text-xs font-medium text-muted-foreground mb-2">Base Styling</div>
-                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.text-input.backgroundColor" value={config.componentStyling?.['text-input']?.backgroundColor} />
-                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.text-input.textColor" value={config.componentStyling?.['text-input']?.textColor} />
-                                            <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.text-input" type="radius" placeholder="8px" />
-                                            <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.text-input" type="padding" placeholder="0.5rem 0.75rem" />
-                                            <TextInput onChange={handleChange} label="Font Size" path="componentStyling.text-input.fontSize" value={config.componentStyling?.['text-input']?.fontSize} placeholder="0.875rem" />
-                                        </div>
-                                        <Separator />
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-medium text-muted-foreground">Border (All Sides)</div>
-                                            <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderColor" value={config.componentStyling?.['text-input']?.borderColor} />
-                                            <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderWidth" value={config.componentStyling?.['text-input']?.borderWidth} placeholder="0.5px" icon={<Minus className="h-3 w-3" />} />
-                                            <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderStyle" value={config.componentStyling?.['text-input']?.borderStyle} placeholder="solid" icon={<Minus className="h-3 w-3" />} />
-                                        </div>
-                                        <Separator />
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-medium text-muted-foreground">Individual Border Sides</div>
-                                            <div className="space-y-2 pl-4">
-                                                <div className="text-xs font-medium text-muted-foreground/80">Top</div>
-                                                <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderTopColor" value={config.componentStyling?.['text-input']?.borderTopColor} />
-                                                <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderTopWidth" value={config.componentStyling?.['text-input']?.borderTopWidth} placeholder="0.5px" icon={<ArrowUp className="h-3 w-3" />} />
-                                                <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderTopStyle" value={config.componentStyling?.['text-input']?.borderTopStyle} placeholder="solid" icon={<ArrowUp className="h-3 w-3" />} />
-                                            </div>
-                                            <div className="space-y-2 pl-4">
-                                                <div className="text-xs font-medium text-muted-foreground/80">Right</div>
-                                                <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderRightColor" value={config.componentStyling?.['text-input']?.borderRightColor} />
-                                                <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderRightWidth" value={config.componentStyling?.['text-input']?.borderRightWidth} placeholder="0.5px" icon={<ArrowRight className="h-3 w-3" />} />
-                                                <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderRightStyle" value={config.componentStyling?.['text-input']?.borderRightStyle} placeholder="solid" icon={<ArrowRight className="h-3 w-3" />} />
-                                            </div>
-                                            <div className="space-y-2 pl-4">
-                                                <div className="text-xs font-medium text-muted-foreground/80">Bottom</div>
-                                                <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderBottomColor" value={config.componentStyling?.['text-input']?.borderBottomColor} />
-                                                <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderBottomWidth" value={config.componentStyling?.['text-input']?.borderBottomWidth} placeholder="0.5px" icon={<ArrowDown className="h-3 w-3" />} />
-                                                <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderBottomStyle" value={config.componentStyling?.['text-input']?.borderBottomStyle} placeholder="solid" icon={<ArrowDown className="h-3 w-3" />} />
-                                            </div>
-                                            <div className="space-y-2 pl-4">
-                                                <div className="text-xs font-medium text-muted-foreground/80">Left</div>
-                                                <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderLeftColor" value={config.componentStyling?.['text-input']?.borderLeftColor} />
-                                                <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderLeftWidth" value={config.componentStyling?.['text-input']?.borderLeftWidth} placeholder="0.5px" icon={<ArrowLeft className="h-3 w-3" />} />
-                                                <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderLeftStyle" value={config.componentStyling?.['text-input']?.borderLeftStyle} placeholder="solid" icon={<ArrowLeft className="h-3 w-3" />} />
-                                            </div>
-                                        </div>
-                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.text-input" type="padding" placeholder="0.5rem 0.75rem" />
-                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.text-input.fontSize" value={config.componentStyling?.['text-input']?.fontSize} placeholder="0.875rem" />
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.text-input.transition" value={config.componentStyling?.['text-input']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                        <AdvancedStyling basePath="componentStyling.text-input" />
-                                        <ComponentStates basePath="componentStyling.text-input" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Select */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Select Dropdowns</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.select.backgroundColor" value={config.componentStyling?.select?.backgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.select.textColor" value={config.componentStyling?.select?.textColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.select" type="radius" placeholder="8px" />
-                                        <BorderConfig basePath="componentStyling.select" />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.select" type="padding" placeholder="0.5rem 0.75rem" />
-                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.select.fontSize" value={config.componentStyling?.select?.fontSize} placeholder="0.875rem" />
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.select.transition" value={config.componentStyling?.select?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                        <AdvancedStyling basePath="componentStyling.select" />
-                                        <ComponentStates basePath="componentStyling.select" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Multi-Select */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Multi-Select Dropdowns</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.multi-select.backgroundColor" value={config.componentStyling?.['multi-select']?.backgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.multi-select.textColor" value={config.componentStyling?.['multi-select']?.textColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.multi-select" type="radius" placeholder="8px" />
-                                        <BorderConfig basePath="componentStyling.multi-select" />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.multi-select" type="padding" placeholder="0.5rem 0.75rem" />
-                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.multi-select.fontSize" value={config.componentStyling?.['multi-select']?.fontSize} placeholder="0.875rem" />
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.multi-select.transition" value={config.componentStyling?.['multi-select']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                        <AdvancedStyling basePath="componentStyling.multi-select" />
-                                        <ComponentStates basePath="componentStyling.multi-select" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Textarea */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Textarea Fields</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.textarea.backgroundColor" value={config.componentStyling?.textarea?.backgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.textarea.textColor" value={config.componentStyling?.textarea?.textColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.textarea" type="radius" placeholder="8px" />
-                                        <BorderConfig basePath="componentStyling.textarea" />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.textarea" type="padding" placeholder="0.5rem 0.75rem" />
-                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.textarea.fontSize" value={config.componentStyling?.textarea?.fontSize} placeholder="0.875rem" />
-                                        <TextInput onChange={handleChange} label="Line Height" path="componentStyling.textarea.lineHeight" value={config.componentStyling?.textarea?.lineHeight} placeholder="1.5" />
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.textarea.transition" value={config.componentStyling?.textarea?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                        <AdvancedStyling basePath="componentStyling.textarea" />
-                                        <ComponentStates basePath="componentStyling.textarea" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Form */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Forms</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.form.backgroundColor" value={config.componentStyling?.form?.backgroundColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.form" type="radius" placeholder="8px" />
-                                        <BorderConfig basePath="componentStyling.form" />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.form" type="padding" placeholder="1rem" />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath="componentStyling.form" type="margin" placeholder="0" />
-                                        <AdvancedStyling basePath="componentStyling.form" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Button */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Buttons</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button.backgroundColor" value={config.componentStyling?.button?.backgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button.textColor" value={config.componentStyling?.button?.textColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.button" type="radius" placeholder="10px" />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.button" type="padding" placeholder="0.5rem 1rem" />
-                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.button.fontSize" value={config.componentStyling?.button?.fontSize} placeholder="0.875rem" />
-                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.button.fontWeight" value={config.componentStyling?.button?.fontWeight} placeholder="500" />
-                                        <BorderConfig basePath="componentStyling.button" />
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.button.transition" value={config.componentStyling?.button?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                        <TextInput onChange={handleChange} label="Shadow" path="componentStyling.button.boxShadow" value={config.componentStyling?.button?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
-                                        <AdvancedStyling basePath="componentStyling.button" />
-                                        <ComponentStates basePath="componentStyling.button" />
-                                    </div>
-                                    <Separator className="my-4" />
-                                    <div className="space-y-4">
-                                        <div className="text-xs font-semibold text-muted-foreground">Button Variants</div>
-
-                                        {/* Default Variant */}
-                                        <div className="space-y-3 pl-4 border-l-2 border-muted">
-                                            <div className="text-xs font-medium text-muted-foreground/80">Default</div>
-                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-default.backgroundColor" value={config.componentStyling?.['button-default']?.backgroundColor} />
-                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-default.textColor" value={config.componentStyling?.['button-default']?.textColor} />
-                                            <BorderConfig basePath="componentStyling.button-default" />
-                                        </div>
-
-                                        {/* Destructive Variant */}
-                                        <div className="space-y-3 pl-4 border-l-2 border-muted">
-                                            <div className="text-xs font-medium text-muted-foreground/80">Destructive</div>
-                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-destructive.backgroundColor" value={config.componentStyling?.['button-destructive']?.backgroundColor} />
-                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-destructive.textColor" value={config.componentStyling?.['button-destructive']?.textColor} />
-                                            <BorderConfig basePath="componentStyling.button-destructive" />
-                                        </div>
-
-                                        {/* Outline Variant */}
-                                        <div className="space-y-3 pl-4 border-l-2 border-muted">
-                                            <div className="text-xs font-medium text-muted-foreground/80">Outline</div>
-                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-outline.backgroundColor" value={config.componentStyling?.['button-outline']?.backgroundColor} />
-                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-outline.textColor" value={config.componentStyling?.['button-outline']?.textColor} />
-                                            <BorderConfig basePath="componentStyling.button-outline" />
-                                        </div>
-
-                                        {/* Secondary Variant */}
-                                        <div className="space-y-3 pl-4 border-l-2 border-muted">
-                                            <div className="text-xs font-medium text-muted-foreground/80">Secondary</div>
-                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-secondary.backgroundColor" value={config.componentStyling?.['button-secondary']?.backgroundColor} />
-                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-secondary.textColor" value={config.componentStyling?.['button-secondary']?.textColor} />
-                                            <BorderConfig basePath="componentStyling.button-secondary" />
-                                        </div>
-
-                                        {/* Ghost Variant */}
-                                        <div className="space-y-3 pl-4 border-l-2 border-muted">
-                                            <div className="text-xs font-medium text-muted-foreground/80">Ghost</div>
-                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-ghost.backgroundColor" value={config.componentStyling?.['button-ghost']?.backgroundColor} />
-                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-ghost.textColor" value={config.componentStyling?.['button-ghost']?.textColor} />
-                                            <BorderConfig basePath="componentStyling.button-ghost" />
-                                        </div>
-
-                                        {/* Link Variant */}
-                                        <div className="space-y-3 pl-4 border-l-2 border-muted">
-                                            <div className="text-xs font-medium text-muted-foreground/80">Link</div>
-                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-link.textColor" value={config.componentStyling?.['button-link']?.textColor} />
-                                            <TextInput onChange={handleChange} label="Text Decoration" path="componentStyling.button-link.textDecoration" value={config.componentStyling?.['button-link']?.textDecoration} placeholder="underline" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Icon Button */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Icon Buttons</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.iconButton.backgroundColor" value={config.componentStyling?.iconButton?.backgroundColor} />
-                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.iconButton.textColor" value={config.componentStyling?.iconButton?.textColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.iconButton" type="radius" placeholder="8px" />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.iconButton" type="padding" placeholder="0.5rem" />
-                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.iconButton.fontSize" value={config.componentStyling?.iconButton?.fontSize} placeholder="1rem" />
-                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.iconButton.fontWeight" value={config.componentStyling?.iconButton?.fontWeight} placeholder="400" />
-                                        <BorderConfig basePath="componentStyling.iconButton" />
-                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.iconButton.transition" value={config.componentStyling?.iconButton?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                        <TextInput onChange={handleChange} label="Shadow" path="componentStyling.iconButton.boxShadow" value={config.componentStyling?.iconButton?.boxShadow} placeholder="none" />
-                                        <AdvancedStyling basePath="componentStyling.iconButton" />
-                                        <ComponentStates basePath="componentStyling.iconButton" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Card */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Sparkles className="h-4 w-4 text-primary" />
-                                        <h3 className="text-sm font-semibold">Cards</h3>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.card.backgroundColor" value={config.componentStyling?.card?.backgroundColor} />
-                                        <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
-                                            <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-                                                <Sparkles className="h-3 w-3" />
-                                                Glassmorphism Effect (Backdrop Blur)
-                                            </div>
-                                            <TextInput onChange={handleChange}
-                                                label="Backdrop Filter"
-                                                path="componentStyling.card.backdropFilter"
-                                                value={config.componentStyling?.card?.backdropFilter}
-                                                placeholder="blur(20px) saturate(180%)"
-                                                icon={<Sparkles className="h-3 w-3" />}
-                                            />
-                                            <div className="text-xs text-muted-foreground mt-2">
-                                                Example: <code className="px-1 py-0.5 bg-muted rounded">blur(20px) saturate(180%)</code> for frosted glass effect
-                                            </div>
-                                        </div>
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.card" type="radius" placeholder="12px" />
-                                        <BorderConfig basePath="componentStyling.card" />
-                                        <TextInput onChange={handleChange} label="Shadow" path="componentStyling.card.boxShadow" value={config.componentStyling?.card?.boxShadow} placeholder="0 4px 6px -1px rgba(0, 0, 0, 0.1)..." />
-                                        <AdvancedStyling basePath="componentStyling.card" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Accordion */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Accordion</h3>
-                                    <div className="space-y-4">
-                                        {/* Accordion Item */}
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-medium text-muted-foreground">Accordion Item (Container)</div>
-                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-item.backgroundColor" value={config.componentStyling?.['accordion-item']?.backgroundColor} />
-                                            <BorderConfig basePath="componentStyling.accordion-item" />
-                                            <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath="componentStyling.accordion-item" type="margin" placeholder="0" />
-                                            <AdvancedStyling basePath="componentStyling.accordion-item" />
-                                        </div>
-
-                                        <Separator className="my-2" />
-
-                                        {/* Accordion Trigger */}
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-medium text-muted-foreground">Trigger (Header)</div>
-                                            <div className="pl-4 border-l-2 border-muted space-y-3">
-                                                <div className="text-xs font-medium text-muted-foreground/80">Normal State</div>
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger.backgroundColor" value={config.componentStyling?.['accordion-trigger']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger.textColor" value={config.componentStyling?.['accordion-trigger']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.accordion-trigger" type="padding" placeholder="1rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.accordion-trigger.fontSize" value={config.componentStyling?.['accordion-trigger']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.accordion-trigger.fontWeight" value={config.componentStyling?.['accordion-trigger']?.fontWeight} placeholder="500" />
-                                                <BorderConfig basePath="componentStyling.accordion-trigger" />
-                                                <AdvancedStyling basePath="componentStyling.accordion-trigger" />
-                                            </div>
-
-                                            <div className="pl-4 border-l-2 border-muted space-y-3">
-                                                <div className="text-xs font-medium text-muted-foreground/80">Hover State</div>
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger-hover.backgroundColor" value={config.componentStyling?.['accordion-trigger-hover']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger-hover.textColor" value={config.componentStyling?.['accordion-trigger-hover']?.textColor} />
-                                                <AdvancedStyling basePath="componentStyling.accordion-trigger-hover" />
-                                            </div>
-
-                                            <div className="pl-4 border-l-2 border-muted space-y-3">
-                                                <div className="text-xs font-medium text-muted-foreground/80">Open/Active State</div>
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger-active.backgroundColor" value={config.componentStyling?.['accordion-trigger-active']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger-active.textColor" value={config.componentStyling?.['accordion-trigger-active']?.textColor} />
-                                                <AdvancedStyling basePath="componentStyling.accordion-trigger-active" />
-                                            </div>
-                                        </div>
-
-                                        <Separator className="my-2" />
-
-                                        {/* Accordion Content */}
-                                        <div className="space-y-3">
-                                            <div className="text-xs font-medium text-muted-foreground">Content (Body)</div>
-                                            <div className="pl-4 border-l-2 border-muted space-y-3">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-content.backgroundColor" value={config.componentStyling?.['accordion-content']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-content.textColor" value={config.componentStyling?.['accordion-content']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.accordion-content" type="padding" placeholder="1rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.accordion-content.fontSize" value={config.componentStyling?.['accordion-content']?.fontSize} placeholder="0.875rem" />
-                                                <BorderConfig basePath="componentStyling.accordion-content" />
-                                                <AdvancedStyling basePath="componentStyling.accordion-content" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Checkbox */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Checkboxes</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.checkbox.backgroundColor" value={config.componentStyling?.checkbox?.backgroundColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.checkbox" type="radius" placeholder="4px" />
-                                        <BorderConfig basePath="componentStyling.checkbox" />
-                                        <AdvancedStyling basePath="componentStyling.checkbox" />
-                                        <ComponentStates basePath="componentStyling.checkbox" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Radio */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Radio Buttons</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.radio.backgroundColor" value={config.componentStyling?.radio?.backgroundColor} />
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.radio" type="radius" placeholder="50%" />
-                                        <BorderConfig basePath="componentStyling.radio" />
-                                        <AdvancedStyling basePath="componentStyling.radio" />
-                                        <ComponentStates basePath="componentStyling.radio" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Switch */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Switches</h3>
-                                    <div className="space-y-3">
-                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.switch" type="radius" placeholder="9999px" />
-                                        <BorderConfig basePath="componentStyling.switch" />
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.switch.backgroundColor" value={config.componentStyling?.switch?.backgroundColor} />
-                                        <AdvancedStyling basePath="componentStyling.switch" />
-                                        <ComponentStates basePath="componentStyling.switch" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Separator/Divider Lines */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Separator/Divider Lines</h3>
-                                    <div className="space-y-3">
-                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.separator.backgroundColor" value={config.componentStyling?.separator?.backgroundColor} />
-                                        <TextInput onChange={handleChange} label="Height" path="componentStyling.separator.height" value={config.componentStyling?.separator?.height} placeholder="1px" />
-                                        <TextInput onChange={handleChange} label="Width" path="componentStyling.separator.width" value={config.componentStyling?.separator?.width} placeholder="100%" />
-                                        <TextInput onChange={handleChange} label="Margin Top" path="componentStyling.separator.marginTop" value={(config.componentStyling?.separator as any)?.marginTop} placeholder="1rem" />
-                                        <TextInput onChange={handleChange} label="Margin Bottom" path="componentStyling.separator.marginBottom" value={(config.componentStyling?.separator as any)?.marginBottom} placeholder="1rem" />
-                                        <BorderConfig basePath="componentStyling.separator" />
-                                        <AdvancedStyling basePath="componentStyling.separator" />
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Vertical Tab Menu (Secondary Sidebar) */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Vertical Tab Menu (Secondary Sidebar)</h3>
-                                    <div className="space-y-4">
+                            <TabsContent value="components" className="space-y-4 mt-0">
+                                <Tabs defaultValue="inputs" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-4 mb-6">
+                                        <TabsTrigger value="inputs" className="text-xs">Inputs</TabsTrigger>
+                                        <TabsTrigger value="buttons" className="text-xs">Buttons</TabsTrigger>
+                                        <TabsTrigger value="surfaces" className="text-xs">Surfaces</TabsTrigger>
+                                        <TabsTrigger value="navigation" className="text-xs">Navigation</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="inputs" className="space-y-6 mt-0">
+                                        {/* Text Input */}
                                         <div>
-                                            <h4 className="text-xs font-medium mb-2 text-muted-foreground">Normal State</h4>
-                                            <div className="space-y-2 pl-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-normal.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-normal']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-normal.textColor" value={config.componentStyling?.['vertical-tab-menu-normal']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-normal" type="radius" placeholder="8px" />
-                                                <BorderConfig basePath="componentStyling.vertical-tab-menu-normal" />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.vertical-tab-menu-normal" type="padding" placeholder="0.5rem 0.75rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.vertical-tab-menu-normal.fontSize" value={config.componentStyling?.['vertical-tab-menu-normal']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.vertical-tab-menu-normal.fontWeight" value={config.componentStyling?.['vertical-tab-menu-normal']?.fontWeight} placeholder="500" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-normal.transition" value={config.componentStyling?.['vertical-tab-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <AdvancedStyling basePath="componentStyling.vertical-tab-menu-normal" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <h4 className="text-xs font-medium mb-2 text-muted-foreground">Hover State</h4>
-                                            <div className="space-y-2 pl-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-hover.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-hover']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-hover.textColor" value={config.componentStyling?.['vertical-tab-menu-hover']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-hover" type="radius" placeholder="8px" />
-                                                <BorderConfig basePath="componentStyling.vertical-tab-menu-hover" />
-                                                <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.vertical-tab-menu-hover.boxShadow" value={config.componentStyling?.['vertical-tab-menu-hover']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-hover.transition" value={config.componentStyling?.['vertical-tab-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <AdvancedStyling basePath="componentStyling.vertical-tab-menu-hover" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <h4 className="text-xs font-medium mb-2 text-muted-foreground">Active State</h4>
-                                            <div className="space-y-2 pl-4">
+                                            <h3 className="text-sm font-semibold mb-4">Text Input Fields</h3>
+                                            <div className="space-y-3">
                                                 <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
-                                                    <div className="text-xs font-medium text-muted-foreground mb-2">Active Menu Background</div>
-                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-active.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-active']?.backgroundColor} />
-                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-active.textColor" value={config.componentStyling?.['vertical-tab-menu-active']?.textColor} />
-                                                    <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-active" type="radius" placeholder="8px" />
-                                                    <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.vertical-tab-menu-active" type="padding" placeholder="0.5rem 0.75rem" />
-                                                    <TextInput onChange={handleChange} label="Font Size" path="componentStyling.vertical-tab-menu-active.fontSize" value={config.componentStyling?.['vertical-tab-menu-active']?.fontSize} placeholder="0.875rem" />
-                                                    <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.vertical-tab-menu-active.fontWeight" value={config.componentStyling?.['vertical-tab-menu-active']?.fontWeight} placeholder="600" />
+                                                    <div className="text-xs font-medium text-muted-foreground mb-2">Base Styling</div>
+                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.text-input.backgroundColor" value={config.componentStyling?.['text-input']?.backgroundColor} />
+                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.text-input.textColor" value={config.componentStyling?.['text-input']?.textColor} />
+                                                    <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.text-input" type="radius" placeholder="8px" />
+                                                    <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.text-input" type="padding" placeholder="0.5rem 0.75rem" />
+                                                    <TextInput onChange={handleChange} label="Font Size" path="componentStyling.text-input.fontSize" value={config.componentStyling?.['text-input']?.fontSize} placeholder="0.875rem" />
                                                 </div>
-                                                <BorderConfig basePath="componentStyling.vertical-tab-menu-active" />
-                                                <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.vertical-tab-menu-active.boxShadow" value={config.componentStyling?.['vertical-tab-menu-active']?.boxShadow} placeholder="0 1px 3px 0 rgba(0, 122, 255, 0.15)" />
-                                                <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.vertical-tab-menu-active.backdropFilter" value={config.componentStyling?.['vertical-tab-menu-active']?.backdropFilter} placeholder="blur(10px)" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-active.transition" value={config.componentStyling?.['vertical-tab-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <AdvancedStyling basePath="componentStyling.vertical-tab-menu-active" />
+                                                <Separator />
+                                                <div className="space-y-3">
+                                                    <div className="text-xs font-medium text-muted-foreground">Border (All Sides)</div>
+                                                    <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderColor" value={config.componentStyling?.['text-input']?.borderColor} />
+                                                    <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderWidth" value={config.componentStyling?.['text-input']?.borderWidth} placeholder="0.5px" icon={<Minus className="h-3 w-3" />} />
+                                                    <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderStyle" value={config.componentStyling?.['text-input']?.borderStyle} placeholder="solid" icon={<Minus className="h-3 w-3" />} />
+                                                </div>
+                                                <Separator />
+                                                <div className="space-y-3">
+                                                    <div className="text-xs font-medium text-muted-foreground">Individual Border Sides</div>
+                                                    <div className="space-y-2 pl-4">
+                                                        <div className="text-xs font-medium text-muted-foreground/80">Top</div>
+                                                        <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderTopColor" value={config.componentStyling?.['text-input']?.borderTopColor} />
+                                                        <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderTopWidth" value={config.componentStyling?.['text-input']?.borderTopWidth} placeholder="0.5px" icon={<ArrowUp className="h-3 w-3" />} />
+                                                        <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderTopStyle" value={config.componentStyling?.['text-input']?.borderTopStyle} placeholder="solid" icon={<ArrowUp className="h-3 w-3" />} />
+                                                    </div>
+                                                    <div className="space-y-2 pl-4">
+                                                        <div className="text-xs font-medium text-muted-foreground/80">Right</div>
+                                                        <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderRightColor" value={config.componentStyling?.['text-input']?.borderRightColor} />
+                                                        <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderRightWidth" value={config.componentStyling?.['text-input']?.borderRightWidth} placeholder="0.5px" icon={<ArrowRight className="h-3 w-3" />} />
+                                                        <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderRightStyle" value={config.componentStyling?.['text-input']?.borderRightStyle} placeholder="solid" icon={<ArrowRight className="h-3 w-3" />} />
+                                                    </div>
+                                                    <div className="space-y-2 pl-4">
+                                                        <div className="text-xs font-medium text-muted-foreground/80">Bottom</div>
+                                                        <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderBottomColor" value={config.componentStyling?.['text-input']?.borderBottomColor} />
+                                                        <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderBottomWidth" value={config.componentStyling?.['text-input']?.borderBottomWidth} placeholder="0.5px" icon={<ArrowDown className="h-3 w-3" />} />
+                                                        <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderBottomStyle" value={config.componentStyling?.['text-input']?.borderBottomStyle} placeholder="solid" icon={<ArrowDown className="h-3 w-3" />} />
+                                                    </div>
+                                                    <div className="space-y-2 pl-4">
+                                                        <div className="text-xs font-medium text-muted-foreground/80">Left</div>
+                                                        <ColorInputField onChange={handleChange} label="Color" path="componentStyling.text-input.borderLeftColor" value={config.componentStyling?.['text-input']?.borderLeftColor} />
+                                                        <TextInput onChange={handleChange} label="Width" path="componentStyling.text-input.borderLeftWidth" value={config.componentStyling?.['text-input']?.borderLeftWidth} placeholder="0.5px" icon={<ArrowLeft className="h-3 w-3" />} />
+                                                        <TextInput onChange={handleChange} label="Style" path="componentStyling.text-input.borderLeftStyle" value={config.componentStyling?.['text-input']?.borderLeftStyle} placeholder="solid" icon={<ArrowLeft className="h-3 w-3" />} />
+                                                    </div>
+                                                </div>
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.text-input" type="padding" placeholder="0.5rem 0.75rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.text-input.fontSize" value={config.componentStyling?.['text-input']?.fontSize} placeholder="0.875rem" />
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.text-input.transition" value={config.componentStyling?.['text-input']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                <AdvancedStyling basePath="componentStyling.text-input" />
+                                                <ComponentStates basePath="componentStyling.text-input" />
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <Separator />
-                                {/* Space Settings Menu */}
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-4">Space Settings Menu</h3>
-                                    <div className="w-full">
-                                        <Tabs defaultValue="normal">
-                                            <TabsList className="grid w-full grid-cols-3">
-                                                <TabsTrigger value="normal">Normal</TabsTrigger>
-                                                <TabsTrigger value="hover">Hover</TabsTrigger>
-                                                <TabsTrigger value="active">Active</TabsTrigger>
-                                            </TabsList>
-                                            <TabsContent value="normal" className="space-y-3 mt-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-normal.backgroundColor" value={config.componentStyling?.['space-settings-menu-normal']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-normal.textColor" value={config.componentStyling?.['space-settings-menu-normal']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-normal" type="radius" placeholder="6px" />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-normal" type="padding" placeholder="0.375rem 0.5rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-normal.fontSize" value={config.componentStyling?.['space-settings-menu-normal']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-normal.fontWeight" value={config.componentStyling?.['space-settings-menu-normal']?.fontWeight} placeholder="400" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-normal.transition" value={config.componentStyling?.['space-settings-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <BorderConfig basePath="componentStyling.space-settings-menu-normal" />
-                                                <AdvancedStyling basePath="componentStyling.space-settings-menu-normal" />
-                                            </TabsContent>
-                                            <TabsContent value="hover" className="space-y-3 mt-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-hover.backgroundColor" value={config.componentStyling?.['space-settings-menu-hover']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-hover.textColor" value={config.componentStyling?.['space-settings-menu-hover']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-hover" type="radius" placeholder="6px" />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-hover.padding" type="padding" placeholder="0.375rem 0.5rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-hover.fontSize" value={config.componentStyling?.['space-settings-menu-hover']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-hover.fontWeight" value={config.componentStyling?.['space-settings-menu-hover']?.fontWeight} placeholder="400" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-hover.transition" value={config.componentStyling?.['space-settings-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <BorderConfig basePath="componentStyling.space-settings-menu-hover" />
-                                                <AdvancedStyling basePath="componentStyling.space-settings-menu-hover" />
-                                            </TabsContent>
-                                            <TabsContent value="active" className="space-y-3 mt-4">
-                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-active.backgroundColor" value={config.componentStyling?.['space-settings-menu-active']?.backgroundColor} />
-                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-active.textColor" value={config.componentStyling?.['space-settings-menu-active']?.textColor} />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-active" type="radius" placeholder="6px" />
-                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-active" type="padding" placeholder="0.375rem 0.5rem" />
-                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-active.fontSize" value={config.componentStyling?.['space-settings-menu-active']?.fontSize} placeholder="0.875rem" />
-                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-active.fontWeight" value={config.componentStyling?.['space-settings-menu-active']?.fontWeight} placeholder="600" />
-                                                <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.space-settings-menu-active.boxShadow" value={config.componentStyling?.['space-settings-menu-active']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 122, 255, 0.15)" />
-                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-active.transition" value={config.componentStyling?.['space-settings-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
-                                                <BorderConfig basePath="componentStyling.space-settings-menu-active" />
-                                                <AdvancedStyling basePath="componentStyling.space-settings-menu-active" />
-                                            </TabsContent>
-                                        </Tabs>
-                                    </div>
-                                </div>
+                                        <Separator />
+                                        {/* Select */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Select Dropdowns</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.select.backgroundColor" value={config.componentStyling?.select?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.select.textColor" value={config.componentStyling?.select?.textColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.select" type="radius" placeholder="8px" />
+                                                <BorderConfig basePath="componentStyling.select" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.select" type="padding" placeholder="0.5rem 0.75rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.select.fontSize" value={config.componentStyling?.select?.fontSize} placeholder="0.875rem" />
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.select.transition" value={config.componentStyling?.select?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                <AdvancedStyling basePath="componentStyling.select" />
+                                                <ComponentStates basePath="componentStyling.select" />
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Multi-Select */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Multi-Select Dropdowns</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.multi-select.backgroundColor" value={config.componentStyling?.['multi-select']?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.multi-select.textColor" value={config.componentStyling?.['multi-select']?.textColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.multi-select" type="radius" placeholder="8px" />
+                                                <BorderConfig basePath="componentStyling.multi-select" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.multi-select" type="padding" placeholder="0.5rem 0.75rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.multi-select.fontSize" value={config.componentStyling?.['multi-select']?.fontSize} placeholder="0.875rem" />
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.multi-select.transition" value={config.componentStyling?.['multi-select']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                <AdvancedStyling basePath="componentStyling.multi-select" />
+                                                <ComponentStates basePath="componentStyling.multi-select" />
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Textarea */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Textarea Fields</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.textarea.backgroundColor" value={config.componentStyling?.textarea?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.textarea.textColor" value={config.componentStyling?.textarea?.textColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.textarea" type="radius" placeholder="8px" />
+                                                <BorderConfig basePath="componentStyling.textarea" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.textarea" type="padding" placeholder="0.5rem 0.75rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.textarea.fontSize" value={config.componentStyling?.textarea?.fontSize} placeholder="0.875rem" />
+                                                <TextInput onChange={handleChange} label="Line Height" path="componentStyling.textarea.lineHeight" value={config.componentStyling?.textarea?.lineHeight} placeholder="1.5" />
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.textarea.transition" value={config.componentStyling?.textarea?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                <AdvancedStyling basePath="componentStyling.textarea" />
+                                                <ComponentStates basePath="componentStyling.textarea" />
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Form */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Forms</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.form.backgroundColor" value={config.componentStyling?.form?.backgroundColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.form" type="radius" placeholder="8px" />
+                                                <BorderConfig basePath="componentStyling.form" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.form" type="padding" placeholder="1rem" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath="componentStyling.form" type="margin" placeholder="0" />
+                                                <AdvancedStyling basePath="componentStyling.form" />
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Checkbox */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Checkboxes</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.checkbox.backgroundColor" value={config.componentStyling?.checkbox?.backgroundColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.checkbox" type="radius" placeholder="4px" />
+                                                <BorderConfig basePath="componentStyling.checkbox" />
+                                                <AdvancedStyling basePath="componentStyling.checkbox" />
+                                                <ComponentStates basePath="componentStyling.checkbox" />
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Radio */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Radio Buttons</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.radio.backgroundColor" value={config.componentStyling?.radio?.backgroundColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.radio" type="radius" placeholder="50%" />
+                                                <BorderConfig basePath="componentStyling.radio" />
+                                                <AdvancedStyling basePath="componentStyling.radio" />
+                                                <ComponentStates basePath="componentStyling.radio" />
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Switch */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Switches</h3>
+                                            <div className="space-y-3">
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.switch" type="radius" placeholder="9999px" />
+                                                <BorderConfig basePath="componentStyling.switch" />
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.switch.backgroundColor" value={config.componentStyling?.switch?.backgroundColor} />
+                                                <AdvancedStyling basePath="componentStyling.switch" />
+                                                <ComponentStates basePath="componentStyling.switch" />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="buttons" className="space-y-6 mt-0">
+                                        {/* Button */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Buttons</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button.backgroundColor" value={config.componentStyling?.button?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button.textColor" value={config.componentStyling?.button?.textColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.button" type="radius" placeholder="10px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.button" type="padding" placeholder="0.5rem 1rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.button.fontSize" value={config.componentStyling?.button?.fontSize} placeholder="0.875rem" />
+                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.button.fontWeight" value={config.componentStyling?.button?.fontWeight} placeholder="500" />
+                                                <BorderConfig basePath="componentStyling.button" />
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.button.transition" value={config.componentStyling?.button?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                <TextInput onChange={handleChange} label="Shadow" path="componentStyling.button.boxShadow" value={config.componentStyling?.button?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
+                                                <AdvancedStyling basePath="componentStyling.button" />
+                                                <ComponentStates basePath="componentStyling.button" />
+                                            </div>
+                                            <Separator className="my-4" />
+                                            <div className="space-y-4">
+                                                <div className="text-xs font-semibold text-muted-foreground">Button Variants</div>
+
+                                                {/* Default Variant */}
+                                                <div className="space-y-3 pl-4 border-l-2 border-muted">
+                                                    <div className="text-xs font-medium text-muted-foreground/80">Default</div>
+                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-default.backgroundColor" value={config.componentStyling?.['button-default']?.backgroundColor} />
+                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-default.textColor" value={config.componentStyling?.['button-default']?.textColor} />
+                                                    <BorderConfig basePath="componentStyling.button-default" />
+                                                </div>
+
+                                                {/* Destructive Variant */}
+                                                <div className="space-y-3 pl-4 border-l-2 border-muted">
+                                                    <div className="text-xs font-medium text-muted-foreground/80">Destructive</div>
+                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-destructive.backgroundColor" value={config.componentStyling?.['button-destructive']?.backgroundColor} />
+                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-destructive.textColor" value={config.componentStyling?.['button-destructive']?.textColor} />
+                                                    <BorderConfig basePath="componentStyling.button-destructive" />
+                                                </div>
+
+                                                {/* Outline Variant */}
+                                                <div className="space-y-3 pl-4 border-l-2 border-muted">
+                                                    <div className="text-xs font-medium text-muted-foreground/80">Outline</div>
+                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-outline.backgroundColor" value={config.componentStyling?.['button-outline']?.backgroundColor} />
+                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-outline.textColor" value={config.componentStyling?.['button-outline']?.textColor} />
+                                                    <BorderConfig basePath="componentStyling.button-outline" />
+                                                </div>
+
+                                                {/* Secondary Variant */}
+                                                <div className="space-y-3 pl-4 border-l-2 border-muted">
+                                                    <div className="text-xs font-medium text-muted-foreground/80">Secondary</div>
+                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-secondary.backgroundColor" value={config.componentStyling?.['button-secondary']?.backgroundColor} />
+                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-secondary.textColor" value={config.componentStyling?.['button-secondary']?.textColor} />
+                                                    <BorderConfig basePath="componentStyling.button-secondary" />
+                                                </div>
+
+                                                {/* Ghost Variant */}
+                                                <div className="space-y-3 pl-4 border-l-2 border-muted">
+                                                    <div className="text-xs font-medium text-muted-foreground/80">Ghost</div>
+                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.button-ghost.backgroundColor" value={config.componentStyling?.['button-ghost']?.backgroundColor} />
+                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-ghost.textColor" value={config.componentStyling?.['button-ghost']?.textColor} />
+                                                    <BorderConfig basePath="componentStyling.button-ghost" />
+                                                </div>
+
+                                                {/* Link Variant */}
+                                                <div className="space-y-3 pl-4 border-l-2 border-muted">
+                                                    <div className="text-xs font-medium text-muted-foreground/80">Link</div>
+                                                    <ColorInputField onChange={handleChange} label="Text" path="componentStyling.button-link.textColor" value={config.componentStyling?.['button-link']?.textColor} />
+                                                    <TextInput onChange={handleChange} label="Text Decoration" path="componentStyling.button-link.textDecoration" value={config.componentStyling?.['button-link']?.textDecoration} placeholder="underline" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Icon Button */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Icon Buttons</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.iconButton.backgroundColor" value={config.componentStyling?.iconButton?.backgroundColor} />
+                                                <ColorInputField onChange={handleChange} label="Text" path="componentStyling.iconButton.textColor" value={config.componentStyling?.iconButton?.textColor} />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.iconButton" type="radius" placeholder="8px" />
+                                                <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.iconButton" type="padding" placeholder="0.5rem" />
+                                                <TextInput onChange={handleChange} label="Font Size" path="componentStyling.iconButton.fontSize" value={config.componentStyling?.iconButton?.fontSize} placeholder="1rem" />
+                                                <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.iconButton.fontWeight" value={config.componentStyling?.iconButton?.fontWeight} placeholder="400" />
+                                                <BorderConfig basePath="componentStyling.iconButton" />
+                                                <TextInput onChange={handleChange} label="Transition" path="componentStyling.iconButton.transition" value={config.componentStyling?.iconButton?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                <TextInput onChange={handleChange} label="Shadow" path="componentStyling.iconButton.boxShadow" value={config.componentStyling?.iconButton?.boxShadow} placeholder="none" />
+                                                <AdvancedStyling basePath="componentStyling.iconButton" />
+                                                <ComponentStates basePath="componentStyling.iconButton" />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="surfaces" className="space-y-6 mt-0">
+                                        {/* Card */}
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Sparkles className="h-4 w-4 text-primary" />
+                                                <h3 className="text-sm font-semibold">Cards</h3>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.card.backgroundColor" value={config.componentStyling?.card?.backgroundColor} />
+                                                <div className="p-3 bg-muted/30 rounded-lg border border-primary/20">
+                                                    <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                                                        <Sparkles className="h-3 w-3" />
+                                                        Glassmorphism Effect (Backdrop Blur)
+                                                    </div>
+                                                    <TextInput onChange={handleChange}
+                                                        label="Backdrop Filter"
+                                                        path="componentStyling.card.backdropFilter"
+                                                        value={config.componentStyling?.card?.backdropFilter}
+                                                        placeholder="blur(20px) saturate(180%)"
+                                                        icon={<Sparkles className="h-3 w-3" />}
+                                                    />
+                                                    <div className="text-xs text-muted-foreground mt-2">
+                                                        Example: <code className="px-1 py-0.5 bg-muted rounded">blur(20px) saturate(180%)</code> for frosted glass effect
+                                                    </div>
+                                                </div>
+                                                <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.card" type="radius" placeholder="12px" />
+                                                <BorderConfig basePath="componentStyling.card" />
+                                                <TextInput onChange={handleChange} label="Shadow" path="componentStyling.card.boxShadow" value={config.componentStyling?.card?.boxShadow} placeholder="0 4px 6px -1px rgba(0, 0, 0, 0.1)..." />
+                                                <AdvancedStyling basePath="componentStyling.card" />
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Accordion */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Accordion</h3>
+                                            <div className="space-y-4">
+                                                {/* Accordion Item */}
+                                                <div className="space-y-3">
+                                                    <div className="text-xs font-medium text-muted-foreground">Accordion Item (Container)</div>
+                                                    <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-item.backgroundColor" value={config.componentStyling?.['accordion-item']?.backgroundColor} />
+                                                    <BorderConfig basePath="componentStyling.accordion-item" />
+                                                    <BoxModelInput config={config} onChange={handleChange} label="Margin" basePath="componentStyling.accordion-item" type="margin" placeholder="0" />
+                                                    <AdvancedStyling basePath="componentStyling.accordion-item" />
+                                                </div>
+
+                                                <Separator className="my-2" />
+
+                                                {/* Accordion Trigger */}
+                                                <div className="space-y-3">
+                                                    <div className="text-xs font-medium text-muted-foreground">Trigger (Header)</div>
+                                                    <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                        <div className="text-xs font-medium text-muted-foreground/80">Normal State</div>
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger.backgroundColor" value={config.componentStyling?.['accordion-trigger']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger.textColor" value={config.componentStyling?.['accordion-trigger']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.accordion-trigger" type="padding" placeholder="1rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.accordion-trigger.fontSize" value={config.componentStyling?.['accordion-trigger']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.accordion-trigger.fontWeight" value={config.componentStyling?.['accordion-trigger']?.fontWeight} placeholder="500" />
+                                                        <BorderConfig basePath="componentStyling.accordion-trigger" />
+                                                        <AdvancedStyling basePath="componentStyling.accordion-trigger" />
+                                                    </div>
+
+                                                    <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                        <div className="text-xs font-medium text-muted-foreground/80">Hover State</div>
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger-hover.backgroundColor" value={config.componentStyling?.['accordion-trigger-hover']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger-hover.textColor" value={config.componentStyling?.['accordion-trigger-hover']?.textColor} />
+                                                        <AdvancedStyling basePath="componentStyling.accordion-trigger-hover" />
+                                                    </div>
+
+                                                    <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                        <div className="text-xs font-medium text-muted-foreground/80">Open/Active State</div>
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-trigger-active.backgroundColor" value={config.componentStyling?.['accordion-trigger-active']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-trigger-active.textColor" value={config.componentStyling?.['accordion-trigger-active']?.textColor} />
+                                                        <AdvancedStyling basePath="componentStyling.accordion-trigger-active" />
+                                                    </div>
+                                                </div>
+
+                                                <Separator className="my-2" />
+
+                                                {/* Accordion Content */}
+                                                <div className="space-y-3">
+                                                    <div className="text-xs font-medium text-muted-foreground">Content (Body)</div>
+                                                    <div className="pl-4 border-l-2 border-muted space-y-3">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.accordion-content.backgroundColor" value={config.componentStyling?.['accordion-content']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.accordion-content.textColor" value={config.componentStyling?.['accordion-content']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.accordion-content" type="padding" placeholder="1rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.accordion-content.fontSize" value={config.componentStyling?.['accordion-content']?.fontSize} placeholder="0.875rem" />
+                                                        <BorderConfig basePath="componentStyling.accordion-content" />
+                                                        <AdvancedStyling basePath="componentStyling.accordion-content" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Separator />
+                                        {/* Separator/Divider Lines */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Separator/Divider Lines</h3>
+                                            <div className="space-y-3">
+                                                <ColorInputField onChange={handleChange} label="Background" path="componentStyling.separator.backgroundColor" value={config.componentStyling?.separator?.backgroundColor} />
+                                                <TextInput onChange={handleChange} label="Height" path="componentStyling.separator.height" value={config.componentStyling?.separator?.height} placeholder="1px" />
+                                                <TextInput onChange={handleChange} label="Width" path="componentStyling.separator.width" value={config.componentStyling?.separator?.width} placeholder="100%" />
+                                                <TextInput onChange={handleChange} label="Margin Top" path="componentStyling.separator.marginTop" value={(config.componentStyling?.separator as any)?.marginTop} placeholder="1rem" />
+                                                <TextInput onChange={handleChange} label="Margin Bottom" path="componentStyling.separator.marginBottom" value={(config.componentStyling?.separator as any)?.marginBottom} placeholder="1rem" />
+                                                <BorderConfig basePath="componentStyling.separator" />
+                                                <AdvancedStyling basePath="componentStyling.separator" />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="navigation" className="space-y-6 mt-0">
+                                        {/* Vertical Tab Menu (Secondary Sidebar) */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Vertical Tab Menu (Secondary Sidebar)</h3>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-xs font-medium mb-2 text-muted-foreground">Normal State</h4>
+                                                    <div className="space-y-2 pl-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-normal.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-normal']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-normal.textColor" value={config.componentStyling?.['vertical-tab-menu-normal']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-normal" type="radius" placeholder="8px" />
+                                                        <BorderConfig basePath="componentStyling.vertical-tab-menu-normal" />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.vertical-tab-menu-normal" type="padding" placeholder="0.5rem 0.75rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.vertical-tab-menu-normal.fontSize" value={config.componentStyling?.['vertical-tab-menu-normal']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.vertical-tab-menu-normal.fontWeight" value={config.componentStyling?.['vertical-tab-menu-normal']?.fontWeight} placeholder="500" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-normal.transition" value={config.componentStyling?.['vertical-tab-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <AdvancedStyling basePath="componentStyling.vertical-tab-menu-normal" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xs font-medium mb-2 text-muted-foreground">Hover State</h4>
+                                                    <div className="space-y-2 pl-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-hover.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-hover']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-hover.textColor" value={config.componentStyling?.['vertical-tab-menu-hover']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-hover" type="radius" placeholder="8px" />
+                                                        <BorderConfig basePath="componentStyling.vertical-tab-menu-hover" />
+                                                        <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.vertical-tab-menu-hover.boxShadow" value={config.componentStyling?.['vertical-tab-menu-hover']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 0, 0, 0.05)" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-hover.transition" value={config.componentStyling?.['vertical-tab-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <AdvancedStyling basePath="componentStyling.vertical-tab-menu-hover" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xs font-medium mb-2 text-muted-foreground">Active State</h4>
+                                                    <div className="space-y-2 pl-4">
+                                                        <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
+                                                            <div className="text-xs font-medium text-muted-foreground mb-2">Active Menu Background</div>
+                                                            <ColorInputField onChange={handleChange} label="Background" path="componentStyling.vertical-tab-menu-active.backgroundColor" value={config.componentStyling?.['vertical-tab-menu-active']?.backgroundColor} />
+                                                            <ColorInputField onChange={handleChange} label="Text" path="componentStyling.vertical-tab-menu-active.textColor" value={config.componentStyling?.['vertical-tab-menu-active']?.textColor} />
+                                                            <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.vertical-tab-menu-active" type="radius" placeholder="8px" />
+                                                            <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.vertical-tab-menu-active" type="padding" placeholder="0.5rem 0.75rem" />
+                                                            <TextInput onChange={handleChange} label="Font Size" path="componentStyling.vertical-tab-menu-active.fontSize" value={config.componentStyling?.['vertical-tab-menu-active']?.fontSize} placeholder="0.875rem" />
+                                                            <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.vertical-tab-menu-active.fontWeight" value={config.componentStyling?.['vertical-tab-menu-active']?.fontWeight} placeholder="600" />
+                                                        </div>
+                                                        <BorderConfig basePath="componentStyling.vertical-tab-menu-active" />
+                                                        <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.vertical-tab-menu-active.boxShadow" value={config.componentStyling?.['vertical-tab-menu-active']?.boxShadow} placeholder="0 1px 3px 0 rgba(0, 122, 255, 0.15)" />
+                                                        <TextInput onChange={handleChange} label="Backdrop Filter" path="componentStyling.vertical-tab-menu-active.backdropFilter" value={config.componentStyling?.['vertical-tab-menu-active']?.backdropFilter} placeholder="blur(10px)" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.vertical-tab-menu-active.transition" value={config.componentStyling?.['vertical-tab-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <AdvancedStyling basePath="componentStyling.vertical-tab-menu-active" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Separator />
+                                        {/* Space Settings Menu */}
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-4">Space Settings Menu</h3>
+                                            <div className="w-full">
+                                                <Tabs defaultValue="normal">
+                                                    <TabsList className="grid w-full grid-cols-3">
+                                                        <TabsTrigger value="normal">Normal</TabsTrigger>
+                                                        <TabsTrigger value="hover">Hover</TabsTrigger>
+                                                        <TabsTrigger value="active">Active</TabsTrigger>
+                                                    </TabsList>
+                                                    <TabsContent value="normal" className="space-y-3 mt-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-normal.backgroundColor" value={config.componentStyling?.['space-settings-menu-normal']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-normal.textColor" value={config.componentStyling?.['space-settings-menu-normal']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-normal" type="radius" placeholder="6px" />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-normal" type="padding" placeholder="0.375rem 0.5rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-normal.fontSize" value={config.componentStyling?.['space-settings-menu-normal']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-normal.fontWeight" value={config.componentStyling?.['space-settings-menu-normal']?.fontWeight} placeholder="400" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-normal.transition" value={config.componentStyling?.['space-settings-menu-normal']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <BorderConfig basePath="componentStyling.space-settings-menu-normal" />
+                                                        <AdvancedStyling basePath="componentStyling.space-settings-menu-normal" />
+                                                    </TabsContent>
+                                                    <TabsContent value="hover" className="space-y-3 mt-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-hover.backgroundColor" value={config.componentStyling?.['space-settings-menu-hover']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-hover.textColor" value={config.componentStyling?.['space-settings-menu-hover']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-hover" type="radius" placeholder="6px" />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-hover.padding" type="padding" placeholder="0.375rem 0.5rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-hover.fontSize" value={config.componentStyling?.['space-settings-menu-hover']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-hover.fontWeight" value={config.componentStyling?.['space-settings-menu-hover']?.fontWeight} placeholder="400" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-hover.transition" value={config.componentStyling?.['space-settings-menu-hover']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <BorderConfig basePath="componentStyling.space-settings-menu-hover" />
+                                                        <AdvancedStyling basePath="componentStyling.space-settings-menu-hover" />
+                                                    </TabsContent>
+                                                    <TabsContent value="active" className="space-y-3 mt-4">
+                                                        <ColorInputField onChange={handleChange} label="Background" path="componentStyling.space-settings-menu-active.backgroundColor" value={config.componentStyling?.['space-settings-menu-active']?.backgroundColor} />
+                                                        <ColorInputField onChange={handleChange} label="Text" path="componentStyling.space-settings-menu-active.textColor" value={config.componentStyling?.['space-settings-menu-active']?.textColor} />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Border Radius" basePath="componentStyling.space-settings-menu-active" type="radius" placeholder="6px" />
+                                                        <BoxModelInput config={config} onChange={handleChange} label="Padding" basePath="componentStyling.space-settings-menu-active" type="padding" placeholder="0.375rem 0.5rem" />
+                                                        <TextInput onChange={handleChange} label="Font Size" path="componentStyling.space-settings-menu-active.fontSize" value={config.componentStyling?.['space-settings-menu-active']?.fontSize} placeholder="0.875rem" />
+                                                        <TextInput onChange={handleChange} label="Font Weight" path="componentStyling.space-settings-menu-active.fontWeight" value={config.componentStyling?.['space-settings-menu-active']?.fontWeight} placeholder="600" />
+                                                        <TextInput onChange={handleChange} label="Box Shadow" path="componentStyling.space-settings-menu-active.boxShadow" value={config.componentStyling?.['space-settings-menu-active']?.boxShadow} placeholder="0 1px 2px 0 rgba(0, 122, 255, 0.15)" />
+                                                        <TextInput onChange={handleChange} label="Transition" path="componentStyling.space-settings-menu-active.transition" value={config.componentStyling?.['space-settings-menu-active']?.transition} placeholder="all 200ms cubic-bezier(0.4, 0, 0.2, 1)" />
+                                                        <BorderConfig basePath="componentStyling.space-settings-menu-active" />
+                                                        <AdvancedStyling basePath="componentStyling.space-settings-menu-active" />
+                                                    </TabsContent>
+                                                </Tabs>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                </Tabs>
                             </TabsContent>
                         </ScrollArea>
                     </Tabs>

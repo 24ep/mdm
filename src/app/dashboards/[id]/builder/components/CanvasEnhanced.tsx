@@ -13,6 +13,7 @@ import { ChartRenderer } from '@/components/charts/ChartRenderer'
 import { DashboardElement, DataSource } from '../hooks/useDashboardState'
 import { ToolboxItem } from '../types'
 import { SelectionToolbar } from './SelectionToolbar'
+import DOMPurify from 'dompurify'
 
 // DnD Kit imports
 import {
@@ -83,23 +84,23 @@ interface CanvasProps {
 const customCollisionDetection: CollisionDetection = (args) => {
   // First, let's see what droppable items are intersecting with the pointer
   const pointerIntersections = pointerWithin(args)
-  
+
   // If there are intersections with the pointer, return those
   if (pointerIntersections.length > 0) {
     return pointerIntersections
   }
-  
+
   // If there are no intersections with the pointer, return the intersections with the rectangle
   return rectIntersection(args)
 }
 
 // Sortable Element Component
-function SortableElement({ 
-  element, 
-  isSelected, 
+function SortableElement({
+  element,
+  isSelected,
   isMultiSelected,
-  onElementClick, 
-  onElementMouseDown, 
+  onElementClick,
+  onElementMouseDown,
   onElementMouseMove,
   onStartResize,
   onUpdateElement,
@@ -144,7 +145,7 @@ function SortableElement({
     transform,
     transition,
     isDragging: isSortableDragging,
-  } = useSortable({ 
+  } = useSortable({
     id: element.id,
     data: {
       type: 'element',
@@ -203,7 +204,7 @@ function SortableElement({
       const label = (element.data_config as any)?.label || 'Total Sales'
       const change = (element.data_config as any)?.change || '+12.5%'
       const isPositive = change.startsWith('+')
-      
+
       return (
         <div className="w-full h-full flex flex-col justify-center items-center p-4" style={{ fontFamily: element.style?.fontFamily || 'Roboto, sans-serif' }}>
           <div className="text-3xl font-bold" style={{ color: element.style?.color || '#111827' }}>
@@ -222,12 +223,12 @@ function SortableElement({
       const label = (element.data_config as any)?.label || 'Progress'
       const max = (element.data_config as any)?.max || 100
       const percentage = Math.min(100, Math.max(0, (value / max) * 100))
-      
+
       return (
         <div className="w-full h-full flex flex-col justify-center p-4" style={{ fontFamily: element.style?.fontFamily || 'Roboto, sans-serif' }}>
           <div className="text-sm mb-2" style={{ color: element.style?.color || '#111827' }}>{label}</div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${percentage}%` }}
             />
@@ -243,16 +244,16 @@ function SortableElement({
       const max = (element.data_config as any)?.max || 100
       const percentage = Math.min(100, Math.max(0, (value / max) * 100))
       const angle = (percentage / 100) * 180 - 90
-      
+
       return (
         <div className="w-full h-full flex flex-col justify-center items-center p-4" style={{ fontFamily: element.style?.fontFamily || 'Roboto, sans-serif' }}>
           <div className="relative w-20 h-20 mb-2">
             <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="40" stroke="#e5e7eb" strokeWidth="8" fill="none" />
-              <circle 
-                cx="50" cy="50" r="40" 
-                stroke="#3b82f6" 
-                strokeWidth="8" 
+              <circle
+                cx="50" cy="50" r="40"
+                stroke="#3b82f6"
+                strokeWidth="8"
                 fill="none"
                 strokeDasharray={`${(percentage / 100) * 251.2} 251.2`}
                 strokeLinecap="round"
@@ -271,9 +272,9 @@ function SortableElement({
 
     if (kind === 'TEXT') {
       return (
-        <div 
+        <div
           className="w-full h-full flex items-center p-4"
-          style={{ 
+          style={{
             fontFamily: element.style?.fontFamily || 'Roboto, sans-serif',
             fontSize: element.style?.fontSize || 14,
             fontWeight: element.style?.fontWeight || 'normal',
@@ -289,9 +290,9 @@ function SortableElement({
     if (kind === 'IMAGE') {
       return (
         <div className="w-full h-full flex items-center justify-center p-4">
-          <img 
-            src={(element.data_config as any)?.url || '/api/placeholder/200/150'} 
-            alt={(element.data_config as any)?.alt || 'Image'} 
+          <img
+            src={(element.data_config as any)?.url || '/api/placeholder/200/150'}
+            alt={(element.data_config as any)?.alt || 'Image'}
             className="max-w-full max-h-full object-contain rounded"
           />
         </div>
@@ -300,15 +301,17 @@ function SortableElement({
 
     if (kind === 'RICH_TEXT') {
       return (
-        <div 
+        <div
           className="w-full h-full p-4 overflow-auto"
-          style={{ 
+          style={{
             fontFamily: element.style?.fontFamily || 'Roboto, sans-serif',
             fontSize: element.style?.fontSize || 14,
             color: element.style?.color || '#111827'
           }}
-          dangerouslySetInnerHTML={{ 
-            __html: (element.data_config as any)?.html || '<p>Rich text content</p>' 
+          dangerouslySetInnerHTML={{
+            __html: typeof window !== 'undefined'
+              ? DOMPurify.sanitize((element.data_config as any)?.html || '<p>Rich text content</p>')
+              : (element.data_config as any)?.html || '<p>Rich text content</p>'
           }}
         />
       )
@@ -317,8 +320,8 @@ function SortableElement({
     if (kind === 'IFRAME') {
       return (
         <div className="w-full h-full p-4">
-          <iframe 
-            src={(element.data_config as any)?.url || 'https://example.com'} 
+          <iframe
+            src={(element.data_config as any)?.url || 'https://example.com'}
             className="w-full h-full border-0 rounded"
             title="Embedded Content"
           />
@@ -330,7 +333,7 @@ function SortableElement({
       const videoId = (element.data_config as any)?.videoId || 'dQw4w9WgXcQ'
       return (
         <div className="w-full h-full p-4">
-          <iframe 
+          <iframe
             src={`https://www.youtube.com/embed/${videoId}`}
             className="w-full h-full border-0 rounded"
             title="YouTube Video"
@@ -343,8 +346,8 @@ function SortableElement({
     if (kind === 'VIDEO') {
       return (
         <div className="w-full h-full p-4">
-          <video 
-            src={(element.data_config as any)?.url || '/api/placeholder/video.mp4'} 
+          <video
+            src={(element.data_config as any)?.url || '/api/placeholder/video.mp4'}
             className="w-full h-full object-contain rounded"
             controls
           />
@@ -354,10 +357,12 @@ function SortableElement({
 
     if (kind === 'HTML') {
       return (
-        <div 
+        <div
           className="w-full h-full p-4 overflow-auto"
-          dangerouslySetInnerHTML={{ 
-            __html: (element.data_config as any)?.html || '<div>Custom HTML content</div>' 
+          dangerouslySetInnerHTML={{
+            __html: typeof window !== 'undefined'
+              ? DOMPurify.sanitize((element.data_config as any)?.html || '<div>Custom HTML content</div>')
+              : (element.data_config as any)?.html || '<div>Custom HTML content</div>'
           }}
         />
       )
@@ -378,7 +383,7 @@ function SortableElement({
       const iconName = (element.data_config as any)?.icon || 'star'
       return (
         <div className="w-full h-full flex items-center justify-center p-4">
-          <div 
+          <div
             className="text-4xl"
             style={{ color: element.style?.color || '#111827' }}
           >
@@ -428,7 +433,7 @@ function SortableElement({
     if (kind === 'BUTTON') {
       return (
         <div className="w-full h-full flex items-center justify-center p-4">
-          <button 
+          <button
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             style={{ fontFamily: element.style?.fontFamily || 'Roboto, sans-serif' }}
           >
@@ -451,12 +456,11 @@ function SortableElement({
   return (
     <div
       ref={setNodeRef}
-      className={`absolute group ${
-        isSelected || isMultiSelected
-          ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-white shadow-lg' 
+      className={`absolute group ${isSelected || isMultiSelected
+          ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-white shadow-lg'
           : ''
-      } ${isDragging && draggedElement?.id === element.id ? 'cursor-grabbing' : 
-        isResizing && isSelected ? 'cursor-grabbing' : 'cursor-move'}`}
+        } ${isDragging && draggedElement?.id === element.id ? 'cursor-grabbing' :
+          isResizing && isSelected ? 'cursor-grabbing' : 'cursor-move'}`}
       style={{
         ...style,
         left: element.config?.freeform?.x != null ? element.config.freeform.x : (element.position_x / gridSize) * canvasWidth,
@@ -465,21 +469,21 @@ function SortableElement({
         height: element.config?.freeform?.h != null ? element.config.freeform.h : (element.height / gridSize) * canvasHeight,
         zIndex: isSortableDragging ? Z_INDEX.sortableDragging : element.z_index,
         borderColor: element.style?.borderColor,
-        borderWidth: typeof element.style?.borderWidth === 'object' 
+        borderWidth: typeof element.style?.borderWidth === 'object'
           ? `${element.style.borderWidth.top || 0}px ${element.style.borderWidth.right || 0}px ${element.style.borderWidth.bottom || 0}px ${element.style.borderWidth.left || 0}px`
           : (element.style?.borderWidth ?? 0),
-        borderStyle: (typeof element.style?.borderWidth === 'object' 
+        borderStyle: (typeof element.style?.borderWidth === 'object'
           ? (element.style.borderWidth.top || element.style.borderWidth.right || element.style.borderWidth.bottom || element.style.borderWidth.left)
           : (element.style?.borderWidth ?? 0)) > 0 ? 'solid' : 'none',
         borderRadius: typeof element.style?.borderRadius === 'object'
           ? `${element.style.borderRadius.topLeft || 0}px ${element.style.borderRadius.topRight || 0}px ${element.style.borderRadius.bottomRight || 0}px ${element.style.borderRadius.bottomLeft || 0}px`
           : (element.style?.borderRadius ?? 0),
         boxShadow: (() => {
-          const elementShadow = element.style?.boxShadow ? 
+          const elementShadow = element.style?.boxShadow ?
             `${element.style.boxShadow.offsetX || 0}px ${element.style.boxShadow.offsetY || 0}px ${element.style.boxShadow.blur || 0}px ${element.style.boxShadow.spread || 0}px ${element.style.boxShadow.color || '#000000'}${Math.round((element.style.boxShadow.opacity || 0.25) * 255).toString(16).padStart(2, '0')}`
             : undefined
-          const selectionShadow = (isSelected || isMultiSelected) && !isDragging && !isResizing ? 
-            '0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.2)' 
+          const selectionShadow = (isSelected || isMultiSelected) && !isDragging && !isResizing ?
+            '0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.2)'
             : undefined
           return [elementShadow, selectionShadow].filter(Boolean).join(', ')
         })(),
@@ -510,7 +514,7 @@ function SortableElement({
           const opacity = typeof s.backgroundOpacity === 'number' ? Math.max(0, Math.min(1, s.backgroundOpacity)) : 1
           const withOpacity = (hex: string) => {
             try {
-              const h = hex.replace('#','')
+              const h = hex.replace('#', '')
               const bigint = parseInt(h, 16)
               const r = (bigint >> 16) & 255
               const g = (bigint >> 8) & 255
@@ -542,7 +546,7 @@ function SortableElement({
       {...listeners}
     >
       {renderElementContent()}
-      
+
       {/* Resize handles - corners and sides */}
       {isSelected && !isSortableDragging && (
         <>
@@ -583,7 +587,7 @@ function SortableElement({
           />
         </>
       )}
-      
+
       {/* Element name label */}
       {(isSelected || isMultiSelected) && !isSortableDragging && (
         <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
@@ -643,7 +647,7 @@ export function CanvasEnhanced({
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event
     setActiveId(active.id as string)
-    
+
     // Find the element being dragged
     const element = dashboard.elements.find((el: DashboardElement) => el.id === active.id)
     if (element) {
@@ -654,25 +658,25 @@ export function CanvasEnhanced({
   // Handle drag over
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event
-    
+
     if (!over) return
-    
+
     // Handle dropping from toolbox
     if (active.data.current?.type === 'toolbox-item' && over.id === 'canvas') {
       // This will be handled in handleDragEnd
       return
     }
-    
+
     // Handle reordering elements
     if (active.data.current?.type === 'element' && over.data.current?.type === 'element') {
       const activeElement = active.data.current.element as DashboardElement
       const overElement = over.data.current.element as DashboardElement
-      
+
       // Calculate new position based on drop location
       const rect = over.rect
       const newX = rect.left - pan.x
       const newY = rect.top - pan.y
-      
+
       onUpdateElement(activeElement.id, {
         config: {
           ...activeElement.config,
@@ -689,21 +693,21 @@ export function CanvasEnhanced({
   // Handle drag end
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event
-    
+
     setActiveId(null)
     setDragOverlayElement(null)
-    
+
     if (!over) return
-    
+
     // Handle dropping from toolbox
     if (active.data.current?.type === 'toolbox-item' && over.id === 'canvas') {
       const toolboxItem = active.data.current.toolboxItem as ToolboxItem
       const rect = over.rect
-      
+
       // Calculate position relative to canvas
       const x = rect.left - pan.x
       const y = rect.top - pan.y
-      
+
       // Create new element
       const newElement: Partial<DashboardElement> = {
         type: toolboxItem.type,
@@ -735,16 +739,16 @@ export function CanvasEnhanced({
         },
         is_visible: true,
       }
-      
+
       onAddElement(newElement)
       return
     }
-    
+
     // Handle element reordering
     if (active.data.current?.type === 'element' && over.data.current?.type === 'element') {
       const activeElement = active.data.current.element as DashboardElement
       const overElement = over.data.current.element as DashboardElement
-      
+
       if (activeElement.id !== overElement.id) {
         // Update z-index to bring element to front
         onUpdateElement(activeElement.id, {
@@ -762,109 +766,109 @@ export function CanvasEnhanced({
   } : undefined
 
   return (
-      <div className="flex-1 relative overflow-hidden bg-gray-50">
-        {/* Canvas */}
-        <div
-          ref={(node) => { setCanvasDroppableRef(node as HTMLElement) }}
-          id="canvas"
-          className="relative w-full h-full"
-          style={{
-            width: canvasWidth,
-            height: canvasHeight,
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
-            transformOrigin: '0 0',
-            background: (() => {
-              if (canvasBackground.type === 'gradient') {
-                return `linear-gradient(${canvasBackground.gradient.angle}deg, ${canvasBackground.gradient.from}, ${canvasBackground.gradient.to})`
-              }
-              if (canvasBackground.type === 'image') {
-                return `url(${canvasBackground.image.url}) ${canvasBackground.image.repeat} ${canvasBackground.image.position}`
-              }
-              return canvasBackground.color
-            })(),
-            backgroundSize: canvasBackground.type === 'image' ? canvasBackground.image.size : 'auto',
-          }}
-          onMouseDown={onCanvasMouseDown}
-          onMouseMove={onCanvasMouseMove}
-          onMouseUp={onCanvasMouseUp}
-        >
-          {/* Grid */}
-          {showGrid && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage: `
+    <div className="flex-1 relative overflow-hidden bg-gray-50">
+      {/* Canvas */}
+      <div
+        ref={(node) => { setCanvasDroppableRef(node as HTMLElement) }}
+        id="canvas"
+        className="relative w-full h-full"
+        style={{
+          width: canvasWidth,
+          height: canvasHeight,
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+          transformOrigin: '0 0',
+          background: (() => {
+            if (canvasBackground.type === 'gradient') {
+              return `linear-gradient(${canvasBackground.gradient.angle}deg, ${canvasBackground.gradient.from}, ${canvasBackground.gradient.to})`
+            }
+            if (canvasBackground.type === 'image') {
+              return `url(${canvasBackground.image.url}) ${canvasBackground.image.repeat} ${canvasBackground.image.position}`
+            }
+            return canvasBackground.color
+          })(),
+          backgroundSize: canvasBackground.type === 'image' ? canvasBackground.image.size : 'auto',
+        }}
+        onMouseDown={onCanvasMouseDown}
+        onMouseMove={onCanvasMouseMove}
+        onMouseUp={onCanvasMouseUp}
+      >
+        {/* Grid */}
+        {showGrid && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `
                   linear-gradient(to right, #e5e7eb 1px, transparent 1px),
                   linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
                 `,
-                backgroundSize: `${gridSize}px ${gridSize}px`,
-                opacity: 0.5,
-              }}
+              backgroundSize: `${gridSize}px ${gridSize}px`,
+              opacity: 0.5,
+            }}
+          />
+        )}
+
+        {/* Canvas border */}
+        {showCanvasBorder && (
+          <div className="absolute inset-0 border-2 border-dashed border-gray-300 pointer-events-none" />
+        )}
+
+        {/* Elements */}
+        <SortableContext items={dashboard.elements.map((el: DashboardElement) => el.id)} strategy={verticalListSortingStrategy}>
+          {dashboard.elements.map((element: DashboardElement) => (
+            <SortableElement
+              key={element.id}
+              element={element}
+              isSelected={selectedElement?.id === element.id}
+              isMultiSelected={selectedElements.some(el => el.id === element.id)}
+              onElementClick={onElementClick}
+              onElementMouseDown={onElementMouseDown}
+              onElementMouseMove={onElementMouseMove}
+              onStartResize={onStartResize}
+              onUpdateElement={onUpdateElement}
+              onDeleteElement={onDeleteElement}
+              gridSize={gridSize}
+              canvasWidth={canvasWidth}
+              canvasHeight={canvasHeight}
+              showPixelMode={showPixelMode}
+              zoom={zoom}
+              pan={pan}
+              activeFilters={activeFilters}
+              realtimeData={realtimeData}
+              isDragging={isDragging}
+              draggedElement={draggedElement}
+              isResizing={isResizing}
             />
-          )}
+          ))}
+        </SortableContext>
 
-          {/* Canvas border */}
-          {showCanvasBorder && (
-            <div className="absolute inset-0 border-2 border-dashed border-gray-300 pointer-events-none" />
-          )}
-
-          {/* Elements */}
-          <SortableContext items={dashboard.elements.map((el: DashboardElement) => el.id)} strategy={verticalListSortingStrategy}>
-            {dashboard.elements.map((element: DashboardElement) => (
-              <SortableElement
-                key={element.id}
-                element={element}
-                isSelected={selectedElement?.id === element.id}
-                isMultiSelected={selectedElements.some(el => el.id === element.id)}
-                onElementClick={onElementClick}
-                onElementMouseDown={onElementMouseDown}
-                onElementMouseMove={onElementMouseMove}
-                onStartResize={onStartResize}
-                onUpdateElement={onUpdateElement}
-                onDeleteElement={onDeleteElement}
-                gridSize={gridSize}
-                canvasWidth={canvasWidth}
-                canvasHeight={canvasHeight}
-                showPixelMode={showPixelMode}
-                zoom={zoom}
-                pan={pan}
-                activeFilters={activeFilters}
-                realtimeData={realtimeData}
-                isDragging={isDragging}
-                draggedElement={draggedElement}
-                isResizing={isResizing}
-              />
-            ))}
-          </SortableContext>
-
-          {/* Selection rectangle */}
-          {isSelecting && selectionRect && (
-            <div
-              className="absolute border-2 border-blue-500 bg-blue-100 bg-opacity-20 pointer-events-none"
-              style={{
-                left: selectionRect.x,
-                top: selectionRect.y,
-                width: selectionRect.width,
-                height: selectionRect.height,
-              }}
-            />
-          )}
-        </div>
-
-        {/* Selection Toolbar */}
-        {selectedElement && (
-          <SelectionToolbar
-            selectedElement={selectedElement}
-            selectedElements={selectedElements}
-            onUpdateElement={onUpdateElement}
-            onBulkUpdate={onBulkUpdate}
-            onDelete={onBulkDelete}
-            onDuplicate={onDuplicate}
-            zoom={zoom}
-            pan={pan}
-            selectedRect={selectedRect}
+        {/* Selection rectangle */}
+        {isSelecting && selectionRect && (
+          <div
+            className="absolute border-2 border-blue-500 bg-blue-100 bg-opacity-20 pointer-events-none"
+            style={{
+              left: selectionRect.x,
+              top: selectionRect.y,
+              width: selectionRect.width,
+              height: selectionRect.height,
+            }}
           />
         )}
       </div>
+
+      {/* Selection Toolbar */}
+      {selectedElement && (
+        <SelectionToolbar
+          selectedElement={selectedElement}
+          selectedElements={selectedElements}
+          onUpdateElement={onUpdateElement}
+          onBulkUpdate={onBulkUpdate}
+          onDelete={onBulkDelete}
+          onDuplicate={onDuplicate}
+          zoom={zoom}
+          pan={pan}
+          selectedRect={selectedRect}
+        />
+      )}
+    </div>
   )
 }

@@ -54,6 +54,8 @@
     "@tiptap/extension-table-row": "^3.10.2",
     "@tiptap/react": "^3.10.2",
     "@tiptap/starter-kit": "^3.10.2",
+    "@types/dompurify": "^3.0.5",
+    "@types/exceljs": "^0.5.3",
     "@uiw/react-codemirror": "^4.25.2",
     "@xyflow/react": "^12.9.3",
     "autoprefixer": "^10.0.1",
@@ -62,10 +64,13 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "dompurify": "^3.3.1",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "highlight.js": "^11.11.1",
     "ioredis": "^5.3.2",
     "js-yaml": "^4.1.1",
+    "lru-cache": "^11.2.4",
     "lucide-react": "^0.553.0",
     "minio": "^8.0.6",
     "next": "^16.0.1",
@@ -137,7 +142,9 @@
     "puppeteer": "^24.23.0",
     "react-colorful": "^5.6.1",
     "socket.io-client": "^4.8.1",
-    "swagger-ui-react": "^5.29.1",
-    "xlsx": "^0.18.5"
+    "swagger-ui-react": "^5.29.1"
+  },
+  "overrides": {
+    "qs": "^6.14.1"
   }
 }

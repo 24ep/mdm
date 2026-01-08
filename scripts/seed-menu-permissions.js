@@ -97,8 +97,8 @@ async function seedRoles() {
             const existing = await prisma.$queryRaw`SELECT id FROM roles WHERE name = ${role.name}`;
             if (existing.length === 0) {
                 await prisma.$executeRaw`
-          INSERT INTO roles (id, name, description, created_at, updated_at)
-          VALUES (gen_random_uuid(), ${role.name}, ${role.description}, NOW(), NOW())
+          INSERT INTO roles (id, name, description)
+          VALUES (gen_random_uuid(), ${role.name}, ${role.description})
         `;
                 console.log(`  ✅ Created role: ${role.name}`);
             } else {

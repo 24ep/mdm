@@ -313,6 +313,21 @@ const nextConfig = {
 
     return config
   },
+  // HTTP Headers to prevent search engine indexing
+  async headers() {
+    return [
+      {
+        // Apply to all routes
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive, nosnippet, noimageindex',
+          },
+        ],
+      },
+    ]
+  },
   // Rewrites to bypass Nginx /api collision
   async rewrites() {
     return []

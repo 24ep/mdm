@@ -3,7 +3,7 @@ import { requireSpaceAccess } from '@/lib/space-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { query } from '@/lib/db'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 async function postHandler(
   request: NextRequest,
@@ -47,12 +47,12 @@ async function postHandler(
     const profile = profileResult.rows[0]
 
     // Check if user has access to this profile
-    const hasAccess = profile.is_public || 
-                     profile.created_by === session.user.id ||
-                     profile.sharing_config.some((share: any) => 
-                       share.sharing_type === 'all_users' ||
-                       (share.sharing_type === 'specific_users' && share.target_id === session.user.id)
-                     )
+    const hasAccess = profile.is_public ||
+      profile.created_by === session.user.id ||
+      profile.sharing_config.some((share: any) =>
+        share.sharing_type === 'all_users' ||
+        (share.sharing_type === 'specific_users' && share.target_id === session.user.id)
+      )
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
@@ -100,7 +100,7 @@ async function postHandler(
 
     // Get the table name from data model
     const tableName = profile.data_model.toLowerCase()
-    
+
     const sqlQuery = `
       SELECT ${selectClause}
       FROM ${tableName}
@@ -122,19 +122,23 @@ async function postHandler(
     let fileName: string
     let mimeType: string
 
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Export')
+
+    if (exportData.length > 0) {
+      const headers = Object.keys(exportData[0])
+      worksheet.addRow(headers)
+      exportData.forEach(row => {
+        worksheet.addRow(Object.values(row))
+      })
+    }
+
     if (profile.format === 'xlsx') {
-      // Create Excel file
-      const worksheet = XLSX.utils.json_to_sheet(exportData)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Export')
-      
-      fileBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
+      fileBuffer = (await workbook.xlsx.writeBuffer()) as any as Buffer
       fileName = `${profile.name}_${new Date().toISOString().split('T')[0]}.xlsx`
       mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     } else {
-      // Create CSV file
-      const csvContent = convertToCSV(exportData)
-      fileBuffer = Buffer.from(csvContent, 'utf-8')
+      fileBuffer = (await workbook.csv.writeBuffer()) as any as Buffer
       fileName = `${profile.name}_${new Date().toISOString().split('T')[0]}.csv`
       mimeType = 'text/csv'
     }
@@ -160,7 +164,7 @@ async function postHandler(
 
 function buildFilterCondition(filter: any, paramIndex: number): string {
   const { attribute, operator, value } = filter
-  
+
   switch (operator) {
     case 'equals':
       return `${attribute} = $${paramIndex}`
@@ -177,30 +181,6 @@ function buildFilterCondition(filter: any, paramIndex: number): string {
     default:
       return `${attribute} = $${paramIndex}`
   }
-}
-
-function convertToCSV(data: any[]): string {
-  if (data.length === 0) return ''
-  
-  const headers = Object.keys(data[0])
-  const csvRows = [headers.join(',')]
-  
-  for (const row of data) {
-    const values = headers.map(header => {
-      const value = row[header]
-      if (value === null || value === undefined) return ''
-      
-      // Escape quotes and wrap in quotes if contains comma, quote, or newline
-      const stringValue = String(value)
-      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-        return `"${stringValue.replace(/"/g, '""')}"`
-      }
-      return stringValue
-    })
-    csvRows.push(values.join(','))
-  }
-  
-  return csvRows.join('\n')
 }
 
 export const POST = withErrorHandling(postHandler, 'POST POST /api/export-profiles/[id]/execute/route.ts')

@@ -1,6 +1,6 @@
 import { Job } from './job-queue'
 import { query } from '@/lib/db'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { downloadJobFile } from './storage-helper'
 
 /**
@@ -20,8 +20,8 @@ export async function processImportJob(job: Job): Promise<void> {
 
     const importJob = jobResult.rows[0]
     const dataModelId = importJob.data_model_id
-    const mapping = typeof importJob.mapping === 'string' 
-      ? JSON.parse(importJob.mapping) 
+    const mapping = typeof importJob.mapping === 'string'
+      ? JSON.parse(importJob.mapping)
       : importJob.mapping
     const filePath = importJob.file_path || importJob.file_name
 
@@ -41,24 +41,48 @@ export async function processImportJob(job: Job): Promise<void> {
     let rows: any[] = []
     const fileType = importJob.file_type || ''
 
-    if (fileType.includes('csv') || fileType === 'text/csv') {
-      // Parse CSV
-      const csvText = fileBuffer.toString('utf-8')
-      const workbook = XLSX.read(csvText, { type: 'string' })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      rows = XLSX.utils.sheet_to_json(worksheet, { raw: false })
-    } else if (
-      fileType.includes('excel') || 
-      fileType.includes('spreadsheet') ||
+    if (fileType.includes('csv') || fileType === 'text/csv' ||
+      fileType.includes('excel') || fileType.includes('spreadsheet') ||
       fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-      fileType === 'application/vnd.ms-excel'
-    ) {
-      // Parse Excel
-      const workbook = XLSX.read(fileBuffer, { type: 'buffer' })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      rows = XLSX.utils.sheet_to_json(worksheet, { raw: false })
+      fileType === 'application/vnd.ms-excel') {
+
+      const workbook = new ExcelJS.Workbook()
+
+      if (fileType.includes('csv') || fileType === 'text/csv') {
+        const csvText = fileBuffer.toString('utf-8')
+        // ExcelJS load function doesn't take string directly for CSV normally, but we can use a Stream
+        const { Readable } = require('stream')
+        const stream = Readable.from([csvText])
+        await workbook.csv.read(stream)
+      } else {
+        await workbook.xlsx.load(fileBuffer)
+      }
+
+      const worksheet = workbook.worksheets[0]
+      const jsonData: any[] = []
+
+      // Get headers from first row
+      const headers: string[] = []
+      const firstRow = worksheet.getRow(1)
+      firstRow.eachCell((cell, colNumber) => {
+        headers[colNumber] = cell.text
+      })
+
+      // Add data rows
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return // Skip header
+
+        const rowData: Record<string, any> = {}
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber]
+          if (header) {
+            rowData[header] = cell.value
+          }
+        })
+        jsonData.push(rowData)
+      })
+
+      rows = jsonData
     } else {
       throw new Error(`Unsupported file type: ${fileType}`)
     }
@@ -93,7 +117,7 @@ export async function processImportJob(job: Job): Promise<void> {
         try {
           // Map row data according to mapping
           const mappedData: Record<string, any> = {}
-          
+
           if (Object.keys(mapping).length > 0) {
             // Use provided mapping
             for (const [sourceCol, targetAttr] of Object.entries(mapping)) {
@@ -172,7 +196,7 @@ export async function processImportJob(job: Job): Promise<void> {
     }
   } catch (error: any) {
     console.error('Import job processing error:', error)
-    
+
     // Mark as failed
     await query(
       `UPDATE import_jobs 

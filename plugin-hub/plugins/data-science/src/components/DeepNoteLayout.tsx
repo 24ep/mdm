@@ -1,20 +1,21 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { 
-  Play, 
-  Plus, 
-  Trash2, 
-  Save, 
-  Download, 
-  Upload, 
-  Copy, 
-  Edit, 
-  Eye, 
+import {
+  Play,
+  Plus,
+  Trash2,
+  Save,
+  Download,
+  Upload,
+  Copy,
+  Edit,
+  Eye,
   EyeOff,
   BarChart3,
   FileText,
@@ -185,9 +186,9 @@ interface DeepNoteLayoutProps {
   enableVersionControl?: boolean
 }
 
-export function DeepNoteLayout({ 
-  initialNotebook, 
-  onSave, 
+export function DeepNoteLayout({
+  initialNotebook,
+  onSave,
   onLoad,
   dataSource,
   enableCollaboration = true,
@@ -215,7 +216,7 @@ export function DeepNoteLayout({
       wordWrap: true
     }
   })
-  
+
   const [activeCellId, setActiveCellId] = useState<string | null>(null)
   const [selectedCellIds, setSelectedCellIds] = useState<Set<string>>(new Set())
   const [isExecuting, setIsExecuting] = useState(false)
@@ -250,7 +251,7 @@ export function DeepNoteLayout({
     { name: 'utils.py', type: 'file' as const, size: '856 B', modified: new Date() },
     { name: 'README.md', type: 'file' as const, size: '1.1 KB', modified: new Date() }
   ])
-  
+
   const notebookRef = useRef<HTMLDivElement>(null)
   const cellRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
@@ -287,7 +288,7 @@ export function DeepNoteLayout({
       } else {
         newCells.push(newCell)
       }
-      
+
       return {
         ...prev,
         cells: newCells,
@@ -324,18 +325,18 @@ export function DeepNoteLayout({
 
     setIsExecuting(true)
     setKernelStatus('busy')
-    
+
     // Update cell status
     setNotebook(prev => ({
       ...prev,
-      cells: prev.cells.map(c => 
+      cells: prev.cells.map(c =>
         c.id === cellId ? { ...c, status: 'running' } : c
       )
     }))
 
     try {
       const startTime = Date.now()
-      
+
       // Execute using the notebook engine
       const result = await notebookEngine.executeCode(
         cell.content,
@@ -353,15 +354,15 @@ export function DeepNoteLayout({
       // Update cell with results
       setNotebook(prev => ({
         ...prev,
-        cells: prev.cells.map(c => 
-          c.id === cellId 
-            ? { 
-                ...c, 
-                output: result, 
-                status: 'success', 
-                executionTime,
-                timestamp: new Date()
-              } 
+        cells: prev.cells.map(c =>
+          c.id === cellId
+            ? {
+              ...c,
+              output: result,
+              status: 'success',
+              executionTime,
+              timestamp: new Date()
+            }
             : c
         ),
         updatedAt: new Date()
@@ -384,17 +385,17 @@ export function DeepNoteLayout({
     } catch (error) {
       setNotebook(prev => ({
         ...prev,
-        cells: prev.cells.map(c => 
-          c.id === cellId 
-            ? { 
-                ...c, 
-                output: { 
-                  error: error instanceof Error ? error.message : 'Execution failed',
-                  details: error 
-                }, 
-                status: 'error',
-                timestamp: new Date()
-              } 
+        cells: prev.cells.map(c =>
+          c.id === cellId
+            ? {
+              ...c,
+              output: {
+                error: error instanceof Error ? error.message : 'Execution failed',
+                details: error
+              },
+              status: 'error',
+              timestamp: new Date()
+            }
             : c
         ),
         updatedAt: new Date()
@@ -429,7 +430,7 @@ export function DeepNoteLayout({
   const updateCellContent = (cellId: string, content: string) => {
     setNotebook(prev => ({
       ...prev,
-      cells: prev.cells.map(cell => 
+      cells: prev.cells.map(cell =>
         cell.id === cellId ? { ...cell, content, timestamp: new Date() } : cell
       ),
       updatedAt: new Date()
@@ -441,17 +442,17 @@ export function DeepNoteLayout({
     setNotebook(prev => {
       const cells = [...prev.cells]
       const currentIndex = cells.findIndex(cell => cell.id === cellId)
-      
+
       if (currentIndex === -1) return prev
-      
+
       const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-      
+
       if (newIndex < 0 || newIndex >= cells.length) return prev
-      
+
       const temp = cells[currentIndex]
       cells[currentIndex] = cells[newIndex]
       cells[newIndex] = temp
-      
+
       return {
         ...prev,
         cells,
@@ -514,7 +515,7 @@ export function DeepNoteLayout({
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               size="sm"
@@ -528,7 +529,7 @@ export function DeepNoteLayout({
             >
               <Play className="h-3 w-3" />
             </Button>
-            
+
             <Button
               size="sm"
               variant="ghost"
@@ -540,7 +541,7 @@ export function DeepNoteLayout({
             >
               <ArrowUp className="h-3 w-3" />
             </Button>
-            
+
             <Button
               size="sm"
               variant="ghost"
@@ -552,7 +553,7 @@ export function DeepNoteLayout({
             >
               <ArrowDown className="h-3 w-3" />
             </Button>
-            
+
             <Button
               size="sm"
               variant="ghost"
@@ -577,7 +578,7 @@ export function DeepNoteLayout({
                 className="w-full h-32 p-3 border border-gray-300 rounded-md font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Write your code here..."
               />
-              
+
               {cell.output && (
                 <div className="bg-gray-900 text-green-400 p-3 rounded-md font-mono text-sm whitespace-pre-wrap">
                   {cell.output.output || cell.output.error}
@@ -592,16 +593,18 @@ export function DeepNoteLayout({
                 className="w-full h-32 p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Write your markdown here..."
               />
-              
+
               <div className="prose max-w-none">
-                <div dangerouslySetInnerHTML={{ 
-                  __html: cell.content
-                    .replace(/\n/g, '<br>')
-                    .replace(/# (.*)/g, '<h1>$1</h1>')
-                    .replace(/## (.*)/g, '<h2>$1</h2>')
-                    .replace(/### (.*)/g, '<h3>$1</h3>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                <div dangerouslySetInnerHTML={{
+                  __html: typeof window !== 'undefined'
+                    ? DOMPurify.sanitize(cell.content
+                      .replace(/\n/g, '<br>')
+                      .replace(/# (.*)/g, '<h1>$1</h1>')
+                      .replace(/## (.*)/g, '<h2>$1</h2>')
+                      .replace(/### (.*)/g, '<h3>$1</h3>')
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em>$1</em>'))
+                    : cell.content
                 }} />
               </div>
             </div>
@@ -706,7 +709,7 @@ export function DeepNoteLayout({
   }
 
   const handleRenameFile = (filePath: string, newName: string) => {
-    setFiles(prev => prev.map(file => 
+    setFiles(prev => prev.map(file =>
       file.name === filePath ? { ...file, name: newName } : file
     ))
     toast.success(`Renamed to: ${newName}`)
@@ -785,13 +788,13 @@ export function DeepNoteLayout({
   const toggleCellType = (cellId: string) => {
     setNotebook(prev => ({
       ...prev,
-      cells: prev.cells.map(cell => 
-        cell.id === cellId 
-          ? { 
-              ...cell, 
-              type: cell.type === 'code' ? 'markdown' : cell.type === 'markdown' ? 'raw' : 'code',
-              content: getDefaultContent(cell.type === 'code' ? 'markdown' : cell.type === 'markdown' ? 'raw' : 'code')
-            } 
+      cells: prev.cells.map(cell =>
+        cell.id === cellId
+          ? {
+            ...cell,
+            type: cell.type === 'code' ? 'markdown' : cell.type === 'markdown' ? 'raw' : 'code',
+            content: getDefaultContent(cell.type === 'code' ? 'markdown' : cell.type === 'markdown' ? 'raw' : 'code')
+          }
           : cell
       ),
       updatedAt: new Date()
@@ -940,7 +943,7 @@ export function DeepNoteLayout({
                     onTypeChange={(cellId, type) => {
                       setNotebook(prev => ({
                         ...prev,
-                        cells: prev.cells.map(cell => 
+                        cells: prev.cells.map(cell =>
                           cell.id === cellId ? { ...cell, type, content: getDefaultContent(type) } : cell
                         )
                       }))

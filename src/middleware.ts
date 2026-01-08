@@ -2,13 +2,26 @@ import { withAuth } from "next-auth/middleware"
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { addSecurityHeaders, handleCors, addCorsHeaders } from '@/lib/security-headers'
+import { rateLimit } from '@/lib/rate-limit'
+import { csrfMiddleware } from '@/lib/csrf'
 
 export default withAuth(
   function proxy(req: NextRequest & { nextauth: { token: any } }) {
     const path = req.nextUrl.pathname
 
-    // Handle CORS for API routes and custom aliases
+    // Handle CORS and Rate Limiting for API routes
     if (path.startsWith('/api/') || path.startsWith('/next-api/') || path.startsWith('/chat-api/')) {
+      // Rate limiting (100 requests per minute per IP)
+      const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for') || 'anonymous'
+      const limit = rateLimit(ip, 100)
+
+      if (!limit.allowed) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Too many requests', retryAfter: 60 }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
+
       const corsResponse = handleCors(req, {
         origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
         credentials: true,
@@ -16,6 +29,12 @@ export default withAuth(
 
       if (corsResponse) {
         return corsResponse
+      }
+
+      // CSRF Protection for state-changing operations
+      const csrfResponse = csrfMiddleware(req)
+      if (csrfResponse) {
+        return csrfResponse
       }
     }
 

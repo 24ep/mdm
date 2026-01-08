@@ -8,6 +8,7 @@ export interface SystemSettings {
   siteName: string
   siteDescription: string
   siteUrl: string
+  faviconUrl: string
   supportEmail: string
 
   // Database
@@ -29,7 +30,7 @@ export interface SystemSettings {
   maxLoginAttempts: number
   passwordMinLength: number
   requireTwoFactor: boolean
-  
+
   // UI Protection
   disableRightClick: boolean
   secureLoginPage: boolean

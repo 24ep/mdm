@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
+import {
   FileText,
   Edit,
   Eye,
@@ -92,7 +93,7 @@ export function MarkdownCell({
 
   const handleContentChange = (newContent: string) => {
     onContentChange(newContent)
-    
+
     // Add to history
     const newHistory = history.slice(0, historyIndex + 1)
     newHistory.push(newContent)
@@ -236,7 +237,7 @@ export function MarkdownCell({
               </Badge>
             )}
           </div>
-          
+
           <div className="flex items-center gap-1">
             <Button
               size="sm"
@@ -305,7 +306,7 @@ export function MarkdownCell({
           </div>
         </div>
       </CardHeader>
-      
+
       {!isCollapsed && (
         <CardContent>
           {isEditing ? (
@@ -332,9 +333,9 @@ export function MarkdownCell({
                     <Redo className="h-3 w-3" />
                   </Button>
                 </div>
-                
+
                 <div className="w-px h-6 bg-gray-300 mx-2" />
-                
+
                 <div className="flex items-center gap-1">
                   {markdownShortcuts.map((shortcut, index) => (
                     <Button
@@ -349,9 +350,9 @@ export function MarkdownCell({
                     </Button>
                   ))}
                 </div>
-                
+
                 <div className="flex-1" />
-                
+
                 <Button
                   size="sm"
                   variant="ghost"
@@ -403,9 +404,13 @@ Write your documentation here using **Markdown** syntax.
                 {showPreview && (
                   <div className="border border-gray-200 rounded-md p-3 bg-white">
                     <div className="text-xs text-gray-500 mb-2 font-medium">Live Preview</div>
-                    <div 
+                    <div
                       className="prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+                      dangerouslySetInnerHTML={{
+                        __html: typeof window !== 'undefined'
+                          ? DOMPurify.sanitize(renderMarkdown(content))
+                          : renderMarkdown(content)
+                      }}
                     />
                   </div>
                 )}
@@ -435,8 +440,12 @@ Write your documentation here using **Markdown** syntax.
             <div>
               {/* Rendered Markdown */}
               <div className="prose prose-sm max-w-none">
-                <div 
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: typeof window !== 'undefined'
+                      ? DOMPurify.sanitize(renderMarkdown(content))
+                      : renderMarkdown(content)
+                  }}
                 />
               </div>
 

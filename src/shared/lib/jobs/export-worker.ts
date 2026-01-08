@@ -1,6 +1,6 @@
 import { Job } from './job-queue'
 import { query } from '@/lib/db'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { uploadJobFile } from './storage-helper'
 
 /**
@@ -108,20 +108,30 @@ export async function processExportJob(job: Job): Promise<void> {
     let fileName: string
     let mimeType: string
 
-    if (format === 'xlsx') {
-      // Create Excel workbook
-      const worksheet = XLSX.utils.json_to_sheet(allData)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data')
-      fileBuffer = Buffer.from(XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }))
-      fileName = `export-${job.id}.xlsx`
-      mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    } else if (format === 'csv') {
-      // Create CSV
-      const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(allData))
-      fileBuffer = Buffer.from(csv, 'utf-8')
-      fileName = `export-${job.id}.csv`
-      mimeType = 'text/csv'
+    if (format === 'xlsx' || format === 'csv') {
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('Data')
+
+      if (allData.length > 0) {
+        // Add headers
+        const headers = Object.keys(allData[0])
+        worksheet.addRow(headers)
+
+        // Add rows
+        allData.forEach(row => {
+          worksheet.addRow(Object.values(row))
+        })
+      }
+
+      if (format === 'xlsx') {
+        fileBuffer = (await workbook.xlsx.writeBuffer()) as Buffer
+        fileName = `export-${job.id}.xlsx`
+        mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      } else {
+        fileBuffer = (await workbook.csv.writeBuffer()) as Buffer
+        fileName = `export-${job.id}.csv`
+        mimeType = 'text/csv'
+      }
     } else if (format === 'json') {
       // Create JSON
       fileBuffer = Buffer.from(JSON.stringify(allData, null, 2), 'utf-8')
@@ -133,7 +143,7 @@ export async function processExportJob(job: Job): Promise<void> {
 
     // Upload file to storage
     const uploadResult = await uploadJobFile(fileName, fileBuffer, mimeType, 'export')
-    
+
     if (!uploadResult.success) {
       throw new Error(uploadResult.error || 'Failed to upload file to storage')
     }

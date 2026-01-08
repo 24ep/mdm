@@ -19,6 +19,17 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Unified Data Platform',
   description: 'Comprehensive unified data platform for event organizations',
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+      'max-video-preview': -1,
+      'max-image-preview': 'none',
+      'max-snippet': -1,
+    },
+  },
 }
 
 export const viewport: Viewport = {
@@ -39,15 +50,15 @@ export default function RootLayout({
         <GlobalErrorHandler />
         <Providers>
           <DynamicFavicon />
-             <SecurityProvider>
-              <SidebarProvider>
-                <Suspense fallback={<LoadingPage />}>
-                  <SpaceProvider>
-                    {children}
-                  </SpaceProvider>
-                </Suspense>
-              </SidebarProvider>
-             </SecurityProvider>
+          <SecurityProvider>
+            <SidebarProvider>
+              <Suspense fallback={<LoadingPage />}>
+                <SpaceProvider>
+                  {children}
+                </SpaceProvider>
+              </Suspense>
+            </SidebarProvider>
+          </SecurityProvider>
         </Providers>
       </body>
     </html>

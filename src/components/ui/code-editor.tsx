@@ -12,6 +12,7 @@ import { createSQLAutocomplete, fetchDatabaseSchema } from '@/lib/sql-autocomple
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import 'highlight.js/styles/github-dark.css'
+import DOMPurify from 'dompurify'
 
 interface CodeEditorProps {
   value: string
@@ -66,13 +67,13 @@ export function CodeEditor({
   const [sqlAutocomplete, setSqlAutocomplete] = useState<any>(null)
   const internalEditorRef = useRef<any>(null)
   const viewRef = useRef<EditorView | null>(null)
-  
+
   // Use provided ref or internal ref
   const codeMirrorRef = editorRef || internalEditorRef
-  
+
   // For SQL language, use CodeMirror with proper autocomplete
   const isSQL = language.toLowerCase() === 'sql'
-  
+
   // Expose jump to line function via ref
   useEffect(() => {
     if (codeMirrorRef && onJumpToLine) {
@@ -82,7 +83,7 @@ export function CodeEditor({
           const doc = viewRef.current.state.doc
           const linePos = doc.line(lineNumber).from
           const pos = column ? linePos + Math.max(0, column - 1) : linePos
-          
+
           viewRef.current.dispatch({
             selection: { anchor: pos, head: pos },
             effects: EditorView.scrollIntoView(pos, { y: 'center' })
@@ -90,14 +91,14 @@ export function CodeEditor({
           viewRef.current.focus()
         }
       }
-      
+
       // Store jump function in ref
       if (codeMirrorRef.current) {
         codeMirrorRef.current.jumpToLine = jumpToLine
       }
     }
   }, [codeMirrorRef, onJumpToLine, value])
-  
+
   // Fetch database schema for SQL autocomplete
   useEffect(() => {
     // Skip during build time - API won't be available
@@ -107,7 +108,7 @@ export function CodeEditor({
       setSqlAutocomplete(defaultAutocomplete)
       return
     }
-    
+
     if (isSQL && options.enableAutoComplete !== false) {
       fetchDatabaseSchema()
         .then(schema => {
@@ -136,7 +137,7 @@ export function CodeEditor({
   // Memoize SQL extensions to avoid recreating them on every render
   const sqlExtensions = useMemo(() => {
     if (!isSQL) return []
-    
+
     // Check if sql function is available
     if (typeof sql !== 'function') {
       console.warn('SQL extension not available, falling back to basic editor')
@@ -159,13 +160,13 @@ export function CodeEditor({
         })
       ]
     }
-    
+
     try {
       // Call sql function with error handling
       let sqlExtension
       try {
         sqlExtension = sql({ dialect: 'postgresql', upperCaseKeywords: true })
-        
+
         // Verify the extension was created successfully
         if (!sqlExtension || (Array.isArray(sqlExtension) && sqlExtension.length === 0)) {
           throw new Error('SQL extension returned empty result')
@@ -196,7 +197,7 @@ export function CodeEditor({
           })
         ]
       }
-      
+
       // Define syntax highlighting styles
       const highlightStyle = HighlightStyle.define([
         { tag: tags.keyword, color: '#0077aa', fontWeight: 'bold' },
@@ -211,22 +212,22 @@ export function CodeEditor({
         { tag: tags.function(tags.variableName), color: '#6f42c1' },
         { tag: tags.className, color: '#0077aa' },
       ])
-      
+
       // Configure autocomplete - always include it
       // If we have custom autocomplete, use it; otherwise use default SQL autocomplete
-      const autocompleteExtension = sqlAutocomplete 
-        ? autocompletion({ 
-            override: [sqlAutocomplete],
-            activateOnTyping: true,
-            maxRenderedOptions: 10,
-            defaultKeymap: true
-          })
+      const autocompleteExtension = sqlAutocomplete
+        ? autocompletion({
+          override: [sqlAutocomplete],
+          activateOnTyping: true,
+          maxRenderedOptions: 10,
+          defaultKeymap: true
+        })
         : autocompletion({
-            activateOnTyping: true,
-            maxRenderedOptions: 10,
-            defaultKeymap: true
-          })
-      
+          activateOnTyping: true,
+          maxRenderedOptions: 10,
+          defaultKeymap: true
+        })
+
       return [
         sqlExtension, // Language extension first for syntax highlighting
         autocompleteExtension, // Autocomplete extension
@@ -324,17 +325,17 @@ export function CodeEditor({
   const [currentFindIndex, setCurrentFindIndex] = useState(0)
   const [foldedLines, setFoldedLines] = useState<Set<number>>(new Set())
   const [highlightedCode, setHighlightedCode] = useState<string>('')
-  const [syntaxErrors, setSyntaxErrors] = useState<Array<{line: number, column: number, message: string, severity: 'error' | 'warning' | 'info'}>>([])
+  const [syntaxErrors, setSyntaxErrors] = useState<Array<{ line: number, column: number, message: string, severity: 'error' | 'warning' | 'info' }>>([])
   const [autoCompleteSuggestions, setAutoCompleteSuggestions] = useState<string[]>([])
   const [showAutoComplete, setShowAutoComplete] = useState(false)
-  const [autoCompletePosition, setAutoCompletePosition] = useState({top: 0, left: 0})
+  const [autoCompletePosition, setAutoCompletePosition] = useState({ top: 0, left: 0 })
   const [currentWord, setCurrentWord] = useState('')
-  const [bracketPairs, setBracketPairs] = useState<Array<{open: number, close: number, type: string}>>([])
+  const [bracketPairs, setBracketPairs] = useState<Array<{ open: number, close: number, type: string }>>([])
   const [wordOccurrences, setWordOccurrences] = useState<number[]>([])
   const [currentLineHighlight, setCurrentLineHighlight] = useState<number>(1)
-  const [codeSnippets, setCodeSnippets] = useState<Array<{trigger: string, content: string, description: string}>>([])
+  const [codeSnippets, setCodeSnippets] = useState<Array<{ trigger: string, content: string, description: string }>>([])
   const [showSnippets, setShowSnippets] = useState(false)
-  const [snippetSuggestions, setSnippetSuggestions] = useState<Array<{trigger: string, content: string, description: string}>>([])
+  const [snippetSuggestions, setSnippetSuggestions] = useState<Array<{ trigger: string, content: string, description: string }>>([])
 
   // Syntax highlighting using highlight.js
   const highlightSyntax = useCallback((code: string, lang: string) => {
@@ -377,7 +378,7 @@ export function CodeEditor({
       }
 
       const hljsLang = languageMap[lang.toLowerCase()] || 'plaintext'
-      
+
       if (hljsLang === 'plaintext') {
         return code
       }
@@ -434,25 +435,25 @@ export function CodeEditor({
     }
 
     const langSuggestions = suggestions[language.toLowerCase()] || []
-    return langSuggestions.filter(suggestion => 
+    return langSuggestions.filter(suggestion =>
       suggestion.toLowerCase().startsWith(word.toLowerCase())
     ).slice(0, 10)
   }, [])
 
   // Syntax validation
   const validateSyntax = useCallback((code: string, language: string) => {
-    const errors: Array<{line: number, column: number, message: string, severity: 'error' | 'warning' | 'info'}> = []
-    
+    const errors: Array<{ line: number, column: number, message: string, severity: 'error' | 'warning' | 'info' }> = []
+
     if (language === 'sql') {
       // Basic SQL validation
       const lines = code.split('\n')
       lines.forEach((line, lineIndex) => {
         const trimmedLine = line.trim()
-        
+
         // Check for unmatched quotes
         const singleQuotes = (line.match(/'/g) || []).length
         const doubleQuotes = (line.match(/"/g) || []).length
-        
+
         if (singleQuotes % 2 !== 0) {
           errors.push({
             line: lineIndex + 1,
@@ -461,7 +462,7 @@ export function CodeEditor({
             severity: 'error'
           })
         }
-        
+
         if (doubleQuotes % 2 !== 0) {
           errors.push({
             line: lineIndex + 1,
@@ -470,7 +471,7 @@ export function CodeEditor({
             severity: 'error'
           })
         }
-        
+
         // Check for basic SQL syntax
         if (trimmedLine.startsWith('SELECT') && !trimmedLine.includes('FROM')) {
           errors.push({
@@ -486,11 +487,11 @@ export function CodeEditor({
       const lines = code.split('\n')
       lines.forEach((line, lineIndex) => {
         const trimmedLine = line.trim()
-        
+
         // Check for unmatched brackets
         const openBrackets = (line.match(/[{[\(]/g) || []).length
         const closeBrackets = (line.match(/[}\]\)]/g) || []).length
-        
+
         if (openBrackets !== closeBrackets) {
           errors.push({
             line: lineIndex + 1,
@@ -499,7 +500,7 @@ export function CodeEditor({
             severity: 'error'
           })
         }
-        
+
         // Check for missing semicolons (basic)
         if (trimmedLine && !trimmedLine.endsWith(';') && !trimmedLine.endsWith('{') && !trimmedLine.endsWith('}')) {
           if (trimmedLine.includes('=') || trimmedLine.includes('return')) {
@@ -513,24 +514,24 @@ export function CodeEditor({
         }
       })
     }
-    
+
     return errors
   }, [])
 
   // Bracket matching
   const findBracketPairs = useCallback((code: string) => {
-    const pairs: Array<{open: number, close: number, type: string}> = []
-    const stack: Array<{pos: number, type: string}> = []
+    const pairs: Array<{ open: number, close: number, type: string }> = []
+    const stack: Array<{ pos: number, type: string }> = []
     const bracketMap: { [key: string]: string } = {
       '(': ')',
       '[': ']',
       '{': '}',
       '<': '>'
     }
-    
+
     for (let i = 0; i < code.length; i++) {
       const char = code[i]
-      
+
       if (['(', '[', '{', '<'].includes(char)) {
         stack.push({ pos: i, type: char })
       } else if ([')', ']', '}', '>'].includes(char)) {
@@ -544,7 +545,7 @@ export function CodeEditor({
         }
       }
     }
-    
+
     return pairs
   }, [])
 
@@ -553,17 +554,17 @@ export function CodeEditor({
     const occurrences: number[] = []
     const regex = new RegExp(`\\b${word}\\b`, 'gi')
     let match
-    
+
     while ((match = regex.exec(code)) !== null) {
       occurrences.push(match.index)
     }
-    
+
     return occurrences
   }, [])
 
   // Code snippets for database and data model operations
   const getCodeSnippets = useCallback((language: string) => {
-    const snippets: Array<{trigger: string, content: string, description: string}> = [
+    const snippets: Array<{ trigger: string, content: string, description: string }> = [
       // Database Operations
       {
         trigger: 'db-create',
@@ -583,7 +584,7 @@ COLLATE utf8mb4_unicode_ci;`,
 mysqldump -u \${1:username} -p \${2:database_name} > \${3:backup_file.sql}`,
         description: 'Database Backup'
       },
-      
+
       // Data Model Operations
       {
         trigger: 'model-create',
@@ -607,7 +608,7 @@ ADD COLUMN \${2:column_name} \${3:data_type} \${4:constraints};`,
         content: `CREATE INDEX idx_\${1:index_name} ON \${2:table_name} (\${3:column_name});`,
         description: 'Create Index'
       },
-      
+
       // Entity Operations
       {
         trigger: 'entity-select',
@@ -638,7 +639,7 @@ SET name = \${1:'new_name'},
 WHERE id = \${3:entity_id};`,
         description: 'Update Entity'
       },
-      
+
       // Attribute Operations
       {
         trigger: 'attr-select',
@@ -661,7 +662,7 @@ ORDER BY a.name;`,
 VALUES (\${1:'attribute_name'}, \${2:'VARCHAR'}, \${3:true}, \${4:NULL}, \${5:data_model_id});`,
         description: 'Insert Attribute'
       },
-      
+
       // Space Operations
       {
         trigger: 'space-select',
@@ -691,7 +692,7 @@ WHERE s.id = \${1:space_id}
 GROUP BY s.id, dm.id;`,
         description: 'Space with Models and Entities'
       },
-      
+
       // Relationship Operations
       {
         trigger: 'rel-select',
@@ -708,7 +709,7 @@ JOIN entities e2 ON r.target_entity_id = e2.id
 WHERE r.data_model_id = \${1:data_model_id};`,
         description: 'Select Relationships'
       },
-      
+
       // User and Permission Operations
       {
         trigger: 'user-select',
@@ -726,7 +727,7 @@ LEFT JOIN spaces s ON sp.space_id = s.id
 WHERE u.id = \${1:user_id};`,
         description: 'Select User with Roles and Permissions'
       },
-      
+
       // Analytics Queries
       {
         trigger: 'analytics-models',
@@ -756,7 +757,7 @@ ORDER BY date DESC;`,
         description: 'Analytics: Usage Over Time'
       }
     ]
-    
+
     return snippets
   }, [])
 
@@ -765,26 +766,26 @@ ORDER BY date DESC;`,
     const lines = value.split('\n')
     const numbers = lines.map((_, index) => (index + 1).toString())
     setLineNumbers(numbers)
-    
+
     // Generate syntax highlighted code using highlight.js
     const highlighted = highlightSyntax(value, language)
     setHighlightedCode(highlighted)
-    
+
     // Validate syntax if enabled
     if (options.enableSyntaxValidation) {
       const errors = validateSyntax(value, language)
       setSyntaxErrors(errors)
     }
-    
+
     // Find bracket pairs if enabled
     if (options.enableBracketMatching) {
       const pairs = findBracketPairs(value)
       setBracketPairs(pairs)
     }
-    
+
     // Update current line highlight
     setCurrentLineHighlight(cursorPosition.line)
-    
+
     // Initialize code snippets
     if (options.enableSnippets) {
       const snippets = getCodeSnippets(language)
@@ -803,7 +804,7 @@ ORDER BY date DESC;`,
       const line = lines.length
       const column = lines[lines.length - 1].length + 1
       setCursorPosition({ line, column })
-      
+
       // Update selected text
       if (start !== end) {
         setSelectedText(value.substring(start, end))
@@ -820,24 +821,24 @@ ORDER BY date DESC;`,
       setCurrentFindIndex(0)
       return
     }
-    
+
     const results: number[] = []
     const lines = value.split('\n')
     let currentIndex = 0
-    
+
     lines.forEach((line, lineIndex) => {
       const lineStart = currentIndex
       const lineEnd = currentIndex + line.length
-      
+
       let searchIndex = line.indexOf(searchText)
       while (searchIndex !== -1) {
         results.push(lineStart + searchIndex)
         searchIndex = line.indexOf(searchText, searchIndex + 1)
       }
-      
+
       currentIndex = lineEnd + 1 // +1 for newline
     })
-    
+
     setFindResults(results)
     setCurrentFindIndex(0)
   }, [value])
@@ -890,14 +891,14 @@ ORDER BY date DESC;`,
       setShowFindReplace(true)
       return
     }
-    
+
     // Ctrl+H for find and replace
     if (e.ctrlKey && e.key === 'h') {
       e.preventDefault()
       setShowFindReplace(true)
       return
     }
-    
+
     // Ctrl+Shift+P for snippets
     if (e.ctrlKey && e.shiftKey && e.key === 'P') {
       e.preventDefault()
@@ -906,7 +907,7 @@ ORDER BY date DESC;`,
       setSnippetSuggestions(snippets)
       return
     }
-    
+
     // Ctrl+A for select all
     if (e.ctrlKey && e.key === 'a') {
       e.preventDefault()
@@ -915,20 +916,20 @@ ORDER BY date DESC;`,
       }
       return
     }
-    
+
     // Ctrl+Z for undo (basic implementation)
     if (e.ctrlKey && e.key === 'z') {
       e.preventDefault()
       // Note: This is a basic implementation. For full undo/redo, you'd need a history stack
       return
     }
-    
+
     // Ctrl+Y for redo
     if (e.ctrlKey && e.key === 'y') {
       e.preventDefault()
       return
     }
-    
+
     // Ctrl+D for duplicate line
     if (e.ctrlKey && e.key === 'd') {
       e.preventDefault()
@@ -945,7 +946,7 @@ ORDER BY date DESC;`,
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Handle keyboard shortcuts first
     handleKeyboardShortcuts(e)
-    
+
     if (e.key === 'Tab') {
       e.preventDefault()
       const textarea = e.currentTarget
@@ -955,7 +956,7 @@ ORDER BY date DESC;`,
       const spaces = ' '.repeat(tabSize)
       const newValue = value.substring(0, start) + spaces + value.substring(end)
       onChange(newValue)
-      
+
       // Set cursor position after the inserted spaces
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + tabSize
@@ -969,7 +970,7 @@ ORDER BY date DESC;`,
       const lines = textBeforeCursor.split('\n')
       const currentLine = lines[lines.length - 1]
       const indent = currentLine.match(/^(\s*)/)?.[1] || ''
-      
+
       setTimeout(() => {
         const newValue = value.substring(0, start) + '\n' + indent + value.substring(start)
         onChange(newValue)
@@ -991,14 +992,14 @@ ORDER BY date DESC;`,
       const textBeforeCursor = value.substring(0, start)
       const words = textBeforeCursor.split(/\s+/)
       const currentWord = words[words.length - 1]
-      
+
       if (currentWord.length > 1) {
         const suggestions = getAutoCompleteSuggestions(currentWord, language)
         if (suggestions.length > 0) {
           setAutoCompleteSuggestions(suggestions)
           setCurrentWord(currentWord)
           setShowAutoComplete(true)
-          
+
           // Calculate position for auto-complete dropdown
           const rect = textarea.getBoundingClientRect()
           setAutoCompletePosition({
@@ -1014,20 +1015,20 @@ ORDER BY date DESC;`,
       const textBeforeCursor = value.substring(0, start)
       const lines = textBeforeCursor.split('\n')
       const currentLine = lines[lines.length - 1]
-      
+
       // Look for snippet triggers
-      const matchingSnippet = codeSnippets.find(snippet => 
+      const matchingSnippet = codeSnippets.find(snippet =>
         currentLine.trim().endsWith(snippet.trigger)
       )
-      
+
       if (matchingSnippet) {
         e.preventDefault()
         const beforeTrigger = currentLine.substring(0, currentLine.lastIndexOf(matchingSnippet.trigger))
         const afterCursor = value.substring(start)
-        const newValue = value.substring(0, start - matchingSnippet.trigger.length) + 
-                        matchingSnippet.content + afterCursor
+        const newValue = value.substring(0, start - matchingSnippet.trigger.length) +
+          matchingSnippet.content + afterCursor
         onChange(newValue)
-        
+
         setTimeout(() => {
           textarea.focus()
           updateCursorPosition()
@@ -1150,10 +1151,10 @@ ORDER BY date DESC;`,
       <div className={`flex ${isFullHeight ? 'flex-1 min-h-0' : ''}`}>
         {/* Line Numbers */}
         {showLineNumbers && (
-          <div 
+          <div
             ref={lineNumbersRef}
             className={`bg-muted border-r border-border text-muted-foreground px-2 py-3 text-xs select-none ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'}`}
-            style={{ 
+            style={{
               fontFamily: getFontFamily(),
               fontSize: getFontSize(),
               ...(isFullHeight ? {} : { minHeight: height }),
@@ -1164,13 +1165,12 @@ ORDER BY date DESC;`,
               const lineNum = index + 1
               const hasError = syntaxErrors.some(error => error.line === lineNum)
               const hasWarning = syntaxErrors.some(error => error.line === lineNum && error.severity === 'warning')
-              
+
               return (
-                <div 
-                  key={index} 
-                  className={`text-right flex items-center justify-between ${
-                    lineNum === cursorPosition.line ? 'text-blue-600 font-medium' : ''
-                  } ${hasError ? 'text-red-500' : hasWarning ? 'text-yellow-500' : ''}`}
+                <div
+                  key={index}
+                  className={`text-right flex items-center justify-between ${lineNum === cursorPosition.line ? 'text-blue-600 font-medium' : ''
+                    } ${hasError ? 'text-red-500' : hasWarning ? 'text-yellow-500' : ''}`}
                 >
                   <span>{num}</span>
                   {hasError && <span className="text-red-500">●</span>}
@@ -1180,11 +1180,11 @@ ORDER BY date DESC;`,
             })}
           </div>
         )}
-        
+
         {/* Code Editor */}
         <div className={`flex-1 relative ${isFullHeight ? 'min-h-0' : ''}`}>
           {/* Syntax Highlighting Overlay */}
-          <div 
+          <div
             className={`absolute inset-0 pointer-events-none p-0 ${isFullHeight ? 'overflow-y-auto' : 'overflow-hidden'} bg-background`}
             style={{
               fontFamily: getFontFamily(),
@@ -1194,12 +1194,16 @@ ORDER BY date DESC;`,
               whiteSpace: 'pre-wrap',
               wordWrap: options.wordWrap ? 'break-word' : 'normal'
             }}
-            dangerouslySetInnerHTML={{ __html: highlightedCode }}
+            dangerouslySetInnerHTML={{
+              __html: typeof window !== 'undefined'
+                ? DOMPurify.sanitize(highlightedCode)
+                : highlightedCode
+            }}
           />
-          
+
           {/* Code Snippets dropdown */}
           {showSnippets && options.enableSnippets && snippetSuggestions.length > 0 && (
-            <div 
+            <div
               className={`absolute z-50 rounded-lg shadow-lg max-h-64 overflow-y-auto bg-background border border-border`}
               style={{
                 top: '50px',
@@ -1230,7 +1234,7 @@ ORDER BY date DESC;`,
                       const end = textarea.selectionEnd
                       const newValue = value.substring(0, start) + snippet.content + value.substring(end)
                       onChange(newValue)
-                      
+
                       setTimeout(() => {
                         textarea.focus()
                         updateCursorPosition()
@@ -1248,7 +1252,7 @@ ORDER BY date DESC;`,
 
           {/* Auto-completion dropdown */}
           {showAutoComplete && options.enableAutoComplete && autoCompleteSuggestions.length > 0 && (
-            <div 
+            <div
               className={`absolute z-50 bg-background border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto`}
               style={{
                 top: autoCompletePosition.top,
@@ -1270,7 +1274,7 @@ ORDER BY date DESC;`,
                       const afterCursor = value.substring(end)
                       const newValue = beforeCursor + suggestion + afterCursor
                       onChange(newValue)
-                      
+
                       setTimeout(() => {
                         textarea.focus()
                         textarea.selectionStart = textarea.selectionEnd = start - currentWord.length + suggestion.length
@@ -1285,18 +1289,17 @@ ORDER BY date DESC;`,
               ))}
             </div>
           )}
-          
+
           {/* Error tooltips */}
           {syntaxErrors.map((error, index) => (
             <div
               key={index}
-              className={`absolute z-40 px-2 py-1 text-xs rounded shadow-lg ${
-                error.severity === 'error' 
-                  ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800' 
+              className={`absolute z-40 px-2 py-1 text-xs rounded shadow-lg ${error.severity === 'error'
+                  ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-800'
                   : error.severity === 'warning'
-                  ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-300 dark:border-yellow-800'
-                  : 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-800'
-              }`}
+                    ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-300 dark:border-yellow-800'
+                    : 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border border-blue-300 dark:border-blue-800'
+                }`}
               style={{
                 top: `${(error.line - 1) * 20 + 12}px`,
                 left: `${error.column * 8 + 60}px`
@@ -1305,7 +1308,7 @@ ORDER BY date DESC;`,
               {error.message}
             </div>
           ))}
-          
+
           {/* Transparent textarea for input */}
           <textarea
             ref={textareaRef}

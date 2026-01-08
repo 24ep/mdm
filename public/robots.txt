@@ -1,0 +1,34 @@
+# Disallow all search engine crawlers from indexing this application
+User-agent: *
+Disallow: /
+
+# Explicitly block Google
+User-agent: Googlebot
+Disallow: /
+
+# Block Google Images
+User-agent: Googlebot-Image
+Disallow: /
+
+# Block Bing
+User-agent: Bingbot
+Disallow: /
+
+# Block Yahoo
+User-agent: Slurp
+Disallow: /
+
+# Block Baidu
+User-agent: Baiduspider
+Disallow: /
+
+# Block Yandex
+User-agent: Yandex
+Disallow: /
+
+# Block DuckDuckGo
+User-agent: DuckDuckBot
+Disallow: /
+
+# No sitemap - internal application
+# Sitemap: none
