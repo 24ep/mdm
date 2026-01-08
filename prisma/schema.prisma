@@ -128,6 +128,7 @@ model Space {
   knowledgeCollections    KnowledgeCollection[]    @relation("SpaceKnowledgeCollections")
   apiWorkspaces           ApiWorkspace[]           @relation("SpaceApiWorkspaces")
   websitePWAs             WebsitePWA[]             @relation("SpaceWebsitePWAs")
+  reportSpaces            ReportSpace[]            @relation("SpaceReports")
 
   @@map("spaces")
 }
@@ -2462,4 +2463,92 @@ model MenuItem {
   sourcePlugin ServiceRegistry? @relation("PluginMenuItems", fields: [sourcePluginId], references: [id], onDelete: SetNull)
 
   @@map("menu_items")
+}
+
+// Reports Module
+model Report {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  source      String    // 'INTERNAL', 'EXTERNAL', 'BUILT_IN'
+  categoryId  String?   @map("category_id") @db.Uuid
+  folderId    String?   @map("folder_id") @db.Uuid
+  owner       String?   // External owner name
+  link        String?   // External link
+  workspace   String?   // External workspace
+  embedUrl    String?   @map("embed_url")
+  metadata    Json?     @default("{}")
+  
+  // Status
+  isActive    Boolean   @default(true) @map("is_active")
+  isPublic    Boolean   @default(false) @map("is_public")
+  
+  // Audit
+  createdBy   String    @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  category    ReportCategory? @relation("CategoryReports", fields: [categoryId], references: [id])
+  folder      ReportFolder?   @relation("FolderReports", fields: [folderId], references: [id])
+  spaces      ReportSpace[]   @relation("ReportSpaces")
+  permissions ReportPermission[] @relation("ReportPermissions")
+
+  @@map("reports")
+}
+
+model ReportSpace {
+  id        String   @id @default(uuid()) @db.Uuid
+  reportId  String   @map("report_id") @db.Uuid
+  spaceId   String   @map("space_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  report    Report   @relation("ReportSpaces", fields: [reportId], references: [id], onDelete: Cascade)
+  space     Space    @relation("SpaceReports", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, spaceId])
+  @@map("report_spaces")
+}
+
+model ReportCategory {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  reports   Report[]  @relation("CategoryReports")
+
+  @@map("report_categories")
+}
+
+model ReportFolder {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  parentId  String?   @map("parent_id") @db.Uuid
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  reports   Report[]  @relation("FolderReports")
+  parent    ReportFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children  ReportFolder[] @relation("FolderHierarchy")
+
+  @@map("report_folders")
+}
+
+model ReportPermission {
+  id        String   @id @default(uuid()) @db.Uuid
+  reportId  String   @map("report_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  report    Report   @relation("ReportPermissions", fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, userId])
+  @@map("report_permissions")
 }

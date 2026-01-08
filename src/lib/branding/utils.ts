@@ -7,13 +7,22 @@
  * Convert hex color to HSL format for CSS variables
  */
 export function hexToHsl(hex: string): string {
-  if (!hex || !hex.startsWith('#')) {
-    return hex // Return as-is if not a hex color
+  if (!hex) return '0 0% 0%'
+
+  let c = hex.startsWith('#') ? hex.slice(1) : hex
+
+  // Handle short hex (e.g. f00 -> ff0000)
+  if (c.length === 3) {
+    c = c.split('').map(char => char + char).join('')
   }
 
-  const r = parseInt(hex.slice(1, 3), 16) / 255
-  const g = parseInt(hex.slice(3, 5), 16) / 255
-  const b = parseInt(hex.slice(5, 7), 16) / 255
+  if (c.length !== 6) {
+    return hex // Return original if not valid hex length
+  }
+
+  const r = parseInt(c.slice(0, 2), 16) / 255
+  const g = parseInt(c.slice(2, 4), 16) / 255
+  const b = parseInt(c.slice(4, 6), 16) / 255
 
   const max = Math.max(r, g, b)
   const min = Math.min(r, g, b)

@@ -237,11 +237,16 @@ export function PlatformSidebar({
   const handleGroupClick = useCallback((groupName: string) => {
     const tabs = groupedTabs[groupName as keyof typeof groupedTabs]
     // Data Management has no secondary sidebar - go directly to the tab and clear selectedGroup
-    if (groupName === 'data-management' && tabs && tabs.length > 0) {
+    if (groupName === 'data-management') {
       if (onGroupSelect) {
         onGroupSelect('') // Clear selectedGroup to hide secondary sidebar
       }
-      handleTabClick(tabs[0].id, (tabs[0] as any).href)
+      // Use tab if available, otherwise fallback to hardcoded path
+      if (tabs && tabs.length > 0) {
+        handleTabClick(tabs[0].id, (tabs[0] as any).href)
+      } else {
+        router.push('/admin/space-selection')
+      }
       return
     }
 

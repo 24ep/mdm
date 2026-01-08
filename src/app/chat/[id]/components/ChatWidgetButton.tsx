@@ -33,6 +33,9 @@ export function ChatWidgetButton({
             return {
                 ...popoverPositionStyle,
                 ...widgetButtonStyle,
+                background: 'transparent',
+                border: 'none',
+                boxShadow: 'none',
                 width: 'auto',
                 height: config.size,
                 borderRadius: config.labelBorderRadius,
@@ -47,6 +50,9 @@ export function ChatWidgetButton({
         return {
             ...popoverPositionStyle,
             ...widgetButtonStyle,
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
         }
     }, [isOpen, config, popoverPositionStyle, widgetButtonStyle])
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Button } from '@/components/ui/button'
@@ -9,24 +9,36 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { 
+import {
   ArrowLeft,
   BarChart3,
   Save
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
+import { useSpaces } from '@/hooks/useSpaces'
 import toast from 'react-hot-toast'
 
 export default function NewReportPage() {
   const router = useRouter()
   const { currentSpace } = useSpace()
+  const { spaces, loading: spacesLoading } = useSpaces()
   const [loading, setLoading] = useState(false)
+
+  // Default to current space if available, otherwise empty
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>(currentSpace?.id || '')
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     category_id: '',
     folder_id: ''
   })
+
+  useEffect(() => {
+    if (currentSpace?.id && !selectedSpaceId) {
+      setSelectedSpaceId(currentSpace.id)
+    }
+  }, [currentSpace, selectedSpaceId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,8 +48,8 @@ export default function NewReportPage() {
       return
     }
 
-    if (!currentSpace?.id) {
-      toast.error('No space selected')
+    if (!selectedSpaceId) {
+      toast.error('Please select a space')
       return
     }
 
@@ -51,7 +63,7 @@ export default function NewReportPage() {
         body: JSON.stringify({
           ...formData,
           source: 'BUILT_IN',
-          space_ids: [currentSpace.id]
+          space_ids: [selectedSpaceId]
         }),
       })
 
@@ -62,9 +74,13 @@ export default function NewReportPage() {
 
       const data = await response.json()
       toast.success('Report created successfully')
-      
-      // Navigate to the report builder or view
-      router.push(`/reports/${data.report.id}`)
+
+      // Find the selected space to get its slug for redirection
+      const selectedSpace = spaces.find(s => s.id === selectedSpaceId)
+      const slug = selectedSpace?.slug || selectedSpaceId
+
+      // Redirect to the space module/dashboard
+      router.push(`/${slug}/module`)
     } catch (error: any) {
       console.error('Error creating report:', error)
       toast.error(error.message || 'Failed to create report')
@@ -109,15 +125,37 @@ export default function NewReportPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="name">Report Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="My Report"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Report Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="My Report"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="space">Space *</Label>
+                  <Select
+                    value={selectedSpaceId}
+                    onValueChange={setSelectedSpaceId}
+                    disabled={spacesLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={spacesLoading ? "Loading spaces..." : "Select a space"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {spaces.map(space => (
+                        <SelectItem key={space.id} value={space.id}>
+                          {space.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>
@@ -185,4 +223,3 @@ export default function NewReportPage() {
     </MainLayout>
   )
 }
-
