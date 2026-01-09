@@ -15,11 +15,11 @@ spec:
       labels:
         app: udp-app
     spec:
-        image: nccgit.qsncc.com:5555/ba/unified-data-platform:1.0.1
-        imagePullPolicy: Always
-        ports:
+      image: nccgit.qsncc.com:5555/ba/unified-data-platform:1.0.0-beta
+      imagePullPolicy: Always
+      ports:
         - containerPort: 8029
-        env:
+      env:
         # From ConfigMap
         - name: NODE_ENV
           valueFrom:
@@ -81,7 +81,7 @@ spec:
             configMapKeyRef:
               name: udp-config
               key: MAIN_APP_URL
-        
+
         # From Secrets
         - name: DATABASE_URL
           valueFrom:
@@ -123,19 +123,19 @@ spec:
             secretKeyRef:
               name: udp-secrets
               key: REDIS_URL
-        
-        resources:
-          limits:
-            memory: "2Gi"
-            cpu: "1000m"
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-        
-        # Add volume mounts if needed (e.g., for uploads if not using S3/MinIO completely)
-        # volumeMounts:
-        # - name: uploads
-        #   mountPath: /app/uploads
+
+      resources:
+        limits:
+          memory: "2Gi"
+          cpu: "1000m"
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+
+      # Add volume mounts if needed (e.g., for uploads if not using S3/MinIO completely)
+      # volumeMounts:
+      # - name: uploads
+      #   mountPath: /app/uploads
 
       # volumes:
       # - name: uploads
@@ -151,7 +151,7 @@ spec:
   selector:
     app: udp-app
   ports:
-  - protocol: TCP
-    port: 8029
-    targetPort: 8029
+    - protocol: TCP
+      port: 8029
+      targetPort: 8029
   type: ClusterIP
