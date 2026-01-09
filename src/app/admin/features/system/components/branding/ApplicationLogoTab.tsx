@@ -103,15 +103,6 @@ export function ApplicationLogoTab({ branding, setBranding, handleApplyBrandingC
                             ) : (
                                 <div className="text-muted-foreground text-sm text-center px-2">No logo</div>
                             )}
-                            ) : branding.applicationLogo ? (
-                            <img
-                                src={branding.applicationLogo}
-                                alt="Application logo"
-                                className="w-full h-full object-contain"
-                            />
-                            ) : (
-                            <div className="text-muted-foreground text-sm text-center px-2">No logo</div>
-                            )}
                         </div>
 
                         {/* Pen Icon Button with Popover */}
