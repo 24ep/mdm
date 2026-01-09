@@ -171,7 +171,7 @@ async function postHandler(request: NextRequest) {
         name, description, source, category_id, folder_id,
         owner, link, workspace, embed_url, metadata,
         created_by, is_active, is_public
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12::boolean, $13::boolean)
+      ) VALUES ($1, $2, $3, $4::uuid, $5::uuid, $6, $7, $8, $9, $10::jsonb, $11::uuid, $12::boolean, $13::boolean)
       RETURNING *
     `
 

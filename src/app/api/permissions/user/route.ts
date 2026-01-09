@@ -28,7 +28,7 @@ async function getHandler(request: NextRequest) {
 
     // Get user's global role
     const { rows: userRows } = await query(
-      'SELECT role FROM users WHERE id = $1',
+      'SELECT role FROM users WHERE id::text = $1',
       [userId]
     )
 
@@ -42,7 +42,7 @@ async function getHandler(request: NextRequest) {
     let spaceRole: string | undefined
     if (spaceId) {
       const { rows: spaceRows } = await query(
-        'SELECT role FROM space_members WHERE space_id = $1 AND user_id = $2',
+        'SELECT role FROM space_members WHERE space_id::text = $1 AND user_id::text = $2',
         [spaceId, userId]
       )
       if (spaceRows.length > 0) {

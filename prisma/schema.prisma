@@ -2552,3 +2552,15 @@ model ReportPermission {
   @@unique([reportId, userId])
   @@map("report_permissions")
 }
+
+model MemberPermission {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  spaceId     String   @map("space_id") @db.Uuid
+  permissions String[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, spaceId])
+  @@map("member_permissions")
+}

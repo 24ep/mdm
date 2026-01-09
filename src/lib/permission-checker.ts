@@ -124,7 +124,7 @@ async function getRolePermissions(
       `SELECT p.name, p.resource, p.action
        FROM public.role_permissions rp
        JOIN public.permissions p ON p.id = rp.permission_id
-       WHERE rp.role_id = $1`,
+       WHERE rp.role_id::text = $1`,
       [roleId]
     )
 
@@ -155,7 +155,7 @@ async function getCustomPermissions(
     const { rows } = await query(
       `SELECT permissions 
        FROM public.member_permissions 
-       WHERE user_id = $1 AND space_id = $2 
+       WHERE user_id::text = $1 AND space_id::text = $2 
        LIMIT 1`,
       [userId, spaceId]
     )
@@ -237,7 +237,7 @@ export async function getUserRoleContext(
   if (spaceId) {
     const spaceMember = await query(
       `SELECT role FROM space_members 
-       WHERE space_id = $1 AND user_id = $2 
+       WHERE space_id::text = $1 AND user_id::text = $2 
        LIMIT 1`,
       [spaceId, session.user.id]
     )
