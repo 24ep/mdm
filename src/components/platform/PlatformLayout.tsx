@@ -575,7 +575,7 @@ export function PlatformLayout({
                 </div>
               )}
             </div>
-          ) : displayGroup && displayGroup !== '' && !isDataManagementRoute && (
+          ) : displayGroup && displayGroup !== '' && (
             <div
               className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
               data-sidebar="secondary"
