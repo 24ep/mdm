@@ -15,12 +15,12 @@ export function applyBrandingColors(branding: BrandingConfig) {
   const root = document.documentElement
 
   // Apply primary and secondary colors
-  root.style.setProperty('--primary', hexToHsl(branding.primaryColor))
-  root.style.setProperty('--secondary', hexToHsl(branding.secondaryColor))
+  root.style.setProperty('--primary', rgbaToHsl(branding.primaryColor))
+  root.style.setProperty('--secondary', rgbaToHsl(branding.secondaryColor))
 
   // Apply warning and danger colors as CSS variables
-  root.style.setProperty('--warning', hexToHsl(branding.warningColor))
-  root.style.setProperty('--destructive', hexToHsl(branding.dangerColor))
+  root.style.setProperty('--warning', rgbaToHsl(branding.warningColor))
+  root.style.setProperty('--destructive', rgbaToHsl(branding.dangerColor))
 
   // Also set as custom properties for direct use
   root.style.setProperty('--brand-primary', branding.primaryColor)
@@ -33,7 +33,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
   // Trim and validate uiBorderColor to ensure rgba values work correctly (handles both with and without spaces)
   const uiBorderColor = branding.uiBorderColor ? branding.uiBorderColor.trim() : 'rgba(0, 0, 0, 0.1)'
   root.style.setProperty('--brand-ui-border', uiBorderColor)
-  
+
   // Also set --border and --input CSS variables for Tailwind's border-border and bg-input classes
   // This is critical for borders to work with themes in dark mode
   // IMPORTANT: If the border color has an alpha channel, we must use it directly
@@ -51,7 +51,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
     root.style.setProperty('--input', borderHsl)
     console.log('[Branding] Set --border to HSL (no alpha):', borderHsl, 'from:', borderColor)
   }
-  
+
   root.style.setProperty('--brand-top-menu-bg', branding.topMenuBackgroundColor)
   root.style.setProperty('--brand-platform-sidebar-bg', branding.platformSidebarBackgroundColor)
   root.style.setProperty('--brand-secondary-sidebar-bg', branding.secondarySidebarBackgroundColor)
@@ -59,12 +59,12 @@ export function applyBrandingColors(branding: BrandingConfig) {
   root.style.setProperty('--brand-platform-sidebar-text', branding.platformSidebarTextColor)
   root.style.setProperty('--brand-secondary-sidebar-text', branding.secondarySidebarTextColor)
   root.style.setProperty('--brand-body-bg', branding.bodyBackgroundColor)
-  
+
   // Set CSS variables for space settings menu (for inline style fallback)
   const spaceSettingsActive = branding.componentStyling?.['space-settings-menu-active']
   const spaceSettingsNormal = branding.componentStyling?.['space-settings-menu-normal']
   const spaceSettingsHover = branding.componentStyling?.['space-settings-menu-hover']
-  
+
   console.log('[Branding] Space settings menu config:', {
     hasActive: !!spaceSettingsActive,
     activeBg: spaceSettingsActive?.backgroundColor,
@@ -72,7 +72,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
     hasNormal: !!spaceSettingsNormal,
     hasHover: !!spaceSettingsHover
   })
-  
+
   if (spaceSettingsActive?.backgroundColor) {
     root.style.setProperty('--space-settings-menu-active-bg', spaceSettingsActive.backgroundColor)
     console.log('[Branding] Set --space-settings-menu-active-bg to:', spaceSettingsActive.backgroundColor)
@@ -93,7 +93,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
   if (spaceSettingsHover?.textColor) {
     root.style.setProperty('--space-settings-menu-hover-text', spaceSettingsHover.textColor)
   }
-  
+
   // Override CSS variables for platform sidebar if component styling has backgroundColor
   // This ensures inline styles in PlatformSidebar use theme colors
   const platformSidebarPrimary = branding.componentStyling?.['platform-sidebar-primary']
@@ -103,7 +103,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
   if (platformSidebarPrimary?.textColor) {
     root.style.setProperty('--brand-platform-sidebar-text', platformSidebarPrimary.textColor)
   }
-  
+
   const platformSidebarSecondary = branding.componentStyling?.['platform-sidebar-secondary']
   if (platformSidebarSecondary?.backgroundColor) {
     root.style.setProperty('--brand-secondary-sidebar-bg', platformSidebarSecondary.backgroundColor)
@@ -111,24 +111,24 @@ export function applyBrandingColors(branding: BrandingConfig) {
   if (platformSidebarSecondary?.textColor) {
     root.style.setProperty('--brand-secondary-sidebar-text', platformSidebarSecondary.textColor)
   }
-  
+
   // Apply global text/foreground color if provided
   if (branding.bodyTextColor) {
     root.style.setProperty('--brand-body-text', branding.bodyTextColor)
-    root.style.setProperty('--foreground', hexToHsl(branding.bodyTextColor))
+    root.style.setProperty('--foreground', rgbaToHsl(branding.bodyTextColor))
     // Apply to body and all text elements (excluding space modules)
     document.body.style.color = branding.bodyTextColor
   } else {
     // Default fallback based on theme mode (inferred from background color)
     // If body background is dark, use light text; if light, use dark text
     const isDarkBg = branding.bodyBackgroundColor && (
-      branding.bodyBackgroundColor.includes('#000') || 
+      branding.bodyBackgroundColor.includes('#000') ||
       branding.bodyBackgroundColor.includes('rgb(0') ||
       branding.bodyBackgroundColor.includes('rgba(0')
     )
     const defaultTextColor = isDarkBg ? '#F5F5F7' : '#1D1D1F'
     root.style.setProperty('--brand-body-text', defaultTextColor)
-    root.style.setProperty('--foreground', hexToHsl(defaultTextColor))
+    root.style.setProperty('--foreground', rgbaToHsl(defaultTextColor))
     document.body.style.color = defaultTextColor
   }
 
@@ -140,7 +140,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
 
   // Apply component-specific styling
   applyComponentStyling(branding)
-  
+
   // Override --muted CSS variable in secondary sidebar for active menu items
   // This is needed because PlatformSidebar uses inline style with hsl(var(--muted))
   // The --muted variable must be in HSL format (e.g., "210 100% 50%") for hsl(var(--muted)) to work
@@ -153,7 +153,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
       styleElement.id = styleId
       document.head.appendChild(styleElement)
     }
-    
+
     // Convert backgroundColor to HSL format for --muted variable
     let mutedHsl: string
     const bgColor = verticalTabActive.backgroundColor.trim()
@@ -195,7 +195,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
     } else {
       mutedHsl = bgColor // Fallback
     }
-    
+
     // Convert textColor to HSL format for --foreground
     let foregroundHsl: string = 'inherit'
     if (verticalTabActive.textColor) {
@@ -231,7 +231,7 @@ export function applyBrandingColors(branding: BrandingConfig) {
         }
       }
     }
-    
+
     // Create CSS with very specific selectors to override Tailwind dark mode styles
     // Also directly override inline styles with !important
     const bgColorValue = verticalTabActive.backgroundColor.trim()

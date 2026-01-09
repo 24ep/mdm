@@ -11,9 +11,9 @@ export default withAuth(
 
     // Handle CORS and Rate Limiting for API routes
     if (path.startsWith('/api/') || path.startsWith('/next-api/') || path.startsWith('/chat-api/')) {
-      // Rate limiting (100 requests per minute per IP)
+      // Rate limiting (1000 requests per minute per IP)
       const ip = req.headers.get('x-real-ip') || req.headers.get('x-forwarded-for') || 'anonymous'
-      const limit = rateLimit(ip, 100)
+      const limit = rateLimit(ip, 1000)
 
       if (!limit.allowed) {
         return new NextResponse(

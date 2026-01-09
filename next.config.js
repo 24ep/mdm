@@ -39,6 +39,11 @@ const nextConfig = {
     // TypeScript will show all errors, build will continue to collect all errors
   },
 
+  // Expose package version to the client
+  env: {
+    NEXT_PUBLIC_APP_VERSION: require('./package.json').version,
+  },
+
   // Disable output file tracing for local builds to avoid Windows permission issues
   // Disable output file tracing for local builds to avoid Windows permission issues
   output: process.env.NODE_ENV === 'production' && process.env.DOCKER_BUILD ? 'standalone' : undefined,

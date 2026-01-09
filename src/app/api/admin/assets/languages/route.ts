@@ -4,27 +4,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
-    const authResult = await requireAuthWithId()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { searchParams } = new URL(request.url)
-    const isActive = searchParams.get('isActive')
+  const { searchParams } = new URL(request.url)
+  const isActive = searchParams.get('isActive')
 
-    const where: any = {}
-    if (isActive !== null) {
-      where.isActive = isActive === 'true'
-    }
+  const where: any = {}
+  if (isActive !== null) {
+    where.isActive = isActive === 'true'
+  }
 
-    const languages = await prisma.language.findMany({
-      where,
-      orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }],
-    })
+  const languages = await prisma.language.findMany({
+    where,
+    orderBy: [{ isDefault: 'desc' }, { sortOrder: 'asc' }],
+  })
 
-    return NextResponse.json(languages)
+  return NextResponse.json(languages)
 }
 
 
@@ -46,7 +46,7 @@ async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

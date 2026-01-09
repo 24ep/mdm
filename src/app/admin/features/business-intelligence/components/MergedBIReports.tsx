@@ -13,6 +13,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   BarChart3,
   FileText,
   Download,
@@ -34,6 +42,7 @@ import { ReportTemplatesDialog } from '@/components/reports/ReportTemplatesDialo
 import { IntegrationSelectionModal } from '@/components/reports/IntegrationSelectionModal'
 import { EmbedReportDialog } from '@/components/reports/EmbedReportDialog'
 import { exportReportsToExcel } from '@/lib/utils/export-utils'
+import { SpaceSelector } from '@/components/project-management/SpaceSelector'
 
 export type ReportSource = 'BUILT_IN' | 'BUILT_IN_VISUALIZE' | 'CUSTOM_EMBED_LINK' | 'POWER_BI' | 'GRAFANA' | 'LOOKER_STUDIO'
 
@@ -72,7 +81,8 @@ export interface ReportFolder {
 
 export function MergedBIReports() {
   const router = useRouter()
-  const { currentSpace } = useSpace()
+  const { currentSpace, spaces } = useSpace()
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>(currentSpace?.id || 'all')
 
   // Reports State
   const [reports, setReports] = useState<Report[]>([])
@@ -92,6 +102,8 @@ export function MergedBIReports() {
   const [showTemplates, setShowTemplates] = useState(false)
   const [showIntegrationModal, setShowIntegrationModal] = useState(false)
   const [showEmbedModal, setShowEmbedModal] = useState(false)
+  const [showCreateReportDialog, setShowCreateReportDialog] = useState(false)
+  const [createReportSpaceId, setCreateReportSpaceId] = useState<string>(selectedSpaceId !== 'all' ? selectedSpaceId : '')
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set())
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
@@ -109,16 +121,23 @@ export function MergedBIReports() {
     debouncedSearch(searchTerm)
   }, [searchTerm, debouncedSearch])
 
+  // Sync local selection when global space changes
+  useEffect(() => {
+    if (currentSpace?.id) {
+      setSelectedSpaceId(currentSpace.id)
+    }
+  }, [currentSpace?.id])
+
   useEffect(() => {
     loadReports()
-  }, [currentSpace?.id, debouncedSearchTerm, filters.source, filters.category, filters.status, filters.showFavorites])
+  }, [selectedSpaceId, debouncedSearchTerm, filters.source, filters.category, filters.status, filters.showFavorites])
 
 
   const loadReports = async () => {
     try {
       setReportsLoading(true)
       const params = new URLSearchParams({
-        ...(currentSpace?.id && { space_id: currentSpace.id }),
+        ...(selectedSpaceId && selectedSpaceId !== 'all' && { space_id: selectedSpaceId }),
         ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(filters.source && { source: filters.source }),
         ...(filters.category && { category_id: filters.category }),
@@ -186,6 +205,12 @@ export function MergedBIReports() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          <SpaceSelector
+            value={selectedSpaceId}
+            onValueChange={setSelectedSpaceId}
+            className="w-[180px]"
+            showAllOption={true}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button>
@@ -195,7 +220,10 @@ export function MergedBIReports() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => router.push('/reports/new')}>
+              <DropdownMenuItem onClick={() => {
+                setCreateReportSpaceId(selectedSpaceId !== 'all' ? selectedSpaceId : '')
+                setShowCreateReportDialog(true)
+              }}>
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 Create new building dashboard/report
               </DropdownMenuItem>
@@ -393,6 +421,43 @@ export function MergedBIReports() {
           loadReports()
         }}
       />
+
+      {/* Create Report Space Selection Dialog */}
+      <Dialog open={showCreateReportDialog} onOpenChange={setShowCreateReportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Space for New Report</DialogTitle>
+            <DialogDescription>
+              Choose the space where you want to create your new dashboard/report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <SpaceSelector
+              value={createReportSpaceId}
+              onValueChange={setCreateReportSpaceId}
+              className="w-full"
+              showAllOption={false}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateReportDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const selectedSpace = spaces.find(s => s.id === createReportSpaceId)
+                if (selectedSpace?.slug) {
+                  router.push(`/${selectedSpace.slug}/studio`)
+                  setShowCreateReportDialog(false)
+                }
+              }}
+              disabled={!createReportSpaceId}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

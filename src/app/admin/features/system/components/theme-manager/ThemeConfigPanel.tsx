@@ -564,72 +564,6 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
         )
     }
 
-    // Helper component for grouped border side input with popover
-    const BorderSideInput = ({
-        side,
-        basePath,
-        componentStyle,
-        icon
-    }: {
-        side: 'Top' | 'Right' | 'Bottom' | 'Left'
-        basePath: string
-        componentStyle: any
-        icon: React.ReactNode
-    }) => {
-        const colorPath = `${basePath}.border${side}Color`
-        const widthPath = `${basePath}.border${side}Width`
-        const stylePath = `${basePath}.border${side}Style`
-
-        const color = componentStyle?.[`border${side}Color`] || ''
-        const width = componentStyle?.[`border${side}Width`] || ''
-        const style = componentStyle?.[`border${side}Style`] || ''
-
-        // Create summary text for the input
-        const summary = [color && `Color: ${color}`, width && `Width: ${width}`, style && `Style: ${style}`]
-            .filter(Boolean)
-            .join(', ') || 'Click to configure'
-
-        // Get border width as number for preview
-        const borderWidthNum = width ? parseFloat(width.replace('px', '').replace('rem', '').replace('em', '')) || 1 : 1
-        const borderStyle = style || 'solid'
-        const borderColor = color || '#e5e7eb'
-
-        return (
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal h-9"
-                    >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-muted-foreground">{icon}</span>
-                            <span className="text-xs font-medium text-muted-foreground/80 shrink-0">{side}</span>
-                            {/* Border preview */}
-                            <div
-                                className="w-12 h-4 rounded border shrink-0"
-                                style={{
-                                    borderColor: borderColor,
-                                    borderWidth: `${borderWidthNum}px`,
-                                    borderStyle: borderStyle,
-                                    backgroundColor: 'transparent'
-                                }}
-                            />
-                            <span className="text-xs text-muted-foreground truncate flex-1">{summary}</span>
-                        </div>
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-4" align="start">
-                    <div className="space-y-3">
-                        <div className="text-xs font-semibold text-muted-foreground mb-2">Border {side} Configuration</div>
-                        <ColorInputField onChange={handleChange} label="Color" path={colorPath} value={color} />
-                        <TextInput onChange={handleChange} label="Width" path={widthPath} value={width} placeholder="0.5px" icon={icon} />
-                        <TextInput onChange={handleChange} label="Style" path={stylePath} value={style} placeholder="solid" icon={icon} />
-                    </div>
-                </PopoverContent>
-            </Popover>
-        )
-    }
-
     // Helper component for grouped text decoration line styling input with popover
     const TextDecorationLineInput = ({
         basePath,
@@ -743,46 +677,19 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
             <>
                 <Separator />
                 <div className="space-y-3">
-                    <div className="text-xs font-medium text-muted-foreground">Border (All Sides)</div>
+                    <div className="text-xs font-medium text-muted-foreground">Border</div>
                     <ColorInputField onChange={handleChange} label="Color" path={`${basePath}.borderColor`} value={componentStyle?.borderColor} />
-                    <BoxModelInput config={config} onChange={handleChange} label="Width" basePath={basePath} type="border-width" placeholder="0.5px" icon={<Minus className="h-3 w-3" />} />
+                    <BoxModelInput
+                        config={config}
+                        onChange={handleChange}
+                        label="Width"
+                        basePath={basePath}
+                        type="border-width"
+                        placeholder="0.5px"
+                        icon={<Minus className="h-3 w-3" />}
+                        iconPosition="right"
+                    />
                     <TextInput onChange={handleChange} label="Style" path={`${basePath}.borderStyle`} value={componentStyle?.borderStyle} placeholder="solid" icon={<Minus className="h-3 w-3" />} />
-                </div>
-                <Separator />
-                <div className="space-y-3">
-                    <div className="text-xs font-medium text-muted-foreground">Individual Border Sides</div>
-                    <div className="space-y-2 pl-4">
-                        <BorderSideInput
-                            side="Top"
-                            basePath={basePath}
-                            componentStyle={componentStyle}
-                            icon={<ArrowUp className="h-3 w-3" />}
-                        />
-                    </div>
-                    <div className="space-y-2 pl-4">
-                        <BorderSideInput
-                            side="Right"
-                            basePath={basePath}
-                            componentStyle={componentStyle}
-                            icon={<ArrowRight className="h-3 w-3" />}
-                        />
-                    </div>
-                    <div className="space-y-2 pl-4">
-                        <BorderSideInput
-                            side="Bottom"
-                            basePath={basePath}
-                            componentStyle={componentStyle}
-                            icon={<ArrowDown className="h-3 w-3" />}
-                        />
-                    </div>
-                    <div className="space-y-2 pl-4">
-                        <BorderSideInput
-                            side="Left"
-                            basePath={basePath}
-                            componentStyle={componentStyle}
-                            icon={<ArrowLeft className="h-3 w-3" />}
-                        />
-                    </div>
                 </div>
             </>
         )
@@ -811,7 +718,7 @@ export function ThemeConfigPanel({ theme }: ThemeConfigPanelProps) {
                 <div className="flex-1 overflow-hidden">
                     <Tabs defaultValue="general" className="h-full flex flex-col">
                         <div className="px-6 py-2 border-b bg-muted/30">
-                            <TabsList className="grid w-full grid-cols-6">
+                            <TabsList className="grid w-full grid-cols-7">
                                 <TabsTrigger value="general" className="text-xs"><Settings className="w-3 h-3 mr-2" />General</TabsTrigger>
                                 <TabsTrigger value="colors" className="text-xs"><Paintbrush className="w-3 h-3 mr-2" />Colors</TabsTrigger>
                                 <TabsTrigger value="layout" className="text-xs"><Layout className="w-3 h-3 mr-2" />Layout</TabsTrigger>

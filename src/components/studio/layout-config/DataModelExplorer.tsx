@@ -8,6 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 
+import { DataModelDialog } from '@/app/admin/features/data/components/DataModelDialog'
+
+interface Space {
+  id: string
+  name: string
+  slug?: string
+}
+
 interface DataModel {
   id: string
   name: string
@@ -40,7 +48,7 @@ export function DataModelExplorer({
   onFieldCreated
 }: DataModelExplorerProps) {
   if (!spaceId) return null
-  
+
   const [dataModels, setDataModels] = useState<DataModel[]>([])
   const [expandedModels, setExpandedModels] = useState<Set<string>>(new Set())
   const [attributesMap, setAttributesMap] = useState<Record<string, Attribute[]>>({})
@@ -55,41 +63,61 @@ export function DataModelExplorer({
   const [suggestionIndex, setSuggestionIndex] = useState(0)
   const [attributeSearchQuery, setAttributeSearchQuery] = useState('')
   const [sqlValidationError, setSqlValidationError] = useState<string | null>(null)
+
+  const [showCreateModelDialog, setShowCreateModelDialog] = useState(false)
+  const [currentSpace, setCurrentSpace] = useState<Space | null>(null)
+
   const sqlTextareaRef = useRef<HTMLTextAreaElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
   const sqlEditorRef = useRef<HTMLDivElement>(null)
 
+  const loadDataModels = React.useCallback(async () => {
+    if (!spaceId) return
+
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/spaces/${spaceId}/data-models`)
+      if (!res.ok) throw new Error('Failed to load data models')
+      const json = await res.json()
+      setDataModels(json.dataModels || [])
+
+      // Auto-expand selected model
+      if (selectedDataModelId) {
+        setExpandedModels(new Set([selectedDataModelId]))
+        loadAttributes(selectedDataModelId)
+      }
+    } catch (error) {
+      console.error('Error loading data models:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [spaceId, selectedDataModelId])
+
   // Load data models for the space
   useEffect(() => {
-    const loadDataModels = async () => {
+    loadDataModels()
+  }, [loadDataModels])
+
+  // Load current space details
+  useEffect(() => {
+    const loadSpace = async () => {
       if (!spaceId) return
-      
-      setLoading(true)
       try {
-        const res = await fetch(`/api/spaces/${spaceId}/data-models`)
-        if (!res.ok) throw new Error('Failed to load data models')
+        const res = await fetch(`/api/spaces/${spaceId}`)
+        if (!res.ok) throw new Error('Failed to load space')
         const json = await res.json()
-        setDataModels(json.dataModels || [])
-        
-        // Auto-expand selected model
-        if (selectedDataModelId) {
-          setExpandedModels(new Set([selectedDataModelId]))
-          loadAttributes(selectedDataModelId)
-        }
+        setCurrentSpace(json.space)
       } catch (error) {
-        console.error('Error loading data models:', error)
-      } finally {
-        setLoading(false)
+        console.error('Error loading space:', error)
       }
     }
-
-    loadDataModels()
-  }, [spaceId, selectedDataModelId])
+    loadSpace()
+  }, [spaceId])
 
   // Load attributes for a specific model
   const loadAttributes = async (modelId: string) => {
     if (attributesMap[modelId]) return // Already loaded
-    
+
     try {
       const res = await fetch(`/api/data-models/${modelId}/attributes`)
       if (!res.ok) throw new Error('Failed to load attributes')
@@ -137,7 +165,7 @@ export function DataModelExplorer({
     }
 
     const errors: string[] = []
-    
+
     // Check for basic SQL structure
     const trimmed = sql.trim()
     if (!trimmed) {
@@ -189,16 +217,16 @@ export function DataModelExplorer({
     badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/30 mr-1'
     badge.setAttribute('data-attribute', attrName)
     badge.contentEditable = 'false'
-    
+
     // Create icon wrapper
     const iconWrapper = document.createElement('span')
     iconWrapper.className = 'inline-flex items-center'
     badge.appendChild(iconWrapper)
-    
+
     // Create text
     const text = document.createTextNode(attrName)
     badge.appendChild(text)
-    
+
     return badge
   }
 
@@ -211,15 +239,15 @@ export function DataModelExplorer({
     const attrs = attributesMap[selectedDataModelId] || []
     const attrNames = attrs.map(a => a.name.toLowerCase())
     const attrMap = new Map(attrs.map(a => [a.name.toLowerCase(), a]))
-    
+
     // Split SQL into parts: attributes and other text
     const parts: Array<{ type: 'text' | 'attribute'; content: string; attr?: Attribute }> = []
     let lastIndex = 0
-    
+
     // Find all attribute names (word boundaries)
     const words = sql.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || []
     const positions: Array<{ start: number; end: number; attr: Attribute }> = []
-    
+
     for (const word of words) {
       const attr = attrMap.get(word.toLowerCase())
       if (attr) {
@@ -234,10 +262,10 @@ export function DataModelExplorer({
         }
       }
     }
-    
+
     // Sort positions by start index
     positions.sort((a, b) => a.start - b.start)
-    
+
     // Build parts array
     for (const pos of positions) {
       if (pos.start > lastIndex) {
@@ -246,15 +274,15 @@ export function DataModelExplorer({
       parts.push({ type: 'attribute', content: pos.attr.name, attr: pos.attr })
       lastIndex = pos.end
     }
-    
+
     if (lastIndex < sql.length) {
       parts.push({ type: 'text', content: sql.substring(lastIndex) })
     }
-    
+
     if (parts.length === 0) {
       parts.push({ type: 'text', content: sql })
     }
-    
+
     return (
       <>
         {parts.map((part, idx) => {
@@ -293,19 +321,19 @@ export function DataModelExplorer({
 
   const isNumeric = (type: string): boolean => {
     const lowerType = type.toLowerCase()
-    return lowerType.includes('number') || 
-           lowerType.includes('integer') || 
-           lowerType.includes('decimal') ||
-           lowerType.includes('float') ||
-           lowerType.includes('money') ||
-           lowerType.includes('currency')
+    return lowerType.includes('number') ||
+      lowerType.includes('integer') ||
+      lowerType.includes('decimal') ||
+      lowerType.includes('float') ||
+      lowerType.includes('money') ||
+      lowerType.includes('currency')
   }
 
   const filteredModels = useMemo(() => {
     if (!searchQuery.trim()) return dataModels
-    
+
     const query = searchQuery.toLowerCase()
-    return dataModels.filter(model => 
+    return dataModels.filter(model =>
       model.name.toLowerCase().includes(query) ||
       model.display_name.toLowerCase().includes(query)
     )
@@ -314,7 +342,7 @@ export function DataModelExplorer({
   const filteredAttributes = (modelId: string): Attribute[] => {
     const attrs = attributesMap[modelId] || []
     if (!searchQuery.trim()) return attrs
-    
+
     const query = searchQuery.toLowerCase()
     return attrs.filter(attr =>
       attr.name.toLowerCase().includes(query) ||
@@ -325,7 +353,18 @@ export function DataModelExplorer({
   return (
     <div className={cn("flex flex-col h-full bg-white border-l", className)}>
       <div className="p-3 border-b">
-        <h3 className="text-sm font-semibold mb-2">Data Models</h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold">Data Models</h3>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setShowCreateModelDialog(true)}
+            title="Add Data Model"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
         <input
           type="text"
           placeholder="Search models or attributes..."
@@ -481,7 +520,7 @@ export function DataModelExplorer({
           <DialogHeader>
             <DialogTitle className="text-sm">Create SQL Field</DialogTitle>
           </DialogHeader>
-          
+
           <div className="flex-1 flex gap-4 overflow-hidden">
             {/* Left Panel - Attributes */}
             <div className="w-64 border-r flex flex-col overflow-hidden">
@@ -507,46 +546,46 @@ export function DataModelExplorer({
                   const attrs = attributesMap[selectedDataModelId] || []
                   const filtered = attributeSearchQuery.trim()
                     ? attrs.filter(attr =>
-                        attr.name.toLowerCase().includes(attributeSearchQuery.toLowerCase()) ||
-                        attr.display_name.toLowerCase().includes(attributeSearchQuery.toLowerCase())
-                      )
+                      attr.name.toLowerCase().includes(attributeSearchQuery.toLowerCase()) ||
+                      attr.display_name.toLowerCase().includes(attributeSearchQuery.toLowerCase())
+                    )
                     : attrs
                   return filtered.map((attr) => (
-                  <div
-                    key={attr.id}
-                    draggable={true}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/plain', attr.name)
-                      e.dataTransfer.setData('application/json', JSON.stringify({ attribute: attr, type: 'attribute' }))
-                    }}
-                    onClick={() => {
-                      const textarea = sqlTextareaRef.current
-                      if (textarea) {
-                        const start = textarea.selectionStart
-                        const end = textarea.selectionEnd
-                        const text = sqlStatement
-                        const before = text.substring(0, start)
-                        const after = text.substring(end)
-                        const newText = `${before}${attr.name}${after}`
-                        setSqlStatement(newText)
-                        validateSql(newText)
-                        setTimeout(() => {
-                          textarea.focus()
-                          const newPos = start + attr.name.length
-                          textarea.setSelectionRange(newPos, newPos)
-                        }, 0)
-                      }
-                    }}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-primary/10 cursor-pointer group transition-colors bg-background border border-transparent hover:border-primary/30"
-                    title={`Drag or click to insert: ${attr.name}`}
-                  >
-                    {getAttributeIcon(attr.type)}
-                    <span className="text-xs flex-1 text-foreground">{attr.display_name || attr.name}</span>
-                    <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">
-                      {attr.type}
-                    </span>
-                  </div>
-                ))
+                    <div
+                      key={attr.id}
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', attr.name)
+                        e.dataTransfer.setData('application/json', JSON.stringify({ attribute: attr, type: 'attribute' }))
+                      }}
+                      onClick={() => {
+                        const textarea = sqlTextareaRef.current
+                        if (textarea) {
+                          const start = textarea.selectionStart
+                          const end = textarea.selectionEnd
+                          const text = sqlStatement
+                          const before = text.substring(0, start)
+                          const after = text.substring(end)
+                          const newText = `${before}${attr.name}${after}`
+                          setSqlStatement(newText)
+                          validateSql(newText)
+                          setTimeout(() => {
+                            textarea.focus()
+                            const newPos = start + attr.name.length
+                            textarea.setSelectionRange(newPos, newPos)
+                          }, 0)
+                        }
+                      }}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-primary/10 cursor-pointer group transition-colors bg-background border border-transparent hover:border-primary/30"
+                      title={`Drag or click to insert: ${attr.name}`}
+                    >
+                      {getAttributeIcon(attr.type)}
+                      <span className="text-xs flex-1 text-foreground">{attr.display_name || attr.name}</span>
+                      <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">
+                        {attr.type}
+                      </span>
+                    </div>
+                  ))
                 })()}
               </div>
             </div>
@@ -564,7 +603,7 @@ export function DataModelExplorer({
                   />
                 </div>
               </div>
-              
+
               <div className="flex-1 flex flex-col space-y-2">
                 <Label className="text-xs font-medium">SQL Statement</Label>
                 <div className="relative flex-1 border rounded overflow-hidden">
@@ -576,7 +615,7 @@ export function DataModelExplorer({
                   >
                     {renderSqlWithBadges(sqlStatement)}
                   </div>
-                  
+
                   {/* Visible textarea for editing (on top, with transparent text so badges show through) */}
                   <textarea
                     ref={sqlTextareaRef}
@@ -587,15 +626,15 @@ export function DataModelExplorer({
                       validateSql(value)
                       const cursorPos = e.target.selectionStart
                       setSqlCursorPos(cursorPos)
-                      
+
                       // Find attribute name being typed
                       const textBeforeCursor = value.substring(0, cursorPos)
                       const match = textBeforeCursor.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
-                      
+
                       if (match && selectedDataModelId) {
                         const partialName = match[1].toLowerCase()
                         const attrs = attributesMap[selectedDataModelId] || []
-                        const suggestions = attrs.filter(attr => 
+                        const suggestions = attrs.filter(attr =>
                           attr.name.toLowerCase().startsWith(partialName) ||
                           attr.display_name.toLowerCase().startsWith(partialName)
                         )
@@ -674,15 +713,15 @@ export function DataModelExplorer({
                     }}
                     onDragOver={(e) => e.preventDefault()}
                     className="absolute inset-0 w-full h-full p-3 text-xs font-mono border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none bg-transparent z-10"
-                    style={{ 
-                      whiteSpace: 'pre-wrap', 
+                    style={{
+                      whiteSpace: 'pre-wrap',
                       wordBreak: 'break-word',
                       color: 'transparent',
                       caretColor: 'black'
                     }}
                     placeholder={sqlStatement ? '' : 'SELECT attribute_name * 2 AS calculated_value FROM table...'}
                   />
-                  
+
                   {/* Validation Error */}
                   {sqlValidationError && (
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-destructive/10 border-t border-destructive/30 flex items-center gap-2">
@@ -690,7 +729,7 @@ export function DataModelExplorer({
                       <span className="text-[10px] text-destructive">{sqlValidationError}</span>
                     </div>
                   )}
-                  
+
                   {/* Detected Attributes Preview */}
                   {selectedDataModelId && sqlStatement && !sqlValidationError && (() => {
                     const attrs = attributesMap[selectedDataModelId] || []
@@ -698,7 +737,7 @@ export function DataModelExplorer({
                     const words = sqlStatement.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || []
                     const detectedAttrs = words.filter(word => attrNames.includes(word.toLowerCase()))
                     const uniqueDetected = Array.from(new Set(detectedAttrs))
-                    
+
                     if (uniqueDetected.length > 0) {
                       return (
                         <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 p-2 bg-primary/10 rounded border border-primary/30">
@@ -720,7 +759,7 @@ export function DataModelExplorer({
                     }
                     return null
                   })()}
-                  
+
                   {/* Attribute Suggestions */}
                   {showSuggestions && attributeSuggestions.length > 0 && (
                     <div
@@ -819,7 +858,7 @@ export function DataModelExplorer({
                   if (attributesMap[selectedDataModelId]) {
                     loadAttributes(selectedDataModelId)
                   }
-                  
+
                   setShowSqlDialog(false)
                   setSqlFieldName('')
                   setSqlStatement('')
@@ -836,6 +875,20 @@ export function DataModelExplorer({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Data Model Dialog */}
+      {currentSpace && (
+        <DataModelDialog
+          open={showCreateModelDialog}
+          onOpenChange={setShowCreateModelDialog}
+          model={null}
+          spaces={[currentSpace]}
+          onSuccess={() => {
+            loadDataModels()
+            setShowCreateModelDialog(false)
+          }}
+        />
+      )}
     </div>
   )
 }

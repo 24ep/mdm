@@ -49,14 +49,14 @@ const getGroupForTab = (tab: string): string | null => {
   if (tab === 'infrastructure') {
     return 'infrastructure'
   }
-  
+
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics', 'knowledge-base', 'projects'],
     tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'marketplace', 'bi', 'reports', 'storage', 'data-governance'],
     system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api'],
     'data-management': ['space-selection']
   }
-  
+
   for (const [group, tabs] of Object.entries(groupedTabs)) {
     if (tabs.includes(tab)) {
       // Data Management has no secondary sidebar
@@ -91,7 +91,7 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     kernels: ['kernels'],
     system: ['logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
-    integrations: ['settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api']
+    integrations: ['settings', 'page-templates', 'notifications', 'themes', 'export']
   }
 
   const tabNames: Record<string, string> = {
@@ -191,11 +191,11 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
   return breadcrumbs
 }
 
-export function PlatformLayout({ 
-  children, 
-  activeTab, 
-  onTabChange, 
-  selectedSpace, 
+export function PlatformLayout({
+  children,
+  activeTab,
+  onTabChange,
+  selectedSpace,
   onSpaceChange,
   breadcrumbItems,
   breadcrumbActions,
@@ -224,12 +224,12 @@ export function PlatformLayout({
   const [vmCredentials, setVmCredentials] = useState<{ username: string; password: string } | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingVm, setEditingVm] = useState<InfrastructureInstance | null>(null)
-  
+
   // Check if we're on a data-management route
   const isDataManagementRoute = useMemo(() => {
     return pathname?.startsWith('/data-management') ?? false
   }, [pathname])
-  
+
   // Memoize group calculation to avoid unnecessary recalculations
   const currentGroup = useMemo(() => {
     // If showing space settings sidebar from data management, return 'data-management' to show it as selected
@@ -242,7 +242,7 @@ export function PlatformLayout({
     }
     return getGroupForTab(activeTab)
   }, [activeTab, isDataManagementRoute, showSpaceSettingsSidebar])
-  
+
   // Initialize selectedGroup based on activeTab
   const [selectedGroup, setSelectedGroup] = useState<string | null>(currentGroup)
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null)
@@ -341,7 +341,7 @@ export function PlatformLayout({
 
   const handleVmRemove = useCallback(async (vm: InfrastructureInstance) => {
     if (!confirm(`Are you sure you want to remove ${vm.name}?`)) return
-    
+
     try {
       const response = await fetch(`/api/infrastructure/instances/${vm.id}`, {
         method: 'DELETE',
@@ -360,7 +360,7 @@ export function PlatformLayout({
 
   const handleVmReboot = useCallback(async (vm: InfrastructureInstance) => {
     if (!confirm(`Are you sure you want to reboot ${vm.name}?`)) return
-    
+
     try {
       // TODO: Implement reboot API call
       console.log('Reboot VM:', vm.id)
@@ -422,8 +422,8 @@ export function PlatformLayout({
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Top Menu Bar - Full Width Above Everything */}
-      <TopMenuBar 
-        activeTab={activeTab} 
+      <TopMenuBar
+        activeTab={activeTab}
         spaceName={
           ((activeTab === 'space-selection' && selectedSpace) || activeTab === 'space-module' || showSpaceSidebar) && (spaceSidebarSpaceId || selectedSpace)
             ? (currentSpace?.name || (selectedSpace && spaces.find(s => s.id === selectedSpace)?.name))
@@ -431,20 +431,20 @@ export function PlatformLayout({
         }
         showSpaceName={
           ((activeTab === 'space-selection' && selectedSpace) || activeTab === 'space-module' || showSpaceSidebar) && (spaceSidebarSpaceId || selectedSpace)
-            ? true 
+            ? true
             : false
         }
       />
-      
+
       {/* Content Area with Sidebars */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebars Container */}
         <div className="flex flex-shrink-0">
           {/* Primary Sidebar - Groups */}
-          <div 
+          <div
             className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-52'} flex-shrink-0`}
             data-sidebar="primary"
-            style={{ 
+            style={{
               position: 'relative',
               zIndex: Z_INDEX.sidebar,
               pointerEvents: 'auto'
@@ -455,8 +455,8 @@ export function PlatformLayout({
               const relatedTarget = e.relatedTarget
               // Check if relatedTarget is an Element (has closest method)
               if (relatedTarget && relatedTarget instanceof Element) {
-                if (!relatedTarget.closest('[data-sidebar="secondary"]') && 
-                    !relatedTarget.closest('.flex-shrink-0.border-r')) {
+                if (!relatedTarget.closest('[data-sidebar="secondary"]') &&
+                  !relatedTarget.closest('.flex-shrink-0.border-r')) {
                   setSidebarCollapsed(true)
                 }
               } else {
@@ -487,10 +487,10 @@ export function PlatformLayout({
           {/* Hide secondary sidebar for data-management routes */}
           {/* Show secondary sidebar when hovering over a group or when a group is selected */}
           {showSpaceSidebar ? (
-            <div 
+            <div
               className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
               data-sidebar="secondary"
-              style={{ 
+              style={{
                 position: 'relative',
                 zIndex: Z_INDEX.sidebar,
                 pointerEvents: 'auto'
@@ -523,10 +523,10 @@ export function PlatformLayout({
               )}
             </div>
           ) : showSpaceSettingsSidebar ? (
-            <div 
+            <div
               className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
               data-sidebar="secondary"
-              style={{ 
+              style={{
                 position: 'relative',
                 zIndex: Z_INDEX.sidebar,
                 pointerEvents: 'auto'
@@ -551,7 +551,7 @@ export function PlatformLayout({
                   <div className="flex-1 overflow-hidden">
                     <SpaceSettingsSidebar
                       activeTab={spaceSettingsTab || 'details'}
-                      onTabChange={onSpaceSettingsTabChange || (() => {})}
+                      onTabChange={onSpaceSettingsTabChange || (() => { })}
                       showSpaceSelector={true}
                       selectedSpaceId={spaceSettingsSelectedSpaceId}
                       onSpaceChange={onSpaceSettingsSpaceChange}
@@ -576,10 +576,10 @@ export function PlatformLayout({
               )}
             </div>
           ) : displayGroup && displayGroup !== '' && !isDataManagementRoute && (
-            <div 
+            <div
               className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
               data-sidebar="secondary"
-              style={{ 
+              style={{
                 position: 'relative',
                 zIndex: Z_INDEX.sidebar,
                 pointerEvents: 'auto'
@@ -598,45 +598,45 @@ export function PlatformLayout({
                 }
               }}
             >
-            {!secondarySidebarCollapsed && (
-              <PlatformSidebar
-                activeTab={activeTab}
-                onTabChange={onTabChange}
-                selectedSpace={selectedSpace}
-                onSpaceChange={onSpaceChange}
-                collapsed={false}
-                selectedGroup={displayGroup}
-                onGroupSelect={handleGroupSelect}
-                mode="secondary"
-                onToggleCollapse={handleToggleSecondaryCollapse}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                selectedVmId={selectedVmId}
-                onVmSelect={handleVmSelect}
-                onVmPermission={handleVmPermission}
-                onVmRemove={handleVmRemove}
-                onVmReboot={handleVmReboot}
-                onVmEdit={handleVmEdit}
-                onVmAccess={handleVmAccessClick}
-                onAddVm={handleAddVm}
-              />
-            )}
-            {secondarySidebarCollapsed && (
-              <div className="h-full flex items-center justify-center border-r border-border">
-                <button
-                  onClick={handleToggleSecondaryCollapse}
-                  className="p-2 hover:bg-muted rounded"
-                  title="Expand secondary sidebar"
-                  aria-label="Expand secondary sidebar"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+              {!secondarySidebarCollapsed && (
+                <PlatformSidebar
+                  activeTab={activeTab}
+                  onTabChange={onTabChange}
+                  selectedSpace={selectedSpace}
+                  onSpaceChange={onSpaceChange}
+                  collapsed={false}
+                  selectedGroup={displayGroup}
+                  onGroupSelect={handleGroupSelect}
+                  mode="secondary"
+                  onToggleCollapse={handleToggleSecondaryCollapse}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  selectedVmId={selectedVmId}
+                  onVmSelect={handleVmSelect}
+                  onVmPermission={handleVmPermission}
+                  onVmRemove={handleVmRemove}
+                  onVmReboot={handleVmReboot}
+                  onVmEdit={handleVmEdit}
+                  onVmAccess={handleVmAccessClick}
+                  onAddVm={handleAddVm}
+                />
+              )}
+              {secondarySidebarCollapsed && (
+                <div className="h-full flex items-center justify-center border-r border-border">
+                  <button
+                    onClick={handleToggleSecondaryCollapse}
+                    className="p-2 hover:bg-muted rounded"
+                    title="Expand secondary sidebar"
+                    aria-label="Expand secondary sidebar"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Main Content */}
@@ -651,7 +651,7 @@ export function PlatformLayout({
                     const crumbs = breadcrumbItems && breadcrumbItems.length
                       ? breadcrumbItems
                       : generateBreadcrumbs(activeTab)
-                    
+
                     // Filter out any breadcrumb items that contain "admin" (case-insensitive)
                     return crumbs.filter(item => {
                       const label = typeof item === 'string' ? item : item.label
@@ -663,13 +663,13 @@ export function PlatformLayout({
                     const href = typeof item === 'object' ? item.href : undefined
                     const onClick = typeof item === 'object' ? item.onClick : undefined
                     const isClickable = !isLast && (href || onClick)
-                    
+
                     return (
                       <Fragment key={`breadcrumb-${idx}`}>
                         <li className={`truncate ${isLast ? 'font-medium text-foreground' : 'whitespace-nowrap'}`}>
                           {isClickable ? (
                             href ? (
-                              <Link 
+                              <Link
                                 href={href}
                                 className="hover:text-foreground hover:underline transition-colors"
                               >
@@ -736,7 +736,7 @@ export function PlatformLayout({
           </div>
         </div>
       </div>
-      
+
       {/* Edit VM Dialog */}
       <EditVMDialog
         open={showEditDialog}

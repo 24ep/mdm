@@ -61,11 +61,11 @@ export function QuickLinksSection() {
   // Filter links by category
   const filteredLinks = selectedCategory === 'all'
     ? links
-    : links.filter(link => 
-        selectedCategory === 'uncategorized' 
-          ? !link.category 
-          : link.category === selectedCategory
-      )
+    : links.filter(link =>
+      selectedCategory === 'uncategorized'
+        ? !link.category
+        : link.category === selectedCategory
+    )
 
   // Group links by category
   const groupedLinks: Record<string, QuickLink[]> = {}
@@ -116,7 +116,7 @@ export function QuickLinksSection() {
   }
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 mt-12 max-w-5xl">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Data Platform Collection</h2>
         <Button onClick={handleAddClick} size="sm" variant="outline">
@@ -202,7 +202,7 @@ export function QuickLinksSection() {
                           )}
                         </div>
                       </button>
-                      
+
                       {/* Edit/Delete buttons - shown on hover */}
                       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button

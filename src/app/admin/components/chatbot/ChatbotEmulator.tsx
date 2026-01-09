@@ -184,11 +184,11 @@ export function ChatbotEmulator({
         <div className="flex items-center gap-2">
           <div className="text-sm font-medium">Emulator</div>
           <div className="w-px h-4 bg-border mx-1" />
-          <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
+          <div className="flex rounded-lg p-0.5 gap-0.5">
             <Button
               variant={deviceType === 'desktop' ? 'default' : 'ghost'}
               size="icon"
-              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'desktop' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted-foreground/10'}`}
+              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'desktop' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted'}`}
               onClick={() => setDeviceType('desktop')}
               title="Desktop View"
             >
@@ -197,7 +197,7 @@ export function ChatbotEmulator({
             <Button
               variant={deviceType === 'tablet' ? 'default' : 'ghost'}
               size="icon"
-              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'tablet' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted-foreground/10'}`}
+              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'tablet' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted'}`}
               onClick={() => setDeviceType('tablet')}
               title="Tablet View"
             >
@@ -206,7 +206,7 @@ export function ChatbotEmulator({
             <Button
               variant={deviceType === 'mobile' ? 'default' : 'ghost'}
               size="icon"
-              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'mobile' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted-foreground/10'}`}
+              className={`h-7 w-7 rounded-md transition-all ${deviceType === 'mobile' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted'}`}
               onClick={() => setDeviceType('mobile')}
               title="Mobile View"
             >
@@ -233,9 +233,9 @@ export function ChatbotEmulator({
           {selectedChatbot?.id && (
             <>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className="h-8 hover:bg-muted"
                 onClick={async () => {
                   const chatbot = {
                     ...formData,
@@ -258,17 +258,17 @@ export function ChatbotEmulator({
                 Embed
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-muted"
                 onClick={() => setConfigDrawerOpen(true)}
               >
                 <Settings className="h-4 w-4" />
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-8"
+                className="h-8 hover:bg-muted"
                 onClick={() => window.open(`/chat/${selectedChatbot.id}?preview=true&deploymentType=${previewMode}&previewDevice=${deviceType}`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />

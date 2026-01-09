@@ -50,9 +50,6 @@ export function ChatWidgetButton({
         return {
             ...popoverPositionStyle,
             ...widgetButtonStyle,
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
         }
     }, [isOpen, config, popoverPositionStyle, widgetButtonStyle])
 

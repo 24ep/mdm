@@ -255,7 +255,8 @@ export function UserManagement() {
           role: 'USER',
           isActive: true,
           defaultSpaceId: '',
-          spaces: []
+          spaces: [],
+          allowedLoginMethods: ['email']
         })
         loadUsers()
       } else {
@@ -281,6 +282,7 @@ export function UserManagement() {
         },
         body: JSON.stringify({
           ...editForm,
+          defaultSpaceId: editForm.defaultSpaceId === 'none' ? null : editForm.defaultSpaceId,
           allowedLoginMethods: editForm.allowedLoginMethods
         }),
       })
@@ -702,7 +704,7 @@ export function UserManagement() {
                       <TableCell className="h-16">
                         <div className="flex items-center justify-end gap-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0"
                             onClick={() => openEditDialog(user)}
@@ -965,37 +967,86 @@ export function UserManagement() {
                 </TabsContent>
 
                 <TabsContent value="spaces" className="space-y-4 mt-4">
-                  {editingUser && editingUser.spaces && editingUser.spaces.length > 0 ? (
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Folder className="h-4 w-4" />
+                      Space Associations
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Manage roles assigned in specific spaces
+                    </p>
+
                     <div className="space-y-2">
-                      <Label className="text-base font-semibold flex items-center gap-2">
-                        <Folder className="h-4 w-4" />
-                        Space Roles
-                      </Label>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Roles assigned in specific spaces
-                      </p>
-                      <div className="space-y-2">
-                        {editingUser.spaces.map((space) => (
-                          <div key={space.spaceId} className="flex items-center justify-between p-2 border rounded">
-                            <div>
-                              <span className="text-sm font-medium">{space.spaceName}</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {space.role}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground italic">
-                        Note: Space roles are managed from the space settings
-                      </p>
+                      {editForm.spaces.map((space, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                          <Select
+                            value={space.spaceId}
+                            onValueChange={(value) => {
+                              const newSpaces = [...editForm.spaces]
+                              newSpaces[index] = { ...newSpaces[index], spaceId: value }
+                              setEditForm({ ...editForm, spaces: newSpaces })
+                            }}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select space" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {spaces.map(s => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <Select
+                            value={space.role}
+                            onValueChange={(value) => {
+                              const newSpaces = [...editForm.spaces]
+                              newSpaces[index] = { ...newSpaces[index], role: value }
+                              setEditForm({ ...editForm, spaces: newSpaces })
+                            }}
+                          >
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">Member</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="owner">Owner</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => {
+                              const newSpaces = editForm.spaces.filter((_, i) => i !== index)
+                              setEditForm({ ...editForm, spaces: newSpaces })
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Folder className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>No space associations</p>
-                    </div>
-                  )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        setEditForm({
+                          ...editForm,
+                          spaces: [...editForm.spaces, { spaceId: '', role: 'member' }]
+                        })
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Space Association
+                    </Button>
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>

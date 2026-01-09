@@ -4,39 +4,39 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
-    const authResult = await requireAuthWithId()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
-    const includeAssets = searchParams.get('includeAssets') === 'true'
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get('category')
+  const includeAssets = searchParams.get('includeAssets') === 'true'
 
-    const where: any = {
-      deletedAt: null,
-    }
+  const where: any = {
+    deletedAt: null,
+  }
 
-    if (category) {
-      where.category = category
-    }
+  if (category) {
+    where.category = category
+  }
 
-    const assetTypes = await prisma.assetType.findMany({
-      where,
-      orderBy: { sortOrder: 'asc' },
-      include: includeAssets
-        ? {
-            assets: {
-              where: { deletedAt: null },
-              orderBy: { sortOrder: 'asc' },
-            },
-          }
-        : undefined,
-    })
+  const assetTypes = await prisma.assetType.findMany({
+    where,
+    orderBy: { sortOrder: 'asc' },
+    include: includeAssets
+      ? {
+        assets: {
+          where: { deletedAt: null },
+          orderBy: { sortOrder: 'asc' },
+        },
+      }
+      : undefined,
+  })
 
-    return NextResponse.json(assetTypes)
+  return NextResponse.json(assetTypes)
 }
 
 
@@ -58,7 +58,7 @@ async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

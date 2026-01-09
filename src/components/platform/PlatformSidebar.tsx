@@ -54,6 +54,7 @@ import { HorizonSidebar } from '@/components/infrastructure/HorizonSidebar'
 import { InfrastructureInstance } from '@/features/infrastructure/types'
 import { useMarketplacePlugins } from '@/features/marketplace/hooks/useMarketplacePlugins'
 import { useMenuConfig } from '@/hooks/useMenuConfig'
+import { useUserPermissions } from '@/hooks/use-permission'
 
 // Map of icon names to components for dynamic rendering
 const ICON_MAP: Record<string, any> = {
@@ -124,7 +125,11 @@ export function PlatformSidebar({
 
   // Fetch menu configuration from database
   const { menuConfig, loading: menuLoading } = useMenuConfig()
+
+
+  // Inside component function
   const { data: session } = useSession()
+  const { permissions: userPermissions } = useUserPermissions()
 
   // Build groupedTabs from database menu config, with plugin injection and role filtering
   const groupedTabs = useMemo(() => {
@@ -136,14 +141,32 @@ export function PlatformSidebar({
       const userRole: string = (session?.user as any)?.role || 'USER'
 
       for (const group of menuConfig.groups) {
-        // Filter items based on requiredRoles
+        // Filter items based on requiredRoles and Permissions
         const allowedItems = group.items.filter(item => {
           // If no requiredRoles specified, allow all roles
           if (!item.requiredRoles || item.requiredRoles.length === 0) {
             return true
           }
-          // Check if user's role is in the allowed list
-          return item.requiredRoles.includes(userRole) || userRole === 'SUPER_ADMIN'
+
+          // Check for Role match (exact match)
+          // OR user is SUPER_ADMIN (always allow)
+          if (item.requiredRoles.includes(userRole) || userRole === 'SUPER_ADMIN') {
+            return true
+          }
+
+          // Check for Permission match (strings with ':')
+          // If the item requires specific permissions (e.g. 'system:manage_users')
+          // and the user has them, allow access.
+          const permissionRequirements = item.requiredRoles.filter(r => r.includes(':'))
+          if (permissionRequirements.length > 0) {
+            // Check if user has ANY of the required permissions listed
+            // This acts as an OR condition with Roles. 
+            // (Role A OR Role B OR Permission P)
+            const hasPermission = permissionRequirements.some(p => userPermissions.includes(p))
+            if (hasPermission) return true
+          }
+
+          return false
         })
 
         tabs[group.slug] = allowedItems.map(item => ({

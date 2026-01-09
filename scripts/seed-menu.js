@@ -50,8 +50,7 @@ const menuItems = [
     { groupSlug: 'system', slug: 'performance', name: 'Performance', icon: 'Activity', href: '/system/performance', section: 'Security', priority: 150 },
     { groupSlug: 'system', slug: 'settings', name: 'System Settings', icon: 'Settings', href: '/system/settings', section: 'Integrations', priority: 160 },
     { groupSlug: 'system', slug: 'themes', name: 'Theme & Branding', icon: 'Palette', href: '/system/themes', section: 'Integrations', priority: 170 },
-    { groupSlug: 'system', slug: 'integrations', name: 'Integrations', icon: 'Key', href: '/system/integrations', section: 'Integrations', priority: 180 },
-    { groupSlug: 'system', slug: 'api', name: 'API Management', icon: 'Key', href: '/system/api', section: 'Integrations', priority: 190 },
+
 
     // Data Management group
     { groupSlug: 'data-management', slug: 'space-selection', name: 'Data Management', icon: 'FolderKanban', href: '/admin/space-selection', section: null, priority: 10 },

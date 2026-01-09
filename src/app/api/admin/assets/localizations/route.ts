@@ -4,49 +4,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
-    const authResult = await requireAuthWithId()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-    const { searchParams } = new URL(request.url)
-    const languageCode = searchParams.get('languageCode')
-    const languageId = searchParams.get('languageId')
-    const entityType = searchParams.get('entityType')
-    const entityId = searchParams.get('entityId')
+  const { searchParams } = new URL(request.url)
+  const languageCode = searchParams.get('languageCode')
+  const languageId = searchParams.get('languageId')
+  const entityType = searchParams.get('entityType')
+  const entityId = searchParams.get('entityId')
 
-    const where: any = {}
+  const where: any = {}
 
-    if (languageCode) {
-      const language = await prisma.language.findUnique({
-        where: { code: languageCode },
-      })
-      if (language) {
-        where.languageId = language.id
-      }
-    } else if (languageId) {
-      where.languageId = languageId
-    }
-
-    if (entityType) {
-      where.entityType = entityType
-    }
-
-    if (entityId) {
-      where.entityId = entityId
-    }
-
-    const localizations = await prisma.localization.findMany({
-      where,
-      include: {
-        language: true,
-      },
-      orderBy: { createdAt: 'desc' },
+  if (languageCode) {
+    const language = await prisma.language.findUnique({
+      where: { code: languageCode },
     })
+    if (language) {
+      where.languageId = language.id
+    }
+  } else if (languageId) {
+    where.languageId = languageId
+  }
 
-    return NextResponse.json(localizations)
+  if (entityType) {
+    where.entityType = entityType
+  }
+
+  if (entityId) {
+    where.entityId = entityId
+  }
+
+  const localizations = await prisma.localization.findMany({
+    where,
+    include: {
+      language: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  return NextResponse.json(localizations)
 }
 
 
@@ -68,7 +68,7 @@ async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

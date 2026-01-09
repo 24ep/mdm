@@ -4,77 +4,77 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 async function getHandler(request: NextRequest) {
-    const authResult = await requireAuthWithId()
-    if (!authResult.success) return authResult.response
-    const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authResult = await requireAuthWithId()
+  if (!authResult.success) return authResult.response
+  const { session } = authResult
+  if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { searchParams } = new URL(request.url)
+  const assetTypeCode = searchParams.get('assetTypeCode')
+  const assetTypeId = searchParams.get('assetTypeId')
+  const isActive = searchParams.get('isActive')
+  const languageCode = searchParams.get('language') // For localized names
+
+  const where: any = {
+    deletedAt: null,
+  }
+
+  if (assetTypeCode) {
+    const assetType = await prisma.assetType.findUnique({
+      where: { code: assetTypeCode },
+    })
+    if (assetType) {
+      where.assetTypeId = assetType.id
     }
+  } else if (assetTypeId) {
+    where.assetTypeId = assetTypeId
+  }
 
-    const { searchParams } = new URL(request.url)
-    const assetTypeCode = searchParams.get('assetTypeCode')
-    const assetTypeId = searchParams.get('assetTypeId')
-    const isActive = searchParams.get('isActive')
-    const languageCode = searchParams.get('language') // For localized names
+  if (isActive !== null) {
+    where.isActive = isActive === 'true'
+  }
 
-    const where: any = {
-      deletedAt: null,
-    }
+  const assets = await prisma.asset.findMany({
+    where,
+    include: {
+      assetType: true,
+    },
+    orderBy: { sortOrder: 'asc' },
+  })
 
-    if (assetTypeCode) {
-      const assetType = await prisma.assetType.findUnique({
-        where: { code: assetTypeCode },
-      })
-      if (assetType) {
-        where.assetTypeId = assetType.id
-      }
-    } else if (assetTypeId) {
-      where.assetTypeId = assetTypeId
-    }
-
-    if (isActive !== null) {
-      where.isActive = isActive === 'true'
-    }
-
-    const assets = await prisma.asset.findMany({
-      where,
-      include: {
-        assetType: true,
-      },
-      orderBy: { sortOrder: 'asc' },
+  // If language code is provided, fetch localizations
+  if (languageCode && assets.length > 0) {
+    const language = await prisma.language.findUnique({
+      where: { code: languageCode },
     })
 
-    // If language code is provided, fetch localizations
-    if (languageCode && assets.length > 0) {
-      const language = await prisma.language.findUnique({
-        where: { code: languageCode },
+    if (language) {
+      const assetIds = assets.map((a) => a.id)
+      const localizations = await prisma.localization.findMany({
+        where: {
+          languageId: language.id,
+          entityType: 'asset',
+          entityId: { in: assetIds },
+        },
       })
 
-      if (language) {
-        const assetIds = assets.map((a) => a.id)
-        const localizations = await prisma.localization.findMany({
-          where: {
-            languageId: language.id,
-            entityType: 'asset',
-            entityId: { in: assetIds },
-          },
-        })
+      // Map localizations to assets
+      const localizationMap = new Map(
+        localizations.map((loc) => [`${loc.entityId}-${loc.field}`, loc.value])
+      )
 
-        // Map localizations to assets
-        const localizationMap = new Map(
-          localizations.map((loc) => [`${loc.entityId}-${loc.field}`, loc.value])
-        )
-
-        assets.forEach((asset) => {
-          const localizedName = localizationMap.get(`${asset.id}-name`)
-          const localizedDesc = localizationMap.get(`${asset.id}-description`)
-          if (localizedName) asset.name = localizedName
-          if (localizedDesc) asset.description = localizedDesc
-        })
-      }
+      assets.forEach((asset) => {
+        const localizedName = localizationMap.get(`${asset.id}-name`)
+        const localizedDesc = localizationMap.get(`${asset.id}-description`)
+        if (localizedName) asset.name = localizedName
+        if (localizedDesc) asset.description = localizedDesc
+      })
     }
+  }
 
-    return NextResponse.json(assets)
+  return NextResponse.json(assets)
 }
 
 
@@ -96,7 +96,7 @@ async function postHandler(request: NextRequest) {
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    if (!session?.user || !['ADMIN', 'SUPER_ADMIN'].includes(session.user.role || '')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

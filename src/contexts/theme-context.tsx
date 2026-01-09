@@ -36,34 +36,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       const root = document.documentElement
 
-      // Ensure the dark class is added/removed based on theme mode
-      // This is critical for Tailwind's dark mode to work
+      // Only toggle dark class - BrandingInitializer handles all CSS color variables
+      // This ensures database themes are the single source of truth for colors
       if (themeConfig.mode === 'dark') {
         root.classList.add('dark')
       } else {
         root.classList.remove('dark')
       }
 
-      // Apply CSS variables
-      root.style.setProperty('--background', themeConfig.colors.background)
-      root.style.setProperty('--foreground', themeConfig.colors.foreground)
-      root.style.setProperty('--card', themeConfig.colors.card)
-      root.style.setProperty('--card-foreground', themeConfig.colors.cardForeground)
-      root.style.setProperty('--popover', themeConfig.colors.popover)
-      root.style.setProperty('--popover-foreground', themeConfig.colors.popoverForeground)
-      root.style.setProperty('--primary', themeConfig.colors.primary)
-      root.style.setProperty('--primary-foreground', themeConfig.colors.primaryForeground)
-      root.style.setProperty('--secondary', themeConfig.colors.secondary)
-      root.style.setProperty('--secondary-foreground', themeConfig.colors.secondaryForeground)
-      root.style.setProperty('--muted', themeConfig.colors.muted)
-      root.style.setProperty('--muted-foreground', themeConfig.colors.mutedForeground)
-      root.style.setProperty('--accent', themeConfig.colors.accent)
-      root.style.setProperty('--accent-foreground', themeConfig.colors.accentForeground)
-      root.style.setProperty('--destructive', themeConfig.colors.destructive)
-      root.style.setProperty('--destructive-foreground', themeConfig.colors.destructiveForeground)
-      root.style.setProperty('--border', themeConfig.colors.border)
-      root.style.setProperty('--input', themeConfig.colors.input)
-      root.style.setProperty('--ring', themeConfig.colors.ring)
+      // NOTE: CSS color variables (--primary, --background, etc.) are now 
+      // exclusively set by BrandingInitializer from database theme config.
+      // This prevents conflicts between static theme variants and database themes.
 
       setError(null)
     } catch (err) {

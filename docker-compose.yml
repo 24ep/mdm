@@ -2,12 +2,12 @@ services:
   app:
     container_name: mdm-app
     image: nccgit.qsncc.com:5555/ba/unified-data-platform:1.0.0-beta
-    # Build from local Dockerfile
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        BUILDKIT_INLINE_CACHE: 1
+    # # Build from local Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     BUILDKIT_INLINE_CACHE: 1
     ports:
       - "8029:8029"
     environment:
@@ -61,12 +61,7 @@ services:
   plugin-hub:
     container_name: mdm-plugin-hub
     image: nccgit.qsncc.com:5555/ba/unified-data-platform/plugin-hub:1.0.0-beta
-    # Build from local Dockerfile
-    build:
-      context: ./plugin-hub
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8129}
+
     ports:
       - "8629:3001"
     environment:
