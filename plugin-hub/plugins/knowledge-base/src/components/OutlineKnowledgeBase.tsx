@@ -170,13 +170,56 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
                 Organize and share your team's knowledge
               </p>
             </div>
-            <Button
-              onClick={() => setShowNewCollectionDialog(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Collection
-            </Button>
+            <Dialog open={showNewCollectionDialog} onOpenChange={setShowNewCollectionDialog}>
+              <DialogTrigger asChild>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Collection
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Collection</DialogTitle>
+                  <DialogDescription>
+                    Collections help organize your documents into groups
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Name</label>
+                    <Input
+                      placeholder="Collection name..."
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newCollectionName.trim()) {
+                          handleCreateCollection()
+                        }
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
+                    <Input
+                      placeholder="Brief description..."
+                      value={newCollectionDescription}
+                      onChange={(e) => setNewCollectionDescription(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowNewCollectionDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateCollection} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Create
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -413,49 +456,7 @@ export function OutlineKnowledgeBase({ spaceId }: { spaceId?: string }) {
         spaceId={spaceId}
       />
 
-      {/* New Collection Dialog */}
-      <Dialog open={showNewCollectionDialog} onOpenChange={setShowNewCollectionDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Collection</DialogTitle>
-            <DialogDescription>
-              Collections help organize your documents into groups
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Name</label>
-              <Input
-                placeholder="Collection name..."
-                value={newCollectionName}
-                onChange={(e) => setNewCollectionName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newCollectionName.trim()) {
-                    handleCreateCollection()
-                  }
-                }}
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Description (Optional)</label>
-              <Input
-                placeholder="Brief description..."
-                value={newCollectionDescription}
-                onChange={(e) => setNewCollectionDescription(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewCollectionDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCollection} className="bg-blue-600 hover:bg-blue-700 text-white">
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* New Document Dialog */}
       <Dialog open={showNewDocumentDialog} onOpenChange={setShowNewDocumentDialog}>

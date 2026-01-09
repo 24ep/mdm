@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ImportExportDialog } from './ImportExportDialog'
 import { Plus, Folder, File, ChevronRight, ChevronDown, MoreVertical, Trash2, Edit } from 'lucide-react'
+import toast from 'react-hot-toast'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +43,10 @@ export function CollectionsSidebar({
   }
 
   const handleCreateCollection = async () => {
-    if (!workspaceId) return
+    if (!workspaceId) {
+      toast.error('Workspace ID is missing')
+      return
+    }
 
     const name = prompt('Collection name:')
     if (!name) return
@@ -233,4 +237,3 @@ export function CollectionsSidebar({
     </div>
   )
 }
-
