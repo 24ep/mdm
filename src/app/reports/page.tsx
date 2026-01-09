@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Folder,
   BarChart3,
   FileText,
@@ -125,7 +125,7 @@ export default function ReportsPage() {
 
       const data = await response.json()
       let filteredReports = data.reports || []
-      
+
       // Apply favorites filter
       if (filters.showFavorites) {
         const stored = localStorage.getItem('report_favorites')
@@ -234,10 +234,7 @@ export default function ReportsPage() {
               <FileText className="h-4 w-4 mr-2" />
               Templates
             </Button>
-            <Button onClick={() => router.push('/reports/new')}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Report
-            </Button>
+
           </div>
         </div>
 
@@ -401,7 +398,7 @@ export default function ReportsPage() {
               onSourceClick={(source) => {
                 const sourcePath = source.toLowerCase().replace(/_/g, '-')
                 if (sourcePath === 'built-in') {
-                  router.push('/reports/new')
+                  // router.push('/reports/new') // Page removed
                 } else {
                   router.push(`/reports/source/${sourcePath}`)
                 }
@@ -416,7 +413,7 @@ export default function ReportsPage() {
           onOpenChange={setShowTemplates}
           onSelectTemplate={(template) => {
             // Navigate to create report with template
-            router.push(`/reports/new?template=${template.id}`)
+            // router.push(`/reports/new?template=${template.id}`) // Page removed
           }}
         />
       </div>
