@@ -52,8 +52,8 @@ const getGroupForTab = (tab: string): string | null => {
 
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics', 'knowledge-base', 'projects'],
-    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'marketplace', 'bi', 'reports', 'storage', 'data-governance'],
-    system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'export', 'integrations', 'api'],
+    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'marketplace', 'bi', 'storage', 'data-governance'],
+    system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'integrations', 'api'],
     'data-management': ['space-selection']
   }
 
@@ -83,7 +83,7 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     'AI & Assistants': ['ai-analyst', 'ai-chat-ui'],
     'Data Tools': ['bigquery', 'notebook', 'storage', 'data-governance'],
     'Platform Services': ['marketplace', 'infrastructure'],
-    'Reporting': ['bi', 'reports']
+    'Reporting': ['bi']
   }
 
   const groupSections: Record<string, string[]> = {
@@ -91,7 +91,7 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     kernels: ['kernels'],
     system: ['logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup'],
     security: ['security', 'performance'],
-    integrations: ['settings', 'page-templates', 'notifications', 'themes', 'export']
+    integrations: ['settings', 'page-templates', 'notifications', 'themes']
   }
 
   const tabNames: Record<string, string> = {
@@ -106,7 +106,6 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     'infrastructure': 'Infrastructure',
     'projects': 'Project Management',
     'bi': 'BI & Reports',
-    'reports': 'Reports & Dashboard',
     'storage': 'Storage',
     'data-governance': 'Data Governance',
     'users': 'Users',
@@ -132,7 +131,6 @@ const generateBreadcrumbs = (activeTab: string): BreadcrumbItem[] => {
     'page-templates': 'Page Templates',
     'notifications': 'Notifications',
     'themes': 'Theme & Branding',
-    'export': 'Data Export',
     'integrations': 'Integrations',
     'api': 'API Management',
     'space-selection': 'Data Management'

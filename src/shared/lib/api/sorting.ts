@@ -27,10 +27,12 @@ export function parseSortParams(request: { url: string }): SortParams {
 export function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: 'asc' | 'desc',
-  defaultSort: { field: string; order: 'asc' | 'desc' } = { field: 'created_at', order: 'desc' }
+  defaultSort: { field: string; order: 'asc' | 'desc' } = { field: 'created_at', order: 'desc' },
+  tableAlias: string = ''
 ): string {
   const field = sortBy || defaultSort.field
   const order = sortOrder || defaultSort.order
+  const prefix = tableAlias ? `${tableAlias}.` : ''
 
   // Validate field to prevent SQL injection
   const validFields = [
@@ -43,13 +45,17 @@ export function buildOrderByClause(
     'priority',
     'type',
     'category',
+    'order',
   ]
 
-  if (!validFields.includes(field)) {
-    return `ORDER BY ${defaultSort.field} ${defaultSort.order}`
+  // Allow quoted fields like "order"
+  const cleanField = field.replace(/"/g, '')
+
+  if (!validFields.includes(cleanField)) {
+    return `ORDER BY ${prefix}${defaultSort.field} ${defaultSort.order.toUpperCase()}`
   }
 
-  return `ORDER BY ${field} ${order.toUpperCase()}`
+  return `ORDER BY ${prefix}${field} ${order.toUpperCase()}`
 }
 
 /**

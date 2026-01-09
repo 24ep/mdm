@@ -69,12 +69,11 @@ async function getHandler(request: NextRequest) {
 
   // Search
   if (searchQuery) {
-    const searchClause = buildSearchClause(searchQuery, ['kc.name', 'kc.description'], '')
+    const searchClause = buildSearchClause(searchQuery, ['kc.name', 'kc.description'], '', paramIndex)
     if (searchClause.clause) {
-      const searchConditions = searchClause.clause.replace('WHERE', 'AND')
-      whereConditions.push(searchConditions)
+      whereConditions.push(searchClause.clause)
       queryParams.push(...searchClause.params)
-      paramIndex += searchClause.params.length
+      paramIndex = searchClause.paramIndex
     }
   }
 
@@ -111,9 +110,9 @@ async function getHandler(request: NextRequest) {
           WHERE kcm.collection_id = kc.id
         ) as member_count
       FROM ${schema}.knowledge_collections kc
-      LEFT JOIN users u ON u.id = kc.created_by
+      LEFT JOIN public.users u ON u.id = kc.created_by
       WHERE ${whereClause}
-      ${buildOrderByClause(sortBy || 'created_at', sortOrder || 'desc', { field: 'created_at', order: 'desc' })}
+      ${buildOrderByClause(sortBy || 'created_at', sortOrder || 'desc', { field: 'created_at', order: 'desc' }, 'kc')}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
   queryParams.push(limit, offset)

@@ -33,11 +33,12 @@ export function parseFilterParams(
  */
 export function buildFilterClause(
   filters: FilterParams,
-  tableAlias: string = ''
+  tableAlias: string = '',
+  startingIndex: number = 1
 ): { clause: string; params: any[]; paramIndex: number } {
   const conditions: string[] = []
   const params: any[] = []
-  let paramIndex = 1
+  let paramIndex = startingIndex
   const prefix = tableAlias ? `${tableAlias}.` : ''
 
   for (const [key, value] of Object.entries(filters)) {
@@ -67,22 +68,23 @@ export function buildFilterClause(
 export function buildSearchClause(
   searchQuery: string | null,
   searchFields: string[],
-  tableAlias: string = ''
+  tableAlias: string = '',
+  startingIndex: number = 1
 ): { clause: string; params: any[]; paramIndex: number } {
   if (!searchQuery || searchFields.length === 0) {
-    return { clause: '', params: [], paramIndex: 1 }
+    return { clause: '', params: [], paramIndex: startingIndex }
   }
 
   const prefix = tableAlias ? `${tableAlias}.` : ''
   const conditions = searchFields.map(
-    (field, index) => `${prefix}${field} ILIKE $${index + 1}`
+    (field, index) => `${prefix}${field} ILIKE $${startingIndex + index}`
   )
   const searchPattern = `%${searchQuery}%`
 
   return {
-    clause: `WHERE (${conditions.join(' OR ')})`,
+    clause: `(${conditions.join(' OR ')})`,
     params: searchFields.map(() => searchPattern),
-    paramIndex: searchFields.length + 1,
+    paramIndex: startingIndex + searchFields.length,
   }
 }
 

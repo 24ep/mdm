@@ -126,18 +126,6 @@ export function BrandingInitializer() {
               const data = await response.json()
               const themeData = data.theme
 
-              // Theme Configuration: Check for restricted names
-              // Only apply if NOT "Default" or "Default Team"
-              const restrictedNames = ['default', 'default team']
-              if (restrictedNames.includes(themeData?.name?.toLowerCase())) {
-                console.log('[BrandingInitializer] Skipping theme application for default theme:', themeData.name)
-                // Proceed to clear branding below (by treating as invalid config or success with clear)
-                clearBrandingStyles()
-                localStorage.removeItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
-                fetchingRef.current = false
-                return
-              }
-
               if (themeData?.config) {
                 const configResult = safeParseBrandingConfig(themeData.config)
                 if (configResult.success) {

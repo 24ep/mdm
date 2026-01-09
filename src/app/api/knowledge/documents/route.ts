@@ -79,12 +79,11 @@ async function getHandler(request: NextRequest) {
 
   // Search
   if (search) {
-    const searchClause = buildSearchClause(search, ['kd.title', 'kd.content'], '')
+    const searchClause = buildSearchClause(search, ['kd.title', 'kd.content'], '', paramIndex)
     if (searchClause.clause) {
-      const searchConditions = searchClause.clause.replace('WHERE', 'AND')
-      whereConditions.push(searchConditions)
+      whereConditions.push(searchClause.clause)
       queryParams.push(...searchClause.params)
-      paramIndex += searchClause.params.length
+      paramIndex = searchClause.paramIndex
     }
   }
 
@@ -127,10 +126,10 @@ async function getHandler(request: NextRequest) {
           AND kd2.deleted_at IS NULL
         ) as child_count
       FROM ${schema}.knowledge_documents kd
-      LEFT JOIN users u1 ON u1.id = kd.created_by
-      LEFT JOIN users u2 ON u2.id = kd.updated_by
+      LEFT JOIN public.users u1 ON u1.id = kd.created_by
+      LEFT JOIN public.users u2 ON u2.id = kd.updated_by
       WHERE ${whereClause}
-      ${buildOrderByClause(sortBy, sortOrder || 'desc', { field: '"order"', order: 'asc' })}
+      ${buildOrderByClause(sortBy, sortOrder || 'desc', { field: '"order"', order: 'asc' }, 'kd')}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `
   queryParams.push(limit, offset)

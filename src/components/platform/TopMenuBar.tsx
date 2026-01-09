@@ -40,7 +40,6 @@ const getFeatureName = (activeTab: string): string => {
     'infrastructure': 'Infrastructure',
     'projects': 'Project Management',
     'bi': 'BI & Reports',
-    'reports': 'Reports & Dashboard',
     'storage': 'Storage',
     'data-governance': 'Data Governance',
     'users': 'Users',
@@ -67,7 +66,6 @@ const getFeatureName = (activeTab: string): string => {
     'page-templates': 'Page Templates',
     'notifications': 'Notifications',
     'themes': 'Theme & Branding',
-    'export': 'Data Export',
     'integrations': 'Integrations',
     'api': 'API Management',
     'space-selection': 'Data Management'
@@ -93,7 +91,7 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
       }
     })
   }, [])
-  
+
   // Use branding config if available, otherwise use props
   const displayName = branding?.applicationName || applicationName
   const displayLogo = branding?.applicationLogo || logoUrl
@@ -109,7 +107,7 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   const userInitial = userName?.charAt(0) || userEmail?.charAt(0) || 'U'
   const userId = (session as any)?.user?.id || (session as any)?.user?.email || ''
   const userRole = (session as any)?.user?.role || 'User'
-  
+
   // Construct user object for ProfileSettingsModal
   const user = {
     id: userId,
@@ -147,10 +145,10 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   const recentNotifications = notifications.slice(0, 5)
 
   return (
-    <div 
-      className="h-14 border-b border-border flex items-center justify-between px-2 top-menu-bar" 
+    <div
+      className="h-14 border-b border-border flex items-center justify-between px-2 top-menu-bar"
       data-component="top-menu-bar"
-      style={{ 
+      style={{
         zIndex: Z_INDEX.navigation,
         backgroundColor: 'var(--brand-top-menu-bg, hsl(var(--background)))',
         color: 'var(--brand-top-menu-text, hsl(var(--foreground)))'
@@ -160,8 +158,8 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
       <div className="flex items-center gap-1.5 min-w-0">
         {/* Logo */}
         {displayLogo ? (
-          <img 
-            src={displayLogo} 
+          <img
+            src={displayLogo}
             alt={displayName}
             className="h-5 w-5 object-contain flex-shrink-0 ml-2 mr-2"
             onError={(e) => {
@@ -175,7 +173,7 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
             </span>
           </div>
         )}
-        
+
         {/* Space Name or Application Name */}
         {showSpaceName && spaceName ? (
           <div className="flex flex-col min-w-0">
@@ -191,12 +189,12 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
             <span className="font-semibold text-sm whitespace-nowrap" style={{ color: 'var(--brand-top-menu-text, hsl(var(--foreground)))' }}>
               {displayName}
             </span>
-            
+
             {/* Separator */}
             {!showSpaceName && (
               <>
                 <span className="text-sm" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.6 }}>|</span>
-                
+
                 {/* Selected Feature */}
                 <span className="text-sm truncate" style={{ color: 'var(--brand-top-menu-text, hsl(var(--muted-foreground)))', opacity: 0.8 }}>
                   {featureName}
@@ -212,15 +210,15 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
         {/* Notification Bell with Popover */}
         <Popover open={notificationPopoverOpen} onOpenChange={setNotificationPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               className="relative h-9 w-9"
               title="Notifications"
             >
               <Bell className="h-4 w-4" />
               {notifications.length > 0 && unreadCount > 0 && (
-                <Badge 
+                <Badge
                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-red-500 text-white border-2 border-background"
                 >
                   {unreadCount > 99 ? '99+' : unreadCount}
@@ -323,7 +321,7 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                     }}
                   >
                     <MoreHorizontal className="h-4 w-4 mr-2" />
-                    {notifications.length > 5 
+                    {notifications.length > 5
                       ? `Show More (${notifications.length - 5} more)`
                       : 'View All Notifications'
                     }
@@ -373,9 +371,9 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                 </p>
               </div>
             </div>
-            
+
             <div className="border-t border-border my-1" />
-            
+
             {/* Menu Items */}
             <div className="py-1">
               <Button
@@ -389,9 +387,9 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile Settings</span>
               </Button>
-              
+
               <div className="border-t border-border my-1" />
-              
+
               <Button
                 variant="ghost"
                 className="w-full justify-start font-normal h-9 px-3"

@@ -44,11 +44,11 @@ export default function SpaceLayout({
   const isSpaceModule = pathname?.includes('/module')
   const fromDataManagement = searchParams?.get('from') === 'data-management'
   const fromSpaceSidebar = searchParams?.get('from') === 'space-sidebar'
-  
+
   // Check if we're in a space context (any route under [space] except settings)
   // This includes /module, /page/[id], and any other space routes
   const isInSpaceContext = !isSpaceSettings && spaceSlug && pathname && (
-    pathname.includes(`/${spaceSlug}/module`) || 
+    pathname.includes(`/${spaceSlug}/module`) ||
     pathname.includes(`/${spaceSlug}/page/`) ||
     (pathname.startsWith(`/${spaceSlug}/`) && !pathname.includes('/settings'))
   )
@@ -149,8 +149,6 @@ export default function SpaceLayout({
       'page-templates': '/system/page-templates',
       'notifications': '/system/notifications',
       'themes': '/system/themes',
-      'export': '/system/export',
-      'integrations': '/system/integrations',
       'api': '/system/api',
       'space-selection': '/data-management/space-selection',
     }
@@ -185,8 +183,8 @@ export default function SpaceLayout({
           <p className="text-muted-foreground mb-4">
             The space you're looking for doesn't exist or you don't have access to it.
           </p>
-          <a 
-            href="/spaces" 
+          <a
+            href="/spaces"
             className="text-primary hover:underline"
           >
             ← Back to Spaces
@@ -243,7 +241,7 @@ export default function SpaceLayout({
   if (isSpaceSettings) {
     // If coming from data management or space sidebar, set activeTab to space-selection to show data management as selected
     const tabForLayout = (fromDataManagement || fromSpaceSidebar) ? 'space-selection' : activeTab
-    
+
     return (
       <PlatformLayout
         activeTab={tabForLayout}
@@ -292,7 +290,7 @@ export default function SpaceLayout({
           if (fromDataManagement) {
             params.set('from', 'data-management')
           }
-            router.push(`/${spaceSlug}/settings?${params.toString()}`)
+          router.push(`/${spaceSlug}/settings?${params.toString()}`)
         }}
         spaceSettingsSelectedSpaceId={currentSpace?.id}
         onSpaceSettingsSpaceChange={(spaceId) => {

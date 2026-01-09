@@ -48,20 +48,10 @@ import { BigQueryInterface } from './admin/features/business-intelligence'
 import { OutlineKnowledgeBase } from '@plugins/knowledge-base/src/components/OutlineKnowledgeBase'
 import { MarketplaceHome } from '@/features/marketplace'
 import { InfrastructureOverview } from '@/features/infrastructure'
-import { ProjectsList } from '@plugins/data-science/src/components/ProjectsList'
-import { AttachmentManager } from './admin/features/content'
-import { UserManagement, RoleManagement, PermissionTester } from './admin/features/users'
-import { SystemSettings, PageTemplatesAdmin } from './admin/features/system'
-import { AuditLogs } from './admin/features/security'
-import { BackupRecovery } from './admin/features/storage'
-
 import { NotificationCenter, ThemeManager } from './admin/features/system'
 import { SecurityFeatures } from './admin/features/security'
-import { DataExportImport } from './admin/features/data'
-import { LogManagement } from './admin/features/analytics'
 import { DatabaseManagement } from './admin/features/data'
 import { CacheManagement, StorageManagement } from './admin/features/storage'
-import { MergedBIReports } from './admin/features/business-intelligence'
 import { SpaceSelection, SpaceLayoutsAdmin } from './admin/features/spaces'
 import { AIAnalyst, AIChatUI, KernelManagement } from './admin/features/business-intelligence'
 import { DataModelManagement } from './admin/features/data'
@@ -110,7 +100,6 @@ const getRouteForTab = (tab: string): string => {
     'page-templates': '/system/page-templates',
     'notifications': '/system/notifications',
     'themes': '/system/themes',
-    'export': '/system/export',
 
     'api': '/system/api',
     'space-selection': '/admin/space-selection',
@@ -173,11 +162,8 @@ export default function HomePage() {
         'ai-chat-ui': { name: 'Agent Embed GUI', icon: 'Bot', color: '#10b981' },
         'knowledge-base': { name: 'Knowledge Base', icon: 'BookOpen', color: '#14b8a6' },
         'space-layouts': { name: 'Space Layouts', icon: 'Layout', color: '#4f46e5' },
-        attachments: { name: 'Attachment Manager', icon: 'Paperclip', color: '#ea580c' },
-        users: { name: 'User Management', icon: 'Users', color: '#dc2626' },
         'space-settings': { name: 'Space Settings', icon: 'Building2', color: '#0891b2' },
         settings: { name: 'System Settings', icon: 'Settings', color: '#6b7280' },
-        projects: { name: 'Project Management', icon: 'Kanban', color: '#8b5cf6' },
         'data-governance': { name: 'Data Governance', icon: 'Shield', color: '#059669' },
       }[activeTab]
 
@@ -364,33 +350,9 @@ export default function HomePage() {
           </div>
         )}
 
-        {activeTab === 'audit' && <AuditLogs />}
-        {activeTab === 'backup' && <BackupRecovery />}
-
-        {activeTab === 'notifications' && <NotificationCenter />}
-        {activeTab === 'themes' && <ThemeManager />}
-        {activeTab === 'security' && <SecurityFeatures />}
-        {activeTab === 'data' && <DataModelManagement />}
-        {activeTab === 'export' && <DataExportImport />}
-        {activeTab === 'logs' && <LogManagement />}
-        {activeTab === 'database' && <DatabaseManagement />}
-        {activeTab === 'change-requests' && <ChangeRequests />}
-        {activeTab === 'sql-linting' && <SQLLinting />}
-        {activeTab === 'schema-migrations' && <SchemaMigrations />}
-        {activeTab === 'data-masking' && <DataMasking />}
-        {activeTab === 'cache' && <CacheManagement />}
-        {activeTab === 'storage' && <StorageManagement />}
-        {activeTab === 'bi' && <MergedBIReports />}
-        {activeTab === 'reports' && <MergedBIReports />}
-        {activeTab === 'users' && <UserManagement />}
-        {activeTab === 'roles' && <RoleManagement />}
-        {activeTab === 'permission-tester' && <PermissionTester />}
+        {activeTab === 'bi' && <BigQueryInterface />}
         {activeTab === 'space-selection' && <SpaceSelection />}
-        {activeTab === 'space-settings' && <SpaceSettingsAdmin selectedSpaceId={selectedSpace} />}
-        {activeTab === 'attachments' && <AttachmentManager />}
         {activeTab === 'bigquery' && <BigQueryInterface />}
-        {activeTab === 'notebook' && <ProjectsList />}
-        {activeTab === 'kernels' && <KernelManagement />}
         {activeTab === 'ai-analyst' && <AIAnalyst />}
         {activeTab === 'ai-chat-ui' && <AIChatUI />}
         {activeTab === 'knowledge-base' && <OutlineKnowledgeBase />}
@@ -407,10 +369,6 @@ export default function HomePage() {
           />
         )}
 
-        {activeTab === 'settings' && <SystemSettings />}
-        {activeTab === 'space-layouts' && <SpaceLayoutsAdmin />}
-        {activeTab === 'page-templates' && <PageTemplatesAdmin />}
-        {activeTab === 'projects' && <ProjectsManagement />}
         {activeTab === 'data-governance' && <DataGovernance />}
       </div>
     </PlatformLayout>
