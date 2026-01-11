@@ -67,7 +67,7 @@
             "type": "modern",
             "margin": "16px",
             "borderRadius": "12px",
-            "width": "500px",
+            "width": "min(500px, 85vw)",
             "backgroundBlur": 10,
             "backgroundOpacity": 95
         },
@@ -97,7 +97,7 @@
                 "backgroundColor": "transparent",
                 "textColor": "#F5F5F7",
                 "borderRadius": "8px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "500",
                 "backdropFilter": "",
@@ -110,7 +110,7 @@
                 "backgroundColor": "rgba(255,255,255,0.08)",
                 "textColor": "#F5F5F7",
                 "borderRadius": "8px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "500",
                 "backdropFilter": "",
@@ -123,7 +123,7 @@
                 "backgroundColor": "rgba(10,132,255,0.18)",
                 "textColor": "#0A84FF",
                 "borderRadius": "8px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "600",
                 "backdropFilter": "",
@@ -136,7 +136,7 @@
                 "backgroundColor": "transparent",
                 "textColor": "#F5F5F7",
                 "borderRadius": "8px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "500",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
@@ -147,7 +147,7 @@
                 "backgroundColor": "rgba(255,255,255,0.08)",
                 "textColor": "#F5F5F7",
                 "borderRadius": "8px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "500",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
@@ -158,7 +158,7 @@
                 "backgroundColor": "rgba(10,132,255,0.18)",
                 "textColor": "#0A84FF",
                 "borderRadius": "8px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "600",
                 "boxShadow": "0 1px 3px 0 rgba(10, 132, 255, 0.25)",
@@ -171,7 +171,7 @@
                 "borderColor": "transparent",
                 "borderRadius": "8px",
                 "borderWidth": "0px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
             },
@@ -191,7 +191,7 @@
                 "borderRadius": "8px",
                 "borderWidth": "0px",
                 "boxShadow": "none",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
             },
@@ -209,7 +209,7 @@
                 "borderColor": "transparent",
                 "borderRadius": "8px",
                 "borderWidth": "0px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
             },
@@ -227,7 +227,7 @@
                 "borderColor": "transparent",
                 "borderRadius": "8px",
                 "borderWidth": "0px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "lineHeight": "1.5",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
@@ -313,7 +313,7 @@
                 "textDecoration": "underline"
             },
             "iconButton": {
-                "backgroundColor": "transparent",
+                "backgroundColor": "rgba(255, 255, 255, 0.05)",
                 "textColor": "#F5F5F7",
                 "borderRadius": "8px",
                 "borderWidth": "0px",
@@ -499,7 +499,7 @@
                 "textColor": "#5AC8FA",
                 "borderRadius": "6px",
                 "borderWidth": "0px",
-                "padding": "0.5rem 0.75rem",
+                "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "600",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"

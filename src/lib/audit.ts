@@ -58,16 +58,16 @@ export async function createAuditLog(data: AuditLogData) {
         hash = ((hash << 5) - hash) + char
         hash = hash & hash // Convert to 32-bit integer
       }
-      
+
       // Generate a 32-character hex string from the hash
       // Use multiple hash iterations to get enough entropy
       const hash1 = Math.abs(hash).toString(16).padStart(8, '0')
       const hash2 = Math.abs((hash * 31 + str.length)).toString(16).padStart(8, '0')
       const hash3 = Math.abs((hash * 17 + (str.charCodeAt(0) || 0))).toString(16).padStart(8, '0')
       const hash4 = Math.abs((hash * 7 + (str.charCodeAt(str.length - 1) || 0))).toString(16).padStart(8, '0')
-      
+
       const hex = (hash1 + hash2 + hash3 + hash4).slice(0, 32).padStart(32, '0')
-      
+
       // Format as UUID v4: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
       // y must be one of 8, 9, a, or b (first hex digit of 4th segment)
       // Ensure we have enough hex characters - hex should be 32 chars after padding
@@ -105,16 +105,41 @@ export async function createAuditLog(data: AuditLogData) {
       RETURNING id, created_at
     `
 
-    const result = await query(insertQuery, [
-      data.action,
-      data.entityType,
-      entityIdValue,
-      data.oldValue ? JSON.stringify(data.oldValue) : null,
-      data.newValue ? JSON.stringify(data.newValue) : null,
-      userIdValue,
-      data.ipAddress || null,
-      data.userAgent || null
-    ])
+    let result
+    try {
+      result = await query(insertQuery, [
+        data.action,
+        data.entityType,
+        entityIdValue,
+        data.oldValue ? JSON.stringify(data.oldValue) : null,
+        data.newValue ? JSON.stringify(data.newValue) : null,
+        userIdValue,
+        data.ipAddress || null,
+        data.userAgent || null
+      ])
+    } catch (error: any) {
+      // Handle Foreign Key Violation
+      // Prisma P2010: Raw query failed. Code: `23503`. Message: ... violates foreign key constraint ...
+      const isFKViolation =
+        error.code === '23503' ||
+        (error.code === 'P2010' && (error.message?.includes('23503') || error.meta?.code === '23503'))
+
+      if (isFKViolation && userIdValue) {
+        console.warn(`Foreign key violation for userId ${userIdValue}. Retrying with null userId.`)
+        result = await query(insertQuery, [
+          data.action,
+          data.entityType,
+          entityIdValue,
+          data.oldValue ? JSON.stringify(data.oldValue) : null,
+          data.newValue ? JSON.stringify(data.newValue) : null,
+          null, // Fallback to null user
+          data.ipAddress || null,
+          data.userAgent || null
+        ])
+      } else {
+        throw error
+      }
+    }
 
     const auditLog = result.rows[0]
 
@@ -131,7 +156,7 @@ export async function createAuditLog(data: AuditLogData) {
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
         createdAt: auditLog.created_at
-      }).catch(() => {}) // Silently fail
+      }).catch(() => { }) // Silently fail
     })
 
     // Send to SigNoz (fire and forget)
@@ -150,7 +175,7 @@ export async function createAuditLog(data: AuditLogData) {
             userAgent: data.userAgent
           },
           timestamp: new Date(auditLog.created_at).getTime()
-        }).catch(() => {}) // Silently fail
+        }).catch(() => { }) // Silently fail
       }
     })
 

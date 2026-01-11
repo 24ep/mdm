@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, withErrorHandling } from '@/lib/api-middleware'
 import { db } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
+
 /**
  * GET /api/admin/menu
  * Fetch all menu groups with their items

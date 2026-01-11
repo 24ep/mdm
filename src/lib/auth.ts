@@ -89,24 +89,24 @@ async function getSSOConfig() {
         AND deleted_at IS NULL
     `
     const { rows } = await query(sql, [], 30000, { skipTracing: true })
-    
+
     if (rows && Array.isArray(rows)) {
       for (const row of rows) {
-         if (row.type === 'azure-ad') {
-           config.azureEnabled = row.is_enabled
-           config.azureClientId = row.config?.clientId || ''
-           config.azureClientSecret = row.config?.clientSecret || ''
-           config.azureTenantId = row.config?.tenantId || ''
-           azureConfigFound = true
-         } else if (row.type === 'google-auth') {
-           config.googleEnabled = row.is_enabled
-           config.googleClientId = row.config?.clientId || ''
-           config.googleClientSecret = row.config?.clientSecret || ''
-           googleConfigFound = true
-         }
+        if (row.type === 'azure-ad') {
+          config.azureEnabled = row.is_enabled
+          config.azureClientId = row.config?.clientId || ''
+          config.azureClientSecret = row.config?.clientSecret || ''
+          config.azureTenantId = row.config?.tenantId || ''
+          azureConfigFound = true
+        } else if (row.type === 'google-auth') {
+          config.googleEnabled = row.is_enabled
+          config.googleClientId = row.config?.clientId || ''
+          config.googleClientSecret = row.config?.clientSecret || ''
+          googleConfigFound = true
+        }
       }
     }
-    
+
     // Fallback to system_settings if not found in platform_integrations (Legacy support)
     // Removed legacy logic for brevity/consistency with route.ts, assuming platform_integrations is source of truth or empty
     // If needed we could add it here similar to route.ts but auth.ts seemed to have commented it out previously?
@@ -159,8 +159,8 @@ async function getSessionTimeoutSeconds(): Promise<number> {
     let found = false
     if (policyRows && Array.isArray(policyRows) && policyRows[0]?.value) {
       try {
-        const policy = typeof policyRows[0].value === 'string' 
-          ? JSON.parse(policyRows[0].value) 
+        const policy = typeof policyRows[0].value === 'string'
+          ? JSON.parse(policyRows[0].value)
           : policyRows[0].value
         if (policy?.timeout) {
           const hours = Number(policy.timeout)
@@ -173,7 +173,7 @@ async function getSessionTimeoutSeconds(): Promise<number> {
         // If JSON parse fails, continue to flat format
       }
     }
-    
+
     if (!found) {
       // Fall back to flat sessionTimeout format (from SystemSettings)
       const { rows } = await query(
@@ -229,7 +229,7 @@ providers.push(
           return null
         }
         const user = rows[0]
-        
+
         // Check if user exists and has a password
         if (!user || !user.password) {
           return null
@@ -242,25 +242,25 @@ providers.push(
 
         // 2. Check if account is active
         if (user.is_active === false) {
-           throw new Error("Account is disabled. Please contact your administrator.")
+          throw new Error("Account is disabled. Please contact your administrator.")
         }
-        
+
         // Check allowed login methods
         // If allowed_login_methods is not empty, 'email' (or 'credentials') must be present
         if (user.allowed_login_methods && Array.isArray(user.allowed_login_methods) && user.allowed_login_methods.length > 0) {
-           if (!user.allowed_login_methods.includes('email') && !user.allowed_login_methods.includes('credentials')) {
-             throw new Error("Login with email/password is not allowed for this account.")
-           }
+          if (!user.allowed_login_methods.includes('email') && !user.allowed_login_methods.includes('credentials')) {
+            throw new Error("Login with email/password is not allowed for this account.")
+          }
         }
 
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-        
+
         if (!isPasswordValid) {
           // Increment failed login attempts
           const newFailedAttempts = (user.failed_login_attempts || 0) + 1
-          
+
           await query(
-            'UPDATE public.users SET failed_login_attempts = $1 WHERE id = $2',
+            'UPDATE public.users SET failed_login_attempts = $1 WHERE id = $2::uuid',
             [newFailedAttempts, user.id],
             5000,
             { skipTracing: true }
@@ -268,22 +268,22 @@ providers.push(
 
           // Lockout if more than 2 failed attempts (i.e., this is the 3rd failure or more)
           if (newFailedAttempts > 2) {
-             await query(
-              'UPDATE public.users SET is_active = false WHERE id = $1',
+            await query(
+              'UPDATE public.users SET is_active = false WHERE id = $1::uuid',
               [user.id],
               5000,
               { skipTracing: true }
             )
             // Still return null for credentials error, but next time they try it will be "Account is disabled"
           }
-          
+
           return null
         }
 
         // Reset failed attempts on successful login if user had some failures
         if (user.failed_login_attempts > 0) {
-           await query(
-            'UPDATE public.users SET failed_login_attempts = 0 WHERE id = $1',
+          await query(
+            'UPDATE public.users SET failed_login_attempts = 0 WHERE id = $1::uuid',
             [user.id],
             5000,
             { skipTracing: true }
@@ -298,20 +298,20 @@ providers.push(
           // Let's pass it in the user object to the session
         }
 
-        return { 
-          id: user.id, 
-          email: user.email, 
-          name: user.name, 
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
           role: user.role,
           requiresPasswordChange: user.requires_password_change
         }
       } catch (error: any) {
         // Log the actual error
         console.error('Auth Error:', error.message)
-        
+
         // Throw known errors so they can be displayed
         if (error.message.includes("Account is")) {
-            throw error
+          throw error
         }
 
         // Silently return null if database query fails
@@ -347,13 +347,13 @@ if (!nextAuthSecret) {
   // This is safe because the secret is only used at runtime, and you should
   // set NEXTAUTH_SECRET in your production environment
   nextAuthSecret = crypto.randomBytes(32).toString('base64')
-  
+
   // Only log warnings in development to avoid build noise
   if (process.env.NODE_ENV === 'development') {
     console.warn('⚠️  NEXTAUTH_SECRET is not set in environment variables!')
-    console.warn('Available env vars starting with NEXTAUTH:', 
+    console.warn('Available env vars starting with NEXTAUTH:',
       Object.keys(process.env).filter(k => k.startsWith('NEXTAUTH')).join(', ') || 'none')
-    console.warn('Available env vars starting with AUTH:', 
+    console.warn('Available env vars starting with AUTH:',
       Object.keys(process.env).filter(k => k.startsWith('AUTH')).join(', ') || 'none')
     console.warn('⚠️  Generated temporary NEXTAUTH_SECRET for development:', nextAuthSecret.substring(0, 20) + '...')
     console.warn('⚠️  WARNING: This secret will change on each restart. Add NEXTAUTH_SECRET to .env.local for a persistent secret.')
@@ -385,34 +385,34 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google' || account?.provider === 'azure-ad') {
         if (!user.email) return false
-        
+
         // Optimally, fetch SSO Config first
         const ssoConfig = await getSSOConfig()
-        
+
         if (account.provider === 'google' && !ssoConfig.googleEnabled) return false
         if (account.provider === 'azure-ad' && !ssoConfig.azureEnabled) return false
-        
+
         // Then check user existence
         const userExists = await checkUserEmailExists(user.email)
         if (!userExists) return false
-        
+
         // Finally get/create SSO user
         const ssoUser = await getOrCreateSSOUser(user.email, user.name || profile?.name || '', account.provider)
-        if (ssoUser) { 
-           // specific check for allowed methods
-           const allowed = ssoUser.allowedLoginMethods
-           if (allowed && Array.isArray(allowed) && allowed.length > 0) {
-             // Map provider id to stored method name if necessary (e.g. 'azure-ad', 'google')
-             // NextAuth provider IDs are typically 'google', 'azure-ad', etc.
-             if (!allowed.includes(account.provider)) {
-               // We can't easily throw an error message to the UI here in standard NextAuth flow without hacking
-               // returning false will redirect to error page
-               return false
-             }
-           }
-           
-           (user as any).id = ssoUser.id; 
-           (user as any).role = ssoUser.role 
+        if (ssoUser) {
+          // specific check for allowed methods
+          const allowed = ssoUser.allowedLoginMethods
+          if (allowed && Array.isArray(allowed) && allowed.length > 0) {
+            // Map provider id to stored method name if necessary (e.g. 'azure-ad', 'google')
+            // NextAuth provider IDs are typically 'google', 'azure-ad', etc.
+            if (!allowed.includes(account.provider)) {
+              // We can't easily throw an error message to the UI here in standard NextAuth flow without hacking
+              // returning false will redirect to error page
+              return false
+            }
+          }
+
+          (user as any).id = ssoUser.id;
+          (user as any).role = ssoUser.role
         }
         return true
       }
@@ -420,12 +420,12 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        ;(token as any).role = (user as any).role
+        ; (token as any).role = (user as any).role
         // Set token expiration based on system setting at login/refresh
         const timeoutSeconds = await getSessionTimeoutSeconds()
         const nowSeconds = Math.floor(Date.now() / 1000)
-        ;(token as any).exp = nowSeconds + timeoutSeconds
-        ;(token as any).iat = nowSeconds
+          ; (token as any).exp = nowSeconds + timeoutSeconds
+          ; (token as any).iat = nowSeconds
       } else {
         // If exp was set previously, leave it; NextAuth will call authorized in middleware
       }
@@ -433,9 +433,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        ;(session.user as any).id = token.sub!
-        ;(session.user as any).role = (token as any).role
-        ;(session as any).exp = (token as any).exp
+        ; (session.user as any).id = token.sub!
+          ; (session.user as any).role = (token as any).role
+          ; (session as any).exp = (token as any).exp
       }
       return session
     },

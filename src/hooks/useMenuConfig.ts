@@ -49,7 +49,7 @@ export function useMenuConfig(): UseMenuConfigResult {
             setLoading(true)
             setError(null)
 
-            const response = await fetch('/api/admin/menu')
+            const response = await fetch('/api/admin/menu', { cache: 'no-store' })
             if (!response.ok) {
                 throw new Error(`Failed to fetch menu config: ${response.status}`)
             }

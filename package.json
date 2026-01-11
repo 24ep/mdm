@@ -24,7 +24,7 @@
     "migrate-api-routes": "node scripts/migrate-api-routes.js",
     "migrate-api-routes:dry": "node scripts/migrate-api-routes.js --dry-run",
     "migrate-api-routes:test": "node scripts/migrate-api-routes.js --dry-run --limit 5",
-    "seed": "npx prisma db push --force-reset --accept-data-loss && node -r dotenv/config scripts/run-migration.js && tsx scripts/create-admin-user.ts && tsx prisma/seed-assets.ts && tsx prisma/seed-storage-connection.ts && node -r dotenv/config scripts/seed-plugins.js && node -r dotenv/config scripts/seed-themes.js && tsx scripts/seed-system-settings.ts && node -r dotenv/config scripts/seed-global-roles.js"
+    "seed": "npx prisma db push --force-reset --accept-data-loss && node -r dotenv/config scripts/run-migration.js && tsx scripts/create-admin-user.ts && tsx prisma/seed-assets.ts && tsx prisma/seed-storage-connection.ts && node -r dotenv/config scripts/seed-plugins.js && tsx src/scripts/seed-themes.ts && tsx scripts/seed-system-settings.ts && node -r dotenv/config scripts/seed-global-roles.js && tsx src/scripts/seed-platform-menu.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.932.0",

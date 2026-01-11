@@ -120,7 +120,8 @@ async function getHandler(request: NextRequest) {
 
 
     // Join Global installations (always check this)
-    const globalJoin = `LEFT JOIN service_installations si_global ON si_global.service_id = sr.id AND si_global.space_id IS NULL AND si_global.deleted_at IS NULL`
+    // Cast service_id to UUID to avoid 'operator does not exist: uuid = text' error
+    const globalJoin = `LEFT JOIN service_installations si_global ON si_global.service_id::uuid = sr.id AND si_global.space_id IS NULL AND si_global.deleted_at IS NULL`
 
     // If spaceId is present, also join Space installations
     let spaceJoin = ''
@@ -128,7 +129,8 @@ async function getHandler(request: NextRequest) {
     let installationStatusSelect = 'si_global.status'
 
     if (spaceId) {
-      spaceJoin = `LEFT JOIN service_installations si_space ON si_space.service_id = sr.id AND si_space.space_id = CAST($${paramIndex} AS uuid) AND si_space.deleted_at IS NULL`
+      // Cast service_id and space_id to UUID
+      spaceJoin = `LEFT JOIN service_installations si_space ON si_space.service_id::uuid = sr.id AND si_space.space_id::uuid = CAST($${paramIndex} AS uuid) AND si_space.deleted_at IS NULL`
       queryParams.push(spaceId)
       paramIndex++
 

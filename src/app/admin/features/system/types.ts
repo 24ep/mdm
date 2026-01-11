@@ -8,8 +8,17 @@ export interface SystemSettings {
   siteName: string
   siteDescription: string
   siteUrl: string
+  logoUrl: string
   faviconUrl: string
   supportEmail: string
+
+  // Organization
+  orgName: string
+  orgDescription: string
+  orgAddress: string
+  orgPhone: string
+  orgEmail: string
+  orgWebsite: string
 
   // Database
   dbHost: string

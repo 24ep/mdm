@@ -139,6 +139,8 @@ export function PlatformSidebar({
 
       // Get user role from session or default to USER
       const userRole: string = (session?.user as any)?.role || 'USER'
+      console.log('PlatformSidebar Debug:', { userRole, groups: menuConfig.groups })
+
 
       for (const group of menuConfig.groups) {
         // Filter items based on requiredRoles and Permissions
@@ -148,9 +150,18 @@ export function PlatformSidebar({
             return true
           }
 
-          // Check for Role match (exact match)
-          // OR user is SUPER_ADMIN (always allow)
-          if (item.requiredRoles.includes(userRole) || userRole === 'SUPER_ADMIN') {
+          // Check for Role match with hierarchy
+          // SUPER_ADMIN > ADMIN > MANAGER > USER
+          // Higher roles can see items for lower roles
+          const roleHierarchy: Record<string, string[]> = {
+            'SUPER_ADMIN': ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER'],
+            'ADMIN': ['ADMIN', 'MANAGER', 'USER'],
+            'MANAGER': ['MANAGER', 'USER'],
+            'USER': ['USER']
+          }
+          const userEffectiveRoles = roleHierarchy[userRole] || [userRole]
+
+          if (item.requiredRoles.some(r => userEffectiveRoles.includes(r))) {
             return true
           }
 
@@ -505,6 +516,19 @@ export function PlatformSidebar({
                   </div>
                 )}
 
+                {/* Group Header Label */}
+                {selectedGroup && groupMetadata[selectedGroup] && (
+                  <div className="px-4 py-3 border-b border-border mb-2">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      {(() => {
+                        const Icon = groupMetadata[selectedGroup].icon
+                        return <Icon className="h-4 w-4" />
+                      })()}
+                      {groupMetadata[selectedGroup].name}
+                    </h3>
+                  </div>
+                )}
+
                 {/* Dynamic Section Rendering */}
                 <div className="space-y-4">
                   {Object.entries(activeGroupSections).map(([sectionName, items], sectionIndex) => {
@@ -572,13 +596,18 @@ export function PlatformSidebar({
                 className="h-8 w-8"
                 onClick={onToggleCollapse}
                 title="Expand sidebar"
-                style={{ pointerEvents: 'auto', position: 'relative', zIndex: 101 }}
+                style={{
+                  pointerEvents: 'auto',
+                  position: 'relative',
+                  zIndex: 101,
+                  color: 'var(--brand-platform-sidebar-text)'
+                }}
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Button>
-              <span className="text-xs text-muted-foreground" style={{ color: sidebarText }}>
+              <span className="text-xs text-muted-foreground" style={{ color: 'var(--brand-platform-sidebar-text)', opacity: 0.7 }}>
                 v{APP_VERSION}
               </span>
             </div>
@@ -589,14 +618,21 @@ export function PlatformSidebar({
                 size="sm"
                 onClick={onToggleCollapse}
                 className="w-full justify-start flex items-center gap-2"
-                style={{ pointerEvents: 'auto', position: 'relative', zIndex: 101 }}
+                style={{
+                  pointerEvents: 'auto',
+                  position: 'relative',
+                  zIndex: 101,
+                  color: 'var(--brand-platform-sidebar-text)',
+                  borderColor: 'var(--brand-platform-sidebar-text)',
+                  opacity: 0.8
+                }}
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 Collapse
               </Button>
-              <div className="text-xs text-muted-foreground text-center" style={{ color: sidebarText }}>
+              <div className="text-xs text-muted-foreground text-center" style={{ color: 'var(--brand-platform-sidebar-text)', opacity: 0.7 }}>
                 Version {APP_VERSION}
               </div>
             </div>

@@ -299,10 +299,12 @@ export default function HomePage() {
                   {recentItems.map((item) => {
                     const IconComponent = getIconComponent(item.icon)
                     return (
-                      <button
+                      <div
+                        role="button"
                         key={`${item.type}-${item.id}`}
                         onClick={() => handleRecentItemClick(item)}
-                        className="flex flex-col items-start gap-2 p-3 rounded-lg border bg-card hover:bg-accent hover:border-accent-foreground/20 transition-all group"
+                        className="flex flex-col items-start gap-2 p-3 rounded-lg border hover:bg-accent hover:border-accent-foreground/20 transition-all group min-h-[100px] h-full cursor-pointer"
+                        style={{ backgroundColor: 'hsl(var(--card))' }}
                       >
                         <div className="flex items-start justify-between w-full">
                           <div
@@ -325,7 +327,7 @@ export default function HomePage() {
                             {getRelativeTimeString(item.accessedAt)}
                           </p>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -337,18 +339,21 @@ export default function HomePage() {
 
 
           </div>
-        )}
+        )
+        }
 
         {/* Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="text-center py-12 px-6">
-            <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Unified Data Platform Homepage</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Select a feature from the cards above or use the sidebar to navigate to different admin functions.
-            </p>
-          </div>
-        )}
+        {
+          activeTab === 'overview' && (
+            <div className="text-center py-12 px-6">
+              <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Unified Data Platform Homepage</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Select a feature from the cards above or use the sidebar to navigate to different admin functions.
+              </p>
+            </div>
+          )
+        }
 
         {activeTab === 'bi' && <BigQueryInterface />}
         {activeTab === 'space-selection' && <SpaceSelection />}
@@ -356,21 +361,25 @@ export default function HomePage() {
         {activeTab === 'ai-analyst' && <AIAnalyst />}
         {activeTab === 'ai-chat-ui' && <AIChatUI />}
         {activeTab === 'knowledge-base' && <OutlineKnowledgeBase />}
-        {activeTab === 'marketplace' && (
-          <MarketplaceHome
-            spaceId={selectedSpace || undefined}
-            showSpaceSelector={true}
-          />
-        )}
-        {activeTab === 'infrastructure' && (
-          <InfrastructureOverview
-            spaceId={selectedSpace || undefined}
-            showSpaceSelector={true}
-          />
-        )}
+        {
+          activeTab === 'marketplace' && (
+            <MarketplaceHome
+              spaceId={selectedSpace || undefined}
+              showSpaceSelector={true}
+            />
+          )
+        }
+        {
+          activeTab === 'infrastructure' && (
+            <InfrastructureOverview
+              spaceId={selectedSpace || undefined}
+              showSpaceSelector={true}
+            />
+          )
+        }
 
         {activeTab === 'data-governance' && <DataGovernance />}
-      </div>
-    </PlatformLayout>
+      </div >
+    </PlatformLayout >
   )
 }

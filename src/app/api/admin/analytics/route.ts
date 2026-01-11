@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || '7d'
-    
+
     // Calculate date range
     const now = new Date()
     let startDate: Date
@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
         COUNT(DISTINCT al.user_id) as active_users,
         COUNT(*) as total_requests,
         COUNT(*) FILTER (WHERE al.created_at >= $1) as recent_requests,
-        COUNT(*) FILTER (WHERE al.action = 'api_request' AND al.details->>'statusCode'::text = '200') as successful_requests,
-        COUNT(*) FILTER (WHERE al.action = 'api_request' AND al.details->>'statusCode'::text != '200') as failed_requests
+        COUNT(*) FILTER (WHERE al.action = 'api_request' AND (al.new_value::jsonb)->>'statusCode' = '200') as successful_requests,
+        COUNT(*) FILTER (WHERE al.action = 'api_request' AND (al.new_value::jsonb)->>'statusCode' != '200') as failed_requests
       FROM audit_logs al
       WHERE al.created_at >= $1`,
       [startDate]
@@ -101,12 +101,12 @@ export async function GET(request: NextRequest) {
     const performanceData = await query(
       `SELECT 
         DATE(al.created_at) as date,
-        AVG(CAST(al.details->>'duration' AS INTEGER)) as avg_duration,
-        MAX(CAST(al.details->>'duration' AS INTEGER)) as max_duration,
-        MIN(CAST(al.details->>'duration' AS INTEGER)) as min_duration
+        AVG(CAST((al.new_value::jsonb)->>'duration' AS INTEGER)) as avg_duration,
+        MAX(CAST((al.new_value::jsonb)->>'duration' AS INTEGER)) as max_duration,
+        MIN(CAST((al.new_value::jsonb)->>'duration' AS INTEGER)) as min_duration
       FROM audit_logs al
       WHERE al.action = 'api_request'
-        AND al.details->>'duration' IS NOT NULL
+        AND (al.new_value::jsonb)->>'duration' IS NOT NULL
         AND al.created_at >= $1
       GROUP BY DATE(al.created_at)
       ORDER BY date ASC`,
@@ -116,13 +116,13 @@ export async function GET(request: NextRequest) {
     // Get top endpoints
     const topEndpoints = await query(
       `SELECT 
-        al.details->>'path' as endpoint,
+        (al.new_value::jsonb)->>'path' as endpoint,
         COUNT(*) as count,
-        AVG(CAST(al.details->>'duration' AS INTEGER)) as avg_duration
+        AVG(CAST((al.new_value::jsonb)->>'duration' AS INTEGER)) as avg_duration
       FROM audit_logs al
       WHERE al.action = 'api_request'
         AND al.created_at >= $1
-      GROUP BY al.details->>'path'
+      GROUP BY (al.new_value::jsonb)->>'path'
       ORDER BY count DESC
       LIMIT 10`,
       [startDate]
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
     // Get error rate
     const errorRate = await query(
       `SELECT 
-        COUNT(*) FILTER (WHERE al.details->>'statusCode'::text != '200') * 100.0 / 
+        COUNT(*) FILTER (WHERE (al.new_value::jsonb)->>'statusCode' != '200') * 100.0 / 
         NULLIF(COUNT(*), 0) as error_rate
       FROM audit_logs al
       WHERE al.action = 'api_request'
@@ -139,8 +139,32 @@ export async function GET(request: NextRequest) {
       [startDate]
     )
 
+    // Get total users
+    const totalUsersResult = await query('SELECT COUNT(*) as count FROM users')
+    const totalUsers = parseInt(totalUsersResult.rows[0]?.count || '0')
+
+    // Calculate details for dashboard
     const metrics = systemMetrics.rows[0] || {}
     const errorRateValue = errorRate.rows[0]?.error_rate || 0
+
+    // Calculate storage used
+    const totalStorageBytes = storageData.rows.reduce((acc: number, row: any) => acc + parseInt(row.estimated_bytes || '0'), 0)
+
+    // Calculate response time (avg from today or recent)
+    const avgResponseTime = performanceData.rows.length > 0
+      ? performanceData.rows[performanceData.rows.length - 1].avg_duration
+      : 0
+
+    // Calculate errors today
+    const today = new Date().toISOString().split('T')[0]
+    const errorsToday = await query(
+      `SELECT COUNT(*) as count 
+       FROM audit_logs al 
+       WHERE al.action = 'api_request' 
+       AND (al.new_value::jsonb)->>'statusCode' != '200' 
+       AND DATE(al.created_at) = DATE(NOW())`
+    )
+    const errorsTodayCount = parseInt(errorsToday.rows[0]?.count || '0')
 
     await logAPIRequest(
       session.user.id,
@@ -152,7 +176,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       metrics: {
+        totalUsers: totalUsers,
         activeUsers: parseInt(metrics.active_users || '0'),
+        storageUsed: totalStorageBytes,
+        storageLimit: 10 * 1024 * 1024 * 1024, // 10GB Hardcoded limit for now
+        responseTime: Math.round(avgResponseTime || 0),
+        uptime: 99.9, // Mocked for now
+        errorsToday: errorsTodayCount,
         totalRequests: parseInt(metrics.total_requests || '0'),
         recentRequests: parseInt(metrics.recent_requests || '0'),
         successfulRequests: parseInt(metrics.successful_requests || '0'),

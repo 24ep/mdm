@@ -37,8 +37,17 @@ export function SystemSettings() {
     siteName: '',
     siteDescription: '',
     siteUrl: '',
+    logoUrl: '',
     faviconUrl: '',
     supportEmail: '',
+
+    // Organization
+    orgName: '',
+    orgDescription: '',
+    orgAddress: '',
+    orgPhone: '',
+    orgEmail: '',
+    orgWebsite: '',
 
     // Database
     dbHost: '',
@@ -95,6 +104,13 @@ export function SystemSettings() {
           // Expect flat key/value map from API
           sessionTimeout: data.sessionTimeout ? Number(data.sessionTimeout) : prev.sessionTimeout,
           faviconUrl: data.faviconUrl || prev.faviconUrl,
+          logoUrl: data.logoUrl || prev.logoUrl,
+          orgName: data.orgName || prev.orgName,
+          orgDescription: data.orgDescription || prev.orgDescription,
+          orgAddress: data.orgAddress || prev.orgAddress,
+          orgPhone: data.orgPhone || prev.orgPhone,
+          orgEmail: data.orgEmail || prev.orgEmail,
+          orgWebsite: data.orgWebsite || prev.orgWebsite,
           disableRightClick: data.disableRightClick !== undefined ? data.disableRightClick : prev.disableRightClick,
           secureLoginPage: data.secureLoginPage !== undefined ? data.secureLoginPage : prev.secureLoginPage,
         }))
@@ -120,6 +136,13 @@ export function SystemSettings() {
             disableRightClick: settings.disableRightClick,
             secureLoginPage: settings.secureLoginPage,
             faviconUrl: settings.faviconUrl,
+            logoUrl: settings.logoUrl,
+            orgName: settings.orgName,
+            orgDescription: settings.orgDescription,
+            orgAddress: settings.orgAddress,
+            orgPhone: settings.orgPhone,
+            orgEmail: settings.orgEmail,
+            orgWebsite: settings.orgWebsite,
           }
         }),
       })
@@ -135,6 +158,80 @@ export function SystemSettings() {
       toast.error('Failed to save settings')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file')
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be less than 2MB')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('logo', file)
+
+    try {
+      const response = await fetch('/api/upload/logo', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSettings({ ...settings, logoUrl: data.url })
+        toast.success('Logo uploaded successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to upload logo')
+      }
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      toast.error('Failed to upload logo')
+    }
+  }
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file')
+      return
+    }
+
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error('Favicon size must be less than 1MB')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('favicon', file)
+
+    try {
+      const response = await fetch('/api/upload/favicon', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSettings({ ...settings, faviconUrl: data.url })
+        toast.success('Favicon uploaded successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to upload favicon')
+      }
+    } catch (error) {
+      console.error('Error uploading favicon:', error)
+      toast.error('Failed to upload favicon')
     }
   }
 
@@ -310,30 +407,104 @@ export function SystemSettings() {
                 </div>
 
                 <div>
-                  <Label htmlFor="faviconUrl">Favicon URL</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="faviconUrl"
-                      value={settings.faviconUrl}
-                      onChange={(e) => setSettings({ ...settings, faviconUrl: e.target.value })}
-                      placeholder="https://example.com/favicon.ico"
-                    />
-                    {settings.faviconUrl && (
-                      <div className="h-10 w-10 flex items-center justify-center border rounded bg-muted/20 shrink-0">
-                        <img
-                          src={settings.faviconUrl}
-                          alt="Favicon preview"
-                          className="max-h-6 max-w-6"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )}
+                  <Label htmlFor="faviconUpload">Favicon</Label>
+                  <div className="flex items-start gap-4 mt-2">
+                    <div className="h-16 w-16 flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
+                      {settings.faviconUrl ? (
+                        <>
+                          <img
+                            src={settings.faviconUrl}
+                            alt="Favicon"
+                            className="max-h-full max-w-full object-contain p-2"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => document.getElementById('faviconUpload')?.click()}
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          className="h-full w-full flex flex-col gap-1 text-muted-foreground p-0"
+                          onClick={() => document.getElementById('faviconUpload')?.click()}
+                        >
+                          <Globe className="h-6 w-6 opacity-20" />
+                          <span className="text-[10px]">Upload</span>
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        Upload a favicon image (.ico, .png, .svg). Max 1MB. Recommended size: 32x32px.
+                      </p>
+                      <Input
+                        id="faviconUpload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFaviconUpload}
+                      />
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    URL to your favicon image (.ico, .png, .svg). You can place the file in the <code>public</code> folder and reference it here (e.g., <code>/logo/my-icon.png</code>).
-                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="logoUpload">Application Logo</Label>
+                  <div className="flex items-start gap-4 mt-2">
+                    <div className="h-24 w-48 flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
+                      {settings.logoUrl ? (
+                        <>
+                          <img
+                            src={settings.logoUrl}
+                            alt="App Logo"
+                            className="max-h-full max-w-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => document.getElementById('logoUpload')?.click()}
+                            >
+                              Change
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          className="h-full w-full flex flex-col gap-2 text-muted-foreground"
+                          onClick={() => document.getElementById('logoUpload')?.click()}
+                        >
+                          <Globe className="h-8 w-8 opacity-20" />
+                          <span className="text-xs">Upload Logo</span>
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        Upload a logo (max 2MB). Recommended size: 200x50px or similar aspect ratio.
+                      </p>
+                      <Input
+                        id="logoUpload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoUpload}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
@@ -355,6 +526,83 @@ export function SystemSettings() {
                     value={settings.supportEmail}
                     onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
                     placeholder="support@myapp.com"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Organization Information
+                </CardTitle>
+                <CardDescription>
+                  Details about your organization
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="orgName">Organization Name</Label>
+                    <Input
+                      id="orgName"
+                      value={settings.orgName}
+                      onChange={(e) => setSettings({ ...settings, orgName: e.target.value })}
+                      placeholder="My Organization"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="orgWebsite">Website</Label>
+                    <Input
+                      id="orgWebsite"
+                      value={settings.orgWebsite}
+                      onChange={(e) => setSettings({ ...settings, orgWebsite: e.target.value })}
+                      placeholder="https://organization.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="orgEmail">Organization Email</Label>
+                    <Input
+                      id="orgEmail"
+                      type="email"
+                      value={settings.orgEmail}
+                      onChange={(e) => setSettings({ ...settings, orgEmail: e.target.value })}
+                      placeholder="contact@organization.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="orgPhone">Phone Number</Label>
+                    <Input
+                      id="orgPhone"
+                      value={settings.orgPhone}
+                      onChange={(e) => setSettings({ ...settings, orgPhone: e.target.value })}
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="orgAddress">Address</Label>
+                  <Input
+                    id="orgAddress"
+                    value={settings.orgAddress}
+                    onChange={(e) => setSettings({ ...settings, orgAddress: e.target.value })}
+                    placeholder="123 Business St, City, Country"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="orgDescription">Organization Description</Label>
+                  <Textarea
+                    id="orgDescription"
+                    value={settings.orgDescription}
+                    onChange={(e) => setSettings({ ...settings, orgDescription: e.target.value })}
+                    placeholder="A brief description of your organization"
+                    rows={3}
                   />
                 </div>
               </CardContent>

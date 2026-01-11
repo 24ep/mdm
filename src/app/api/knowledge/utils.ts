@@ -25,7 +25,7 @@ export async function getKnowledgeSchema(spaceId?: string | null): Promise<strin
          WHERE sr.slug = 'knowledge-base' AND si.space_id IS NULL AND si.deleted_at IS NULL`
     )
 
-    const schema = globalResult.rows[0]?.db_schema || 'plugin_knowledge_base'
+    const schema = globalResult.rows[0]?.db_schema || 'public'
     return schema === 'public' ? 'public' : `"${schema}"`
 }
 

@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force restart - triggered update 3
+// Force restart - triggered update 4
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -68,12 +68,9 @@ const nextConfig = {
       '@xyflow/react',
     ],
     // Enable modularizeImports for lucide-react to tree-shake unused icons
-    modularizeImports: {
-      'lucide-react': {
-        transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
-        skipDefaultConversion: true,
-      },
-    },
+    // Enable modularizeImports for lucide-react to tree-shake unused icons
+    // modularizeImports removed due to being invalid in this Next.js version
+
   },
 
   // Disable source maps to save memory and space used during build

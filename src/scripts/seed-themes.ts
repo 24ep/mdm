@@ -4,7 +4,7 @@
  * Or via npm script: npm run seed:themes
  */
 
-import { db as prisma } from '@/lib/db'
+import { db } from '../lib/db'
 import * as fs from 'fs'
 import * as path from 'path'
 

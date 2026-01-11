@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Database, 
-  Search, 
-  Plus, 
+import {
+  Database,
+  Search,
+  Plus,
   ExternalLink,
   Table,
   FileText,
@@ -22,6 +22,9 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react'
+import { DataModelDialog } from '@/app/admin/features/data/components/DataModelDialog'
+import { DataModel as AdminDataModel } from '@/app/admin/features/data/types'
+import { showSuccess, showError } from '@/lib/toast-utils'
 
 interface DataModel {
   id: string
@@ -41,6 +44,12 @@ interface DataModel {
 interface DataSourceSelectorProps {
   onSelect: (dataModel: DataModel) => void
   selectedModel?: DataModel | null
+}
+
+interface Space {
+  id: string
+  name: string
+  slug?: string
 }
 
 // Mock data models - in real implementation, this would come from API
@@ -148,16 +157,51 @@ export function DataSourceSelector({ onSelect, selectedModel }: DataSourceSelect
   const [selectedType, setSelectedType] = useState<'ALL' | 'INTERNAL' | 'EXTERNAL'>('ALL')
   const [dataModels, setDataModels] = useState<DataModel[]>(mockDataModels)
 
+  // Data Model Dialog state
+  const [showModelDialog, setShowModelDialog] = useState(false)
+  const [spaces, setSpaces] = useState<Space[]>([])
+  const [spacesLoading, setSpacesLoading] = useState(false)
+
+  // Load spaces for the dialog
+  useEffect(() => {
+    const loadSpaces = async () => {
+      setSpacesLoading(true)
+      try {
+        const res = await fetch('/api/spaces?page=1&limit=200')
+        const json = await res.json().catch(() => ({}))
+        setSpaces(json.spaces || [])
+      } catch (e) {
+        // Silent error since this only affects the add dialog
+        console.error('Failed to load spaces', e)
+      } finally {
+        setSpacesLoading(false)
+      }
+    }
+    loadSpaces()
+  }, [])
+
   const filteredModels = dataModels.filter(model => {
     const matchesSearch = model.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         model.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         model.name.toLowerCase().includes(searchTerm.toLowerCase())
+      model.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      model.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = selectedType === 'ALL' || model.source_type === selectedType
     return matchesSearch && matchesType
   })
 
   const handleModelSelect = (model: DataModel) => {
     onSelect(model)
+  }
+
+  const handleCreateModel = () => {
+    setShowModelDialog(true)
+  }
+
+  const handleModelDialogSuccess = () => {
+    // In a real app, we would re-fetch the data models here
+    // For now, we'll just close the dialog as we are using mock data
+    // Assuming backend creation worked
+    // We could potentially try to fetch the new model if we had an endpoint
+    showSuccess('Data model created. Note: List may not update immediately in this preview.')
   }
 
   const renderModelIcon = (iconName?: string) => {
@@ -168,9 +212,18 @@ export function DataSourceSelector({ onSelect, selectedModel }: DataSourceSelect
   return (
     <div className="space-y-4">
       <div className="mb-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Database className="h-5 w-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">Select Data Source</h3>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCreateModel}>
+              <Plus className="h-4 w-4" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Select Data Source</h3>
+              </div>
+            </div>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           Choose a data model to display records from
@@ -232,18 +285,17 @@ export function DataSourceSelector({ onSelect, selectedModel }: DataSourceSelect
             <CardContent className="py-8 text-center">
               <Database className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
               <p className="text-sm text-muted-foreground">No data models found</p>
-              <p className="text-xs text-muted-foreground">
-                {searchTerm ? 'Try adjusting your search terms' : 'No data models available'}
-              </p>
+              <Button variant="link" onClick={handleCreateModel}>
+                Create one now
+              </Button>
             </CardContent>
           </Card>
         ) : (
           filteredModels.map(model => (
             <Card
               key={model.id}
-              className={`cursor-pointer hover:shadow-md transition-shadow ${
-                selectedModel?.id === model.id ? 'ring-2 ring-primary' : ''
-              }`}
+              className={`cursor-pointer hover:shadow-md transition-shadow ${selectedModel?.id === model.id ? 'ring-2 ring-primary' : ''
+                }`}
               onClick={() => handleModelSelect(model)}
             >
               <CardContent className="p-4">
@@ -285,7 +337,7 @@ export function DataSourceSelector({ onSelect, selectedModel }: DataSourceSelect
 
       {/* Quick Actions */}
       <div className="flex gap-2 pt-4 border-t">
-        <Button variant="outline" size="sm" className="flex-1">
+        <Button variant="outline" size="sm" className="flex-1" onClick={handleCreateModel}>
           <Plus className="h-4 w-4 mr-2" />
           Create New Model
         </Button>
@@ -294,6 +346,14 @@ export function DataSourceSelector({ onSelect, selectedModel }: DataSourceSelect
           Connect External
         </Button>
       </div>
+
+      {/* Data Model Dialog */}
+      <DataModelDialog
+        open={showModelDialog}
+        onOpenChange={setShowModelDialog}
+        spaces={spaces}
+        onSuccess={handleModelDialogSuccess}
+      />
     </div>
   )
 }
