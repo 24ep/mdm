@@ -41,34 +41,55 @@ async function postHandler(
     }
 
     const { provider, config } = body
-    
+
     if (!provider || !config) {
       return NextResponse.json({ error: 'Provider and config are required' }, { status: 400 })
     }
 
-    const providerConfig = config[provider]
-    if (!providerConfig) {
-      return NextResponse.json({ error: `Invalid provider: ${provider}` }, { status: 400 })
+    let activeProvider = provider
+    let activeConfig = config[provider]
+
+    // Handle shared connection
+    if (provider === 'shared') {
+      const sharedConfig = config.shared
+      if (!sharedConfig?.connectionId) {
+        return NextResponse.json({ error: 'Shared connection ID is required' }, { status: 400 })
+      }
+
+      const connection = await db.storageConnection.findUnique({
+        where: { id: sharedConfig.connectionId }
+      })
+
+      if (!connection) {
+        return NextResponse.json({ error: 'Storage connection not found' }, { status: 404 })
+      }
+
+      activeProvider = connection.type
+      activeConfig = connection.config
+    }
+
+    if (!activeConfig) {
+      return NextResponse.json({ error: `Invalid configuration for provider: ${activeProvider}` }, { status: 400 })
     }
 
     // Test connection based on provider
     let testResult
-    
-    switch (provider) {
+
+    switch (activeProvider) {
       case 'minio':
-        testResult = await testMinIOConnection(providerConfig)
+        testResult = await testMinIOConnection(activeConfig)
         break
       case 's3':
-        testResult = await testS3Connection(providerConfig)
+        testResult = await testS3Connection(activeConfig)
         break
       case 'sftp':
-        testResult = await testSFTPConnection(providerConfig)
+        testResult = await testSFTPConnection(activeConfig)
         break
       case 'ftp':
-        testResult = await testFTPConnection(providerConfig)
+        testResult = await testFTPConnection(activeConfig)
         break
       default:
-        return NextResponse.json({ error: `Unsupported provider: ${provider}` }, { status: 400 })
+        return NextResponse.json({ error: `Unsupported provider: ${activeProvider}` }, { status: 400 })
     }
 
     return NextResponse.json(testResult)
@@ -87,7 +108,7 @@ async function testMinIOConnection(config: any) {
   try {
     const requiredFields = ['endpoint', 'access_key', 'secret_key', 'bucket']
     const missingFields = requiredFields.filter(field => !config[field])
-    
+
     if (missingFields.length > 0) {
       return {
         success: false,
@@ -112,7 +133,7 @@ async function testMinIOConnection(config: any) {
 
     // Test connection by listing buckets
     await minioClient.listBuckets()
-    
+
     // Check if bucket exists, create if it doesn't
     const bucketExists = await minioClient.bucketExists(config.bucket)
     if (!bucketExists) {
@@ -135,7 +156,7 @@ async function testS3Connection(config: any) {
   try {
     const requiredFields = ['access_key_id', 'secret_access_key', 'bucket']
     const missingFields = requiredFields.filter(field => !config[field])
-    
+
     if (missingFields.length > 0) {
       return {
         success: false,
@@ -155,10 +176,10 @@ async function testS3Connection(config: any) {
     // Test connection by listing buckets
     const command = new ListBucketsCommand({})
     const response = await s3Client.send(command)
-    
+
     // Check if the specified bucket exists
     const bucketExists = response.Buckets?.some(bucket => bucket.Name === config.bucket)
-    
+
     if (!bucketExists) {
       return {
         success: false,
@@ -182,7 +203,7 @@ async function testSFTPConnection(config: any) {
   try {
     const requiredFields = ['host', 'username', 'password']
     const missingFields = requiredFields.filter(field => !config[field])
-    
+
     if (missingFields.length > 0) {
       return {
         success: false,
@@ -204,7 +225,7 @@ async function testSFTPConnection(config: any) {
     }
 
     const sftp = new SftpClient()
-    
+
     try {
       // Connect to SFTP server
       await sftp.connect({
@@ -251,7 +272,7 @@ async function testFTPConnection(config: any) {
   try {
     const requiredFields = ['host', 'username', 'password']
     const missingFields = requiredFields.filter(field => !config[field])
-    
+
     if (missingFields.length > 0) {
       return {
         success: false,
@@ -274,12 +295,12 @@ async function testFTPConnection(config: any) {
 
     return new Promise((resolve) => {
       const ftp = new FtpClient()
-      
+
       ftp.on('ready', async () => {
         try {
           // Test by listing the upload directory
           const uploadPath = config.path || '/uploads'
-          
+
           ftp.list(uploadPath, (err: any, list: any) => {
             if (err) {
               // If directory doesn't exist, try to create it

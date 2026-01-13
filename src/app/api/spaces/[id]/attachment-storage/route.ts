@@ -75,8 +75,8 @@ async function getHandler(
       }
     }
 
-    return NextResponse.json({ 
-      storage: storageConfig || defaultConfig 
+    return NextResponse.json({
+      storage: storageConfig || defaultConfig
     })
   } catch (error: any) {
     console.error('Error fetching attachment storage:', error)
@@ -121,7 +121,7 @@ async function putHandler(
 
     // Validate required fields based on provider
     const { provider, config } = body
-    
+
     if (!provider || !config) {
       return NextResponse.json({ error: 'Provider and config are required' }, { status: 400 })
     }
@@ -131,7 +131,8 @@ async function putHandler(
       minio: ['endpoint', 'access_key', 'secret_key', 'bucket'],
       s3: ['access_key_id', 'secret_access_key', 'bucket'],
       sftp: ['host', 'username', 'password'],
-      ftp: ['host', 'username', 'password']
+      ftp: ['host', 'username', 'password'],
+      shared: ['connectionId']
     }
 
     const providerConfig = config[provider]
@@ -144,8 +145,8 @@ async function putHandler(
     )
 
     if (missingFields && missingFields.length > 0) {
-      return NextResponse.json({ 
-        error: `Missing required fields for ${provider}: ${missingFields.join(', ')}` 
+      return NextResponse.json({
+        error: `Missing required fields for ${provider}: ${missingFields.join(', ')}`
       }, { status: 400 })
     }
 

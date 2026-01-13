@@ -3,7 +3,7 @@
 // Polyfill for crypto.randomUUID in non-secure contexts (HTTP)
 // crypto.randomUUID() only works in secure contexts (HTTPS or localhost)
 if (typeof window !== 'undefined' && typeof crypto !== 'undefined' && !crypto.randomUUID) {
-  (crypto as any).randomUUID = function(): string {
+  (crypto as any).randomUUID = function (): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
       const r = Math.random() * 16 | 0
       const v = c === 'x' ? r : (r & 0x3 | 0x8)
@@ -28,7 +28,7 @@ function ThemedToaster() {
 
   if (!mounted) {
     return (
-      <Toaster 
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
@@ -43,7 +43,7 @@ function ThemedToaster() {
   }
 
   return (
-    <Toaster 
+    <Toaster
       position="top-right"
       toastOptions={{
         duration: 3000,
@@ -75,8 +75,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <NextThemeProvider
         attribute="class"
-        defaultTheme="light"
-        enableSystem={false}
+        defaultTheme="system"
+        enableSystem={true}
         disableTransitionOnChange
       >
         <ThemeProvider>

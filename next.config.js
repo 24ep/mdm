@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Force restart - triggered update 4
+// Force restart - triggered update 23
 const nextConfig = {
   images: {
     remotePatterns: [

@@ -25,11 +25,13 @@ export class TemplateManager {
       console.warn('Failed to fetch templates from API, using local storage:', error)
     }
 
-    // Fallback to local storage
-    const stored = localStorage.getItem(this.STORAGE_KEY)
-    if (stored) {
-      const data: TemplateStorage = JSON.parse(stored)
-      return data.templates || []
+    // Fallback to local storage (only on client)
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(this.STORAGE_KEY)
+      if (stored) {
+        const data: TemplateStorage = JSON.parse(stored)
+        return data.templates || []
+      }
     }
 
     return []
@@ -75,7 +77,7 @@ export class TemplateManager {
     // Fallback to local storage
     const templates = await this.getTemplates()
     const existingIndex = templates.findIndex(t => t.id === template.id)
-    
+
     if (existingIndex >= 0) {
       templates[existingIndex] = { ...template, updatedAt: new Date().toISOString() }
     } else {
@@ -124,7 +126,7 @@ export class TemplateManager {
    */
   static async createDefaultTemplatesForModel(dataModel: DataModel): Promise<Template[]> {
     const defaultTemplates = TemplateGenerator.generateDefaultTemplates(dataModel)
-    
+
     // Save all templates
     for (const template of defaultTemplates) {
       await this.saveTemplate(template)
@@ -168,7 +170,7 @@ export class TemplateManager {
   static async importTemplate(templateJson: string): Promise<Template | null> {
     try {
       const template: Template = JSON.parse(templateJson)
-      
+
       // Validate template structure
       if (!this.validateTemplate(template)) {
         throw new Error('Invalid template structure')
@@ -205,8 +207,8 @@ export class TemplateManager {
   static async searchTemplates(query: string): Promise<Template[]> {
     const templates = await this.getTemplates()
     const lowercaseQuery = query.toLowerCase()
-    
-    return templates.filter(template => 
+
+    return templates.filter(template =>
       template.name.toLowerCase().includes(lowercaseQuery) ||
       template.displayName.toLowerCase().includes(lowercaseQuery) ||
       template.description.toLowerCase().includes(lowercaseQuery) ||
@@ -246,7 +248,7 @@ export class TemplateManager {
    */
   static async clearAllTemplates(): Promise<void> {
     localStorage.removeItem(this.STORAGE_KEY)
-    
+
     try {
       await fetch(`${this.API_BASE}`, {
         method: 'DELETE',

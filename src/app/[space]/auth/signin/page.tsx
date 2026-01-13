@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Layers } from 'lucide-react'
+import { loadBrandingConfig } from '@/lib/branding'
 
 export default function SpaceSignInPage() {
   const params = useParams() as { space: string }
@@ -21,6 +23,11 @@ export default function SpaceSignInPage() {
   const [loginImageUrl, setLoginImageUrl] = useState<string | null>(null)
   const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
   const [loginPageConfig, setLoginPageConfig] = useState<any>(null)
+  const [branding, setBranding] = useState<any>(null)
+
+  useEffect(() => {
+    loadBrandingConfig().then(setBranding)
+  }, [])
 
   useEffect(() => {
     const loadSpace = async () => {
@@ -38,13 +45,13 @@ export default function SpaceSignInPage() {
       }
     }
     loadSpace()
-    
+
     // Fetch enabled SSO providers
     fetch('/api/auth/sso-providers')
       .then(res => res.json())
       .then(data => setSsoProviders(data))
       .catch(err => console.error('Error fetching SSO providers:', err))
-    
+
     // Fetch login page config
     fetch(`/api/spaces/${params.space}/login-config`)
       .then(res => res.json())
@@ -59,7 +66,11 @@ export default function SpaceSignInPage() {
     try {
       const result = await signIn('credentials', { email, password, redirect: false })
       if (result?.error) {
-        setError(result.error)
+        if (result.error === 'CredentialsSignin') {
+          setError('Invalid email or password. Please try again.')
+        } else {
+          setError(result.error)
+        }
       } else {
         // Get the default page for this space from layout config
         try {
@@ -87,85 +98,138 @@ export default function SpaceSignInPage() {
 
   // Get styling from config or use defaults
   const config = loginPageConfig || {}
-  const leftPanelWidth = config.leftPanelWidth || '70%'
-  const rightPanelWidth = config.rightPanelWidth || '30%'
-  const bgType = config.backgroundType || 'gradient'
-  const bgColor = config.backgroundColor || '#1e40af'
+  const bgType = config.backgroundType
   const bgImage = config.backgroundImage || loginImageUrl
-  const gradient = config.gradient || { from: '#1e40af', to: '#3b82f6', angle: 135 }
-  const cardStyle = config.cardStyle || {}
   const title = config.title || 'Sign in'
   const description = config.description || 'Access this workspace'
 
   // Build background style
   const getBackgroundStyle = () => {
     if (bgType === 'image' && bgImage) {
-      return { backgroundImage: `url(${bgImage})` }
-    } else if (bgType === 'gradient') {
-      return { background: `linear-gradient(${gradient.angle}deg, ${gradient.from}, ${gradient.to})` }
-    } else {
-      return { backgroundColor: bgColor }
+      return { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    } else if (bgType === 'color' && config.backgroundColor) {
+      return { backgroundColor: config.backgroundColor }
+    } else if (bgType === 'gradient' && config.gradient) {
+      const { angle, from, to } = config.gradient
+      return { background: `linear-gradient(${angle}deg, ${from}, ${to})` }
+    }
+
+    // Default light grey background
+    return {
+      background: 'linear-gradient(135deg, #f9fafb 0%, #d1d5db 100%)',
+      backgroundColor: '#f3f4f6'
     }
   }
 
   return (
-    <div className="min-h-screen flex">
-      <div className="relative" style={{ width: leftPanelWidth, ...getBackgroundStyle() }}>
-        {bgType === 'image' && bgImage ? (
-          <img src={bgImage} alt="Login" className="absolute inset-0 w-full h-full object-cover" />
-        ) : null}
-        <div className="absolute inset-0 bg-black/20" />
+    <div className="h-screen w-full flex flex-col md:flex-row relative overflow-hidden" style={getBackgroundStyle()}>
+      {/* Animated background blobs for default style - Removed to match clean white/pink/blue design */}
+      {/* {!bgType && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-[30%] -left-[10%] w-[70%] h-[70%] rounded-full bg-purple-500/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+          <div className="absolute top-[20%] -right-[10%] w-[60%] h-[60%] rounded-full bg-blue-500/20 blur-[100px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '1s' }} />
+          <div className="absolute -bottom-[20%] left-[20%] w-[60%] h-[60%] rounded-full bg-pink-500/20 blur-[100px] animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
+        </div>
+      )} */}
+
+      {/* Left Column - App Name & Description */}
+      <div className="flex-1 flex flex-col justify-center p-8 md:p-12 lg:p-20 relative z-10">
+        <div className="max-w-3xl space-y-6">
+          <div className="flex items-center space-x-4 mb-2">
+            <div className="p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
+              {branding?.applicationLogo ? (
+                <img src={branding.applicationLogo} alt="Logo" className="h-10 w-10 object-contain" />
+              ) : (
+                <Layers className="h-10 w-10 text-primary fill-primary/10" />
+              )}
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 drop-shadow-sm">
+              {branding?.applicationName || 'Unified Data Platform'}
+            </h1>
+          </div>
+          <p className="text-xl md:text-2xl text-gray-600 font-light max-w-lg leading-relaxed ml-1">
+            {branding?.applicationDescription || 'Experience the future of data management. Secure, scalable, and simple.'}
+          </p>
+        </div>
       </div>
 
-      <div className="flex items-center justify-center p-8" style={{ width: rightPanelWidth, backgroundColor: cardStyle.backgroundColor || '#ffffff' }}>
-        <Card 
-          className="w-full max-w-sm"
+      {/* Right Column - Login Panel (40% width on Desktop) */}
+      <div className="w-full md:w-[40%] min-w-[320px] p-4 md:p-6 flex flex-col justify-center relative z-10 h-full">
+        <Card
+          className="w-full h-full relative border border-gray-200 shadow-2xl backdrop-blur-xl flex flex-col justify-center rounded-2xl"
           style={{
-            backgroundColor: cardStyle.backgroundColor || '#ffffff',
-            color: cardStyle.textColor || '#1f2937',
-            borderColor: cardStyle.borderColor || '#e5e7eb',
-            borderRadius: cardStyle.borderRadius !== undefined ? cardStyle.borderRadius : 8,
-            boxShadow: cardStyle.shadow ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none'
+            backgroundColor: config.cardStyle?.backgroundColor || 'rgba(255, 255, 255, 0.8)',
+            color: config.cardStyle?.textColor || '#1f2937',
+            borderColor: config.cardStyle?.borderColor || 'rgba(229, 231, 235, 0.5)',
+            borderRadius: config.cardStyle?.borderRadius !== undefined ? config.cardStyle.borderRadius : 16,
+            boxShadow: config.cardStyle?.shadow !== false ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : 'none'
           }}
         >
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">{title}</CardTitle>
-            <CardDescription className="text-center">{description}</CardDescription>
+          <CardHeader className="space-y-1 text-center pb-2 flex flex-col items-center">
+            <CardTitle className="text-3xl font-bold tracking-tight">{title}</CardTitle>
+            <CardDescription className="text-muted-foreground/80 text-lg">{description}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 px-8 md:px-12">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 bg-white/50 border-white/30 focus:bg-white/80 transition-all hover:bg-white/60"
+                    placeholder="name@example.com"
+                    required
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 pr-10" required />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? (<EyeOff className="h-4 w-4" />) : (<Eye className="h-4 w-4" />)}
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10 bg-white/50 border-white/30 focus:bg-white/80 transition-all hover:bg-white/60"
+                    required
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? (<EyeOff className="h-4 w-4 text-muted-foreground" />) : (<Eye className="h-4 w-4 text-muted-foreground" />)}
                   </Button>
                 </div>
               </div>
-              {error && <div className="text-sm text-destructive text-center">{error}</div>}
-              <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Signing in...' : 'Sign in'}</Button>
+
+              {error && (
+                <Alert variant="destructive" className="border-red-500 animate-in fade-in zoom-in-95 duration-200">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5" disabled={isLoading}>
+                {isLoading ? 'Signing in...' : 'Sign in'}
+              </Button>
             </form>
 
             {(ssoProviders.google || ssoProviders.azure) && (
               <>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center"><Separator className="w-full bg-border/50" /></div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                    <span className="bg-transparent px-2 text-muted-foreground backdrop-blur-sm rounded-full">Or continue with</span>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="grid gap-2">
                   {ssoProviders.google && (
-                    <Button variant="outline" className="w-full" onClick={async () => {
+                    <Button variant="outline" className="w-full bg-white/50 hover:bg-white/80 border-white/40" onClick={async () => {
                       try {
                         const spaceRes = await fetch(`/api/spaces/${params.space}/default-page`)
                         const defaultPath = spaceRes.ok ? (await spaceRes.json()).path : '/dashboard'
@@ -175,16 +239,16 @@ export default function SpaceSignInPage() {
                       }
                     }} disabled={isLoading}>
                       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                        <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                       </svg>
                       Google
                     </Button>
                   )}
                   {ssoProviders.azure && (
-                    <Button variant="outline" className="w-full" onClick={async () => {
+                    <Button variant="outline" className="w-full bg-white/50 hover:bg-white/80 border-white/40" onClick={async () => {
                       try {
                         const spaceRes = await fetch(`/api/spaces/${params.space}/default-page`)
                         const defaultPath = spaceRes.ok ? (await spaceRes.json()).path : '/dashboard'
@@ -194,7 +258,7 @@ export default function SpaceSignInPage() {
                       }
                     }} disabled={isLoading}>
                       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
+                        <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z" />
                       </svg>
                       Microsoft Azure
                     </Button>
@@ -208,5 +272,3 @@ export default function SpaceSignInPage() {
     </div>
   )
 }
-
-

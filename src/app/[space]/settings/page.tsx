@@ -1,6 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
+import { StorageConnectionDialog } from '@/app/admin/features/system/components/StorageConnectionDialog'
+import { StorageConnectionFormData } from '@/app/admin/features/system/components/StorageConnectionForm'
+import { DataModelDrawer } from '@/app/admin/features/system/components/DataModelDrawer'
+import { ExternalConnectionWizard } from '@/app/admin/features/system/components/ExternalConnectionWizard'
 import { useRouter } from 'next/navigation'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -17,7 +21,7 @@ import { UserInviteInput } from '@/components/ui/user-invite-input'
 import { MemberManagementPanel } from '@/components/space-management/MemberManagementPanel'
 import { MemberPermissionsPanel } from '@/components/space-management/MemberPermissionsPanel'
 import { MemberAuditLog } from '@/components/space-management/MemberAuditLog'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3, CheckCircle2, Circle, Lock } from 'lucide-react'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3, CheckCircle2, Circle, Lock, Link as LinkIcon, Cloud, Server } from 'lucide-react'
 import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 import { useSpace } from '@/contexts/space-context'
 import { useSession } from 'next-auth/react'
@@ -40,6 +44,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { SpaceSettingsSidebar } from '@/components/space-management/SpaceSettingsSidebar'
 import { SpaceSettingsHeader } from '@/components/space-management/SpaceSettingsHeader'
 import { DataSyncManagement } from '@/components/data-sync/DataSyncManagement'
+import { AttachmentBrowser } from '@/components/attachment-storage/AttachmentBrowser'
+import { DataModelBrowser } from '@/components/data-model/DataModelBrowser'
 
 function EffectRedirect({ to }: { to: string }) {
   const router = useRouter()
@@ -53,7 +59,7 @@ export default function SpaceSettingsPage() {
   const router = useRouter()
   const params = useParams() as { space: string }
   const searchParams = useSearchParams()
-  const allowedTabs = ['details','members','data-model','attachments','restore','danger']
+  const allowedTabs = ['details', 'members', 'data-model', 'attachments', 'restore', 'danger']
   const initialTabRaw = (searchParams.get('tab') as string) || 'details'
   const initialTab = allowedTabs.includes(initialTabRaw) ? initialTabRaw : 'details'
   const fromDataManagement = searchParams.get('from') === 'data-management'
@@ -100,6 +106,38 @@ export default function SpaceSettingsPage() {
   }, [spaces, currentSpace, params.space])
 
   const [tab, setTab] = useState<string>(initialTab)
+
+  const [showSharedConnectionDialog, setShowSharedConnectionDialog] = useState(false)
+
+  const handleSharedConnectionSave = async (data: StorageConnectionFormData) => {
+    try {
+      const payload = {
+        name: data.name,
+        type: data.type,
+        description: data.description,
+        isActive: data.isActive,
+        config: data.config,
+      }
+
+      const response = await fetch('/api/admin/storage/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!response.ok) throw new Error('Failed to create')
+
+      showSuccess('Storage connection created successfully')
+      setShowSharedConnectionDialog(false)
+
+      // Refresh connections list
+      if (typeof loadStorageConnections === 'function') {
+        loadStorageConnections()
+      }
+    } catch (error: any) {
+      showError(error.message || 'Failed to save storage connection')
+    }
+  }
+
   useEffect(() => {
     setTab(initialTab)
   }, [initialTab])
@@ -136,7 +174,7 @@ export default function SpaceSettingsPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: user.id, role })
         })
-        
+
         if (res.ok) {
           showSuccess('User added to space')
           await loadMembers(selectedSpace.id)
@@ -151,7 +189,7 @@ export default function SpaceSettingsPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: user.email, role })
         })
-        
+
         if (res.ok) {
           showSuccess('Invitation sent successfully')
         } else {
@@ -175,7 +213,7 @@ export default function SpaceSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ operation, userIds, data })
       })
-      
+
       if (res.ok) {
         await loadMembers(selectedSpace.id)
         showSuccess('Bulk operation completed successfully')
@@ -199,7 +237,7 @@ export default function SpaceSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role })
       })
-      
+
       if (res.ok) {
         await loadMembers(selectedSpace.id)
         showSuccess('Role updated successfully')
@@ -221,7 +259,7 @@ export default function SpaceSettingsPage() {
       const res = await fetch(`/api/spaces/${selectedSpace.id}/members/${userId}`, {
         method: 'DELETE'
       })
-      
+
       if (res.ok) {
         await loadMembers(selectedSpace.id)
         showSuccess('Member removed successfully')
@@ -245,12 +283,12 @@ export default function SpaceSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ permissions })
       })
-      
+
       if (res.ok) {
         showSuccess('Permissions updated successfully')
       } else {
         const error = await res.json()
-      showError(error.error || 'Failed to update permissions')
+        showError(error.error || 'Failed to update permissions')
       }
     } catch (error) {
       console.error('Error updating permissions:', error)
@@ -282,56 +320,24 @@ export default function SpaceSettingsPage() {
   const [modelSearch, setModelSearch] = useState('')
   const [showModelDrawer, setShowModelDrawer] = useState(false)
   const [editingModel, setEditingModel] = useState<any | null>(null)
-  const [modelForm, setModelForm] = useState({ name: '', display_name: '', description: '', slug: '' })
-  
-  // Data Model Type Selection
-  const [showDataModelTypeDialog, setShowDataModelTypeDialog] = useState(false)
-  const [selectedDataModelType, setSelectedDataModelType] = useState<'internal' | 'external' | null>(null)
-  
+
   // External Data Source Connection
-  const [showDatabaseSelection, setShowDatabaseSelection] = useState(false)
-  const [databaseSearch, setDatabaseSearch] = useState('')
-  const [selectedDatabaseType, setSelectedDatabaseType] = useState<'postgres' | 'mysql' | 'api' | null>(null)
-  const [showConnectionForm, setShowConnectionForm] = useState(false)
-  const [connectionForm, setConnectionForm] = useState({
-    name: '',
-    connection_type: 'database' as 'database' | 'api',
-    db_type: 'postgres' as 'postgres' | 'mysql',
-    host: '',
-    port: '',
-    database: '',
-    username: '',
-    password: '',
-    schema: '',
-    table: '',
-    // API fields
-    api_url: '',
-    api_method: 'GET' as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-    api_headers: {} as Record<string, string>,
-    api_auth_type: 'none' as 'none' | 'bearer' | 'basic' | 'apikey',
-    api_auth_token: '',
-    api_auth_username: '',
-    api_auth_password: '',
-    api_auth_apikey_name: '',
-    api_auth_apikey_value: '',
-    api_body: '',
-    api_response_path: ''
-  })
-  const [testingConnection, setTestingConnection] = useState(false)
-  const [connectionTestResult, setConnectionTestResult] = useState<any>(null)
-  const [connectionSchemas, setConnectionSchemas] = useState<string[]>([])
-  const [connectionTables, setConnectionTables] = useState<Record<string, string[]>>({})
+  const [showExternalWizard, setShowExternalWizard] = useState(false)
+
+  // Attribute creation state
   const [activeModelTab, setActiveModelTab] = useState<'details' | 'attributes' | 'activity'>('details')
   const [attributes, setAttributes] = useState<any[]>([])
   const [attributesLoading, setAttributesLoading] = useState(false)
   const [showAttributeDrawer, setShowAttributeDrawer] = useState(false)
   const [selectedAttribute, setSelectedAttribute] = useState<any | null>(null)
-  
+
+
+
   // For data model entities reference
   const [availableModels, setAvailableModels] = useState<any[]>([])
   const [referenceModelAttributes, setReferenceModelAttributes] = useState<any[]>([])
   const [loadingReferenceAttributes, setLoadingReferenceAttributes] = useState(false)
-  
+
   // Folder management
   const [folders, setFolders] = useState<any[]>([])
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false)
@@ -391,7 +397,25 @@ export default function SpaceSettingsPage() {
         password: '',
         path: '/uploads',
         passive: true
+      },
+      // Shared connection configuration
+      shared: {
+        connectionId: ''
       }
+    }
+  })
+  const [availableStorageConnections, setAvailableStorageConnections] = useState<any[]>([])
+  const [showCreateConnectionDialog, setShowCreateConnectionDialog] = useState(false)
+  const [newConnectionForm, setNewConnectionForm] = useState({
+    name: '',
+    type: 'minio',
+    config: {
+      endpoint: '',
+      access_key: '',
+      secret_key: '',
+      bucket: '',
+      region: 'us-east-1',
+      use_ssl: false
     }
   })
   const [storageTestResult, setStorageTestResult] = useState<any>(null)
@@ -458,6 +482,8 @@ export default function SpaceSettingsPage() {
     }
     if (tab === 'attachments' && selectedSpace?.id) {
       loadAttachmentStorageConfig()
+      loadAttachmentStorageConfig()
+      loadStorageConnections()
     }
   }, [tab, selectedSpace?.id])
 
@@ -492,7 +518,7 @@ export default function SpaceSettingsPage() {
     if (!selectedSpace?.id) return
     setModelsLoading(true)
     try {
-      const res = await fetch(`/api/data-models?page=1&limit=200&space_id=${selectedSpace.id}`)
+      const res = await fetch(`/api/data-models?page=1&limit=100&space_id=${selectedSpace.id}`)
       const json = await res.json().catch(() => ({}))
       setModels(json.dataModels || [])
     } catch (e) {
@@ -520,7 +546,7 @@ export default function SpaceSettingsPage() {
 
   const loadAvailableSpaces = async () => {
     try {
-      const res = await fetch('/api/spaces?page=1&limit=200')
+      const res = await fetch('/api/spaces?page=1&limit=100')
       const json = await res.json().catch(() => ({}))
       setAvailableSpaces((json.spaces || []).filter((s: any) => s.id !== selectedSpace?.id))
     } catch (e) {
@@ -528,220 +554,125 @@ export default function SpaceSettingsPage() {
     }
   }
 
+  const loadStorageConnections = async () => {
+    try {
+      const res = await fetch('/api/storage/available')
+      if (res.ok) {
+        const data = await res.json()
+        setAvailableStorageConnections(data.connections || [])
+      }
+    } catch (error) {
+      console.error('Error loading storage connections:', error)
+    }
+  }
+
+  const handleCreateConnection = async () => {
+    try {
+      const res = await fetch('/api/admin/storage/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newConnectionForm.name,
+          type: newConnectionForm.type,
+          config: newConnectionForm.config,
+          isActive: true
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        showSuccess('Storage connection created successfully')
+        setShowCreateConnectionDialog(false)
+        await loadStorageConnections()
+        // Auto-select the new connection
+        setAttachmentStorage(prev => ({
+          ...prev,
+          provider: 'shared',
+          config: {
+            ...prev.config,
+            shared: { connectionId: data.connection.id }
+          }
+        }))
+      } else {
+        const error = await res.json()
+        showError(error.error || 'Failed to create connection')
+      }
+    } catch (error) {
+      showError('Failed to create connection')
+    }
+  }
+
   const openCreateModel = () => {
-    // Show dialog to select data model type
-    setShowDataModelTypeDialog(true)
-    setSelectedDataModelType(null)
-    setShowDatabaseSelection(false)
-    setShowConnectionForm(false)
-    setDatabaseSearch('')
-    setSelectedDatabaseType(null)
-    setConnectionForm({
-      name: '',
-      connection_type: 'database',
-      db_type: 'postgres',
-      host: '',
-      port: '',
-      database: '',
-      username: '',
-      password: '',
-      schema: '',
-      table: '',
-      api_url: '',
-      api_method: 'GET',
-      api_headers: {},
-      api_auth_type: 'none',
-      api_auth_token: '',
-      api_auth_username: '',
-      api_auth_password: '',
-      api_auth_apikey_name: '',
-      api_auth_apikey_value: '',
-      api_body: '',
-      api_response_path: ''
-    })
-  }
-
-  const handleSelectDataModelType = (type: 'internal' | 'external') => {
-    setSelectedDataModelType(type)
-    if (type === 'external') {
-      setShowDatabaseSelection(true)
-      setShowDataModelTypeDialog(false)
-    } else {
-      // Internal - proceed with existing flow
-      setShowDataModelTypeDialog(false)
+    // We now have a choice: New Internal Model or External Source
+    // For now, let's just show a simple selection or default to internal if we click "New Model"
+    // Ideally the UI would have two buttons or the drawer would handle it.
+    // For this refactor, let's assume we want to open the Internal Model Drawer initially, 
+    // but we need a way to trigger the External Wizard.
+    // Let's modify the UI to allow picking.
     setEditingModel(null)
-    setModelForm({ name: '', display_name: '', description: '', slug: '' })
-    setModelIcon('')
-    setModelPrimaryColor('#1e40af')
-    setModelTags([])
-    setModelGroupFolder('')
-    setModelOwnerName('')
     setShowModelDrawer(true)
-    }
   }
 
-  const handleSelectDatabase = (dbType: 'postgres' | 'mysql' | 'api') => {
-    setSelectedDatabaseType(dbType)
-    if (dbType === 'api') {
-      setConnectionForm(prev => ({ 
-        ...prev, 
-        connection_type: 'api',
-        api_method: 'GET',
-        api_auth_type: 'none'
-      }))
-    } else {
-      setConnectionForm(prev => ({ 
-        ...prev, 
-        connection_type: 'database',
-        db_type: dbType, 
-        port: dbType === 'postgres' ? '5432' : '3306' 
-      }))
-    }
-    setShowDatabaseSelection(false)
-    setShowConnectionForm(true)
+  const openEditModel = (model: any) => {
+    setEditingModel(model)
+    setShowModelDrawer(true)
   }
 
-  const testConnection = async () => {
-    if (!selectedSpace?.id) return
-    
-    setTestingConnection(true)
-    setConnectionTestResult(null)
-    
+  const handleSaveModel = async (formData: any) => {
     try {
-      if (connectionForm.connection_type === 'api') {
-        // Test API connection
-        const res = await fetch('/api/external-connections/test', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            space_id: selectedSpace.id,
-            connection_type: 'api',
-            api_url: connectionForm.api_url,
-            api_method: connectionForm.api_method,
-            api_headers: connectionForm.api_headers,
-            api_auth_type: connectionForm.api_auth_type,
-            api_auth_token: connectionForm.api_auth_token,
-            api_auth_username: connectionForm.api_auth_username,
-            api_auth_password: connectionForm.api_auth_password,
-            api_auth_apikey_name: connectionForm.api_auth_apikey_name,
-            api_auth_apikey_value: connectionForm.api_auth_apikey_value,
-            api_body: connectionForm.api_body
-          })
-        })
-        
-        const json = await res.json()
-        if (res.ok && json.success) {
-          setConnectionTestResult({ success: true, data: json.data, sampleResponse: json.sampleResponse })
-          showSuccess('API connection test successful')
-        } else {
-          setConnectionTestResult({ success: false, error: json.error || 'API connection failed' })
-          showError('API connection test failed')
-        }
-      } else {
-        // Test database connection
-        const res = await fetch('/api/external-connections/test', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            space_id: selectedSpace.id,
-            connection_type: 'database',
-            db_type: connectionForm.db_type,
-            host: connectionForm.host,
-            port: connectionForm.port ? parseInt(connectionForm.port) : undefined,
-            database: connectionForm.database || undefined,
-            username: connectionForm.username || undefined,
-            password: connectionForm.password || undefined
-          })
-        })
-        
-        const json = await res.json()
-        if (res.ok && json.ok) {
-          setConnectionTestResult({ success: true, schemas: json.schemas, tablesBySchema: json.tablesBySchema })
-          setConnectionSchemas(json.schemas || [])
-          setConnectionTables(json.tablesBySchema || {})
-          showSuccess('Connection test successful')
-        } else {
-          setConnectionTestResult({ success: false, error: json.error || 'Connection failed' })
-          showError('Connection test failed')
-        }
+      const body = {
+        ...formData,
+        space_ids: [selectedSpace!.id],
       }
-    } catch (error: any) {
-      setConnectionTestResult({ success: false, error: error.message || 'Connection test failed' })
-      showError('Connection test failed')
-    } finally {
-      setTestingConnection(false)
+
+      const url = editingModel ? `/api/data-models/${editingModel.id}` : '/api/data-models'
+      const method = editingModel ? 'PUT' : 'POST'
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      if (!res.ok) throw new Error(editingModel ? 'Failed to update model' : 'Failed to create model')
+      setShowModelDrawer(false)
+      await loadModels()
+      showSuccess(editingModel ? 'Model updated' : 'Model created')
+    } catch (e) {
+      showError(editingModel ? 'Failed to update model' : 'Failed to create model')
     }
   }
 
-  const saveExternalConnection = async () => {
+  const handleSaveExternalConnection = async (data: any) => {
+    // This logic corresponds to the old saveExternalConnection but adapted for the wizard's output
     if (!selectedSpace?.id) return
-    
-    if (!connectionForm.name) {
-      showError('Please provide a connection name')
-      return
-    }
-
-    if (connectionForm.connection_type === 'api') {
-      // Validate API connection
-      if (!connectionForm.api_url) {
-        showError('Please provide an API URL')
-        return
-      }
-    } else {
-      // Validate database connection
-      if (!connectionForm.host || !connectionForm.db_type) {
-        showError('Please fill in all required fields')
-        return
-      }
-
-      // For PostgreSQL, schema and table are required. For MySQL, schema might be optional
-      if (!connectionForm.table) {
-        showError('Please select a table')
-        return
-      }
-
-      // For PostgreSQL, schema is required. For MySQL, use database name as schema if not provided
-      const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
-      if (connectionForm.db_type === 'postgres' && !schemaToUse) {
-        showError('Please select a schema')
-        return
-      }
-    }
 
     try {
+      // 1. Create Connection
       let connectionPayload: any
-      
-      if (connectionForm.connection_type === 'api') {
-        // Create API connection
+
+      if (data.connection_type === 'api') {
         connectionPayload = {
           space_id: selectedSpace.id,
-          name: connectionForm.name,
+          name: data.name,
           connection_type: 'api',
-          db_type: 'api', // Store as 'api' for compatibility
-          api_url: connectionForm.api_url,
-          api_method: connectionForm.api_method,
-          api_headers: connectionForm.api_headers,
-          api_auth_type: connectionForm.api_auth_type,
-          api_auth_token: connectionForm.api_auth_token || null,
-          api_auth_username: connectionForm.api_auth_username || null,
-          api_auth_password: connectionForm.api_auth_password || null,
-          api_auth_apikey_name: connectionForm.api_auth_apikey_name || null,
-          api_auth_apikey_value: connectionForm.api_auth_apikey_value || null,
-          api_body: connectionForm.api_body || null,
-          api_response_path: connectionForm.api_response_path || null
+          db_type: 'api',
+          api_url: data.api_url,
+          api_method: data.api_method,
+          api_headers: data.api_headers || {},
+          api_auth_type: data.api_auth_type,
+          api_auth_token: data.api_auth_token || null,
         }
       } else {
-        // Create database connection
         connectionPayload = {
           space_id: selectedSpace.id,
-          name: connectionForm.name,
+          name: data.name,
           connection_type: 'database',
-          db_type: connectionForm.db_type,
-          host: connectionForm.host,
-          port: connectionForm.port ? parseInt(connectionForm.port) : (connectionForm.db_type === 'postgres' ? 5432 : 3306),
-          database: connectionForm.database || null,
-          username: connectionForm.username || null,
-          password: connectionForm.password || null,
+          db_type: data.db_type,
+          host: data.host,
+          port: parseInt(data.port),
+          database: data.database,
+          username: data.username,
+          password: data.password,
           options: {}
         }
       }
@@ -752,38 +683,35 @@ export default function SpaceSettingsPage() {
         body: JSON.stringify(connectionPayload)
       })
 
-      if (!connectionRes.ok) {
-        const error = await connectionRes.json().catch(() => ({}))
-        throw new Error(error.error || 'Failed to create connection')
-      }
+      if (!connectionRes.ok) throw new Error('Failed to create connection')
 
       const connectionData = await connectionRes.json()
       const connectionId = connectionData.connection?.id || connectionData.id
 
-      // Create data model linked to external connection
+      // 2. Create Model
       let modelPayload: any
-      if (connectionForm.connection_type === 'api') {
+      if (data.connection_type === 'api') {
         modelPayload = {
-          name: connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
-          display_name: connectionForm.name,
-          description: `External API data source: ${connectionForm.api_url}`,
-          slug: connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          name: data.name.toLowerCase().replace(/\s+/g, '_'),
+          display_name: data.name,
+          description: `External API data source: ${data.api_url}`,
+          slug: data.name.toLowerCase().replace(/\s+/g, '_'),
           space_ids: [selectedSpace.id],
           source_type: 'EXTERNAL',
           external_connection_id: connectionId
         }
       } else {
-        const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
+        const schemaToUse = data.schema || (data.db_type === 'mysql' ? data.database : null)
         modelPayload = {
-          name: connectionForm.table || connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
-          display_name: connectionForm.name,
-          description: `External data source: ${connectionForm.db_type} - ${connectionForm.host}/${connectionForm.database || ''}`,
-          slug: connectionForm.table || connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          name: data.table || data.name.toLowerCase().replace(/\s+/g, '_'),
+          display_name: data.name,
+          description: `External data source: ${data.db_type} - ${data.host}/${data.database}`,
+          slug: data.table || data.name.toLowerCase().replace(/\s+/g, '_'),
           space_ids: [selectedSpace.id],
           source_type: 'EXTERNAL',
           external_connection_id: connectionId,
-          external_schema: schemaToUse || connectionForm.database || null,
-          external_table: connectionForm.table
+          external_schema: schemaToUse || data.database || null,
+          external_table: data.table
         }
       }
 
@@ -793,117 +721,14 @@ export default function SpaceSettingsPage() {
         body: JSON.stringify(modelPayload)
       })
 
-      if (!modelRes.ok) {
-        throw new Error('Failed to create data model')
-      }
+      if (!modelRes.ok) throw new Error('Failed to create data model')
 
       showSuccess('External data source connected successfully')
-      setShowConnectionForm(false)
-      setShowDatabaseSelection(false)
-      setSelectedDataModelType(null)
-      setConnectionForm({
-        name: '',
-        connection_type: 'database',
-        db_type: 'postgres',
-        host: '',
-        port: '',
-        database: '',
-        username: '',
-        password: '',
-        schema: '',
-        table: '',
-        api_url: '',
-        api_method: 'GET',
-        api_headers: {},
-        api_auth_type: 'none',
-        api_auth_token: '',
-        api_auth_username: '',
-        api_auth_password: '',
-        api_auth_apikey_name: '',
-        api_auth_apikey_value: '',
-        api_body: '',
-        api_response_path: ''
-      })
+      setShowExternalWizard(false)
       await loadModels()
-    } catch (error: any) {
-      console.error('Error saving external connection:', error)
-      showError(error.message || 'Failed to save external connection')
-    }
-  }
 
-  // Data sources list (from asset management system)
-  const [allDataSources] = useState([
-    {
-      id: 'postgres',
-      name: 'PostgreSQL',
-      description: 'Connect to a PostgreSQL database',
-      icon: '🐘'
-    },
-    {
-      id: 'mysql',
-      name: 'MySQL',
-      description: 'Connect to a MySQL database',
-      icon: '🗄️'
-    },
-    {
-      id: 'api',
-      name: 'REST API',
-      description: 'Connect to a REST API endpoint',
-      icon: '🔌'
-    }
-  ])
-
-  // filteredDatabaseTypes is computed from allDataSources (which uses asset management system)
-  const filteredDatabaseTypes = useMemo(() => {
-    return allDataSources.filter(db => 
-      db.name.toLowerCase().includes(databaseSearch.toLowerCase()) ||
-      db.description.toLowerCase().includes(databaseSearch.toLowerCase())
-    )
-  }, [allDataSources, databaseSearch])
-
-  const openEditModel = (model: any) => {
-    setEditingModel(model)
-    setModelForm({ 
-      name: model.name || '', 
-      display_name: model.display_name || '', 
-      description: model.description || '', 
-      slug: model.slug || '' 
-    })
-    setModelIcon(model.icon || '')
-    setModelPrimaryColor(model.primary_color || '#1e40af')
-    setModelTags(model.tags || [])
-    setModelGroupFolder(model.group_folder || '')
-    setModelOwnerName(model.owner_name || '')
-    setShowModelDrawer(true)
-  }
-
-
-  const saveModel = async () => {
-    try {
-      const body = { 
-        ...modelForm,
-        icon: modelIcon,
-        space_ids: [selectedSpace!.id],
-        primary_color: modelPrimaryColor,
-        tags: modelTags,
-        group_folder: modelGroupFolder,
-        owner_name: modelOwnerName
-      }
-      
-      const url = editingModel ? `/api/data-models/${editingModel.id}` : '/api/data-models'
-      const method = editingModel ? 'PUT' : 'POST'
-      
-      const res = await fetch(url, { 
-        method, 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(body) 
-      })
-      if (!res.ok) throw new Error(editingModel ? 'Failed to update model' : 'Failed to create model')
-      setShowModelDrawer(false)
-      await loadModels()
-      showSuccess(editingModel ? 'Model updated' : 'Model created')
-    } catch (e) {
-      showError(editingModel ? 'Failed to update model' : 'Failed to create model')
+    } catch (e: any) {
+      showError(e.message || 'Failed to save external connection')
     }
   }
 
@@ -933,7 +758,7 @@ export default function SpaceSettingsPage() {
   const loadAvailableModels = async () => {
     if (!selectedSpace?.id) return
     try {
-      const res = await fetch(`/api/data-models?page=1&limit=200&space_id=${selectedSpace.id}`)
+      const res = await fetch(`/api/data-models?page=1&limit=100&space_id=${selectedSpace.id}`)
       const json = await res.json().catch(() => ({}))
       setAvailableModels(json.dataModels || [])
     } catch (e) {
@@ -946,7 +771,7 @@ export default function SpaceSettingsPage() {
       setReferenceModelAttributes([])
       return
     }
-    
+
     setLoadingReferenceAttributes(true)
     try {
       const res = await fetch(`/api/data-models/${modelId}/attributes`)
@@ -997,7 +822,7 @@ export default function SpaceSettingsPage() {
 
   const handleAttributeSave = (updatedAttribute: any) => {
     console.log('Saving attribute:', updatedAttribute)
-    setAttributes(prev => prev.map(attr => 
+    setAttributes(prev => prev.map(attr =>
       attr.id === updatedAttribute.id ? updatedAttribute : attr
     ))
     setShowAttributeDrawer(false)
@@ -1019,13 +844,13 @@ export default function SpaceSettingsPage() {
       const sorted = [...prev].sort((a, b) => a.order - b.order)
       const currentIndex = sorted.findIndex(attr => attr.id === attributeId)
       const targetIndex = sorted.findIndex(attr => attr.order === newOrder)
-      
+
       if (currentIndex === -1 || targetIndex === -1) return prev
-      
+
       const newSorted = [...sorted]
       const [movedItem] = newSorted.splice(currentIndex, 1)
       newSorted.splice(targetIndex, 0, movedItem)
-      
+
       return newSorted.map((attr, index) => ({
         ...attr,
         order: index
@@ -1036,16 +861,16 @@ export default function SpaceSettingsPage() {
 
   const createAttribute = async () => {
     if (!editingModel?.id) return
-    
+
     try {
       const res = await fetch(`/api/data-models/${editingModel.id}/attributes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(createAttributeForm)
       })
-      
+
       if (!res.ok) throw new Error('Failed to create attribute')
-      
+
       setShowCreateAttributeDrawer(false)
       await loadAttributes(editingModel.id)
       showSuccess('Attribute created')
@@ -1056,7 +881,7 @@ export default function SpaceSettingsPage() {
 
   const createFolder = async () => {
     if (!folderForm.name.trim()) return
-    
+
     try {
       const res = await fetch('/api/folders', {
         method: 'POST',
@@ -1068,14 +893,14 @@ export default function SpaceSettingsPage() {
           parent_id: folderForm.parent_id || null
         })
       })
-      
+
       if (res.status === 503) {
         showError('Folders feature not yet available. Please run database migrations.')
         return
       }
-      
+
       if (!res.ok) throw new Error('Failed to create folder')
-      
+
       setShowCreateFolderDialog(false)
       setFolderForm({ name: '', parent_id: '' })
       await loadFolders()
@@ -1106,9 +931,9 @@ export default function SpaceSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(attachmentStorage)
       })
-      
+
       if (!res.ok) throw new Error('Failed to save storage configuration')
-      
+
       showSuccess('Attachment storage configuration saved')
     } catch (e) {
       showError('Failed to save storage configuration')
@@ -1124,10 +949,10 @@ export default function SpaceSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(attachmentStorage)
       })
-      
+
       const json = await res.json()
       setStorageTestResult(json)
-      
+
       if (json.success) {
         showSuccess('Storage connection test successful')
       } else {
@@ -1150,16 +975,16 @@ export default function SpaceSettingsPage() {
 
   const shareModel = async () => {
     if (!selectedModelForSharing?.id) return
-    
+
     try {
       const res = await fetch(`/api/data-models/${selectedModelForSharing.id}/share`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ space_ids: shareForm.space_ids })
       })
-      
+
       if (!res.ok) throw new Error('Failed to share model')
-      
+
       setShowShareModelDialog(false)
       await loadModels()
       showSuccess('Model sharing updated')
@@ -1175,9 +1000,9 @@ export default function SpaceSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folder_id: folderId })
       })
-      
+
       if (!res.ok) throw new Error('Failed to move model')
-      
+
       await loadModels()
       showSuccess('Model moved')
     } catch (e) {
@@ -1237,12 +1062,12 @@ export default function SpaceSettingsPage() {
           parent_id: editingFolder.parent_id || null
         })
       })
-      
+
       if (!res.ok) {
         const error = await res.json()
         throw new Error(error.error || 'Failed to update folder')
       }
-      
+
       showSuccess('Folder renamed successfully')
       setShowEditFolderDialog(false)
       setEditingFolder(null)
@@ -1342,164 +1167,164 @@ export default function SpaceSettingsPage() {
                     </TabsList>
 
                     <TabsContent value="basic" className="space-y-6 mt-6">
-                    <Card className="border-0 shadow-sm bg-card">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center space-x-2 text-lg">
-                          <Settings className="h-5 w-5" />
-                          <span>Basic Information</span>
-                    </CardTitle>
-                        <CardDescription>Update your space's core details and configuration</CardDescription>
-                  </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <Label htmlFor="space-name" className="text-sm font-medium">Space Name</Label>
-                            <Input 
-                              id="space-name" 
-                              defaultValue={selectedSpace.name} 
-                              className="h-11 border border-input bg-background"
-                              onBlur={async (e) => {
-                        const name = e.currentTarget.value.trim()
-                        if (!name || name === selectedSpace.name) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ name })
-                        })
-                        if (res.ok) { showSuccess('Space name updated'); await refreshSpaces() } else { showError('Failed to update name') }
-                              }} 
-                            />
-                            <p className="text-xs text-muted-foreground">The display name for your space</p>
-                    </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="space-slug" className="text-sm font-medium">Custom URL (Slug)</Label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">/</span>
-                              <Input 
-                                id="space-slug" 
-                                defaultValue={selectedSpace.slug || ''} 
-                                className="h-11 pl-8 border border-input bg-background"
-                                placeholder="my-space"
+                      <Card className="border-0 shadow-sm bg-card">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="flex items-center space-x-2 text-lg">
+                            <Settings className="h-5 w-5" />
+                            <span>Basic Information</span>
+                          </CardTitle>
+                          <CardDescription>Update your space's core details and configuration</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label htmlFor="space-name" className="text-sm font-medium">Space Name</Label>
+                              <Input
+                                id="space-name"
+                                defaultValue={selectedSpace.name}
+                                className="h-11 border border-input bg-background"
                                 onBlur={async (e) => {
-                        const slug = e.currentTarget.value.trim()
-                        if (slug === (selectedSpace.slug || '')) return
-                        const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ slug })
-                        })
-                        if (res.ok) { showSuccess('Slug updated'); await refreshSpaces() } else { showError('Failed to update slug') }
-                                }} 
+                                  const name = e.currentTarget.value.trim()
+                                  if (!name || name === selectedSpace.name) return
+                                  const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name })
+                                  })
+                                  if (res.ok) { showSuccess('Space name updated'); await refreshSpaces() } else { showError('Failed to update name') }
+                                }}
                               />
+                              <p className="text-xs text-muted-foreground">The display name for your space</p>
                             </div>
-                            <p className="text-xs text-muted-foreground">Custom URL: /{selectedSpace.slug || selectedSpace.id}/dashboard</p>
+                            <div className="space-y-2">
+                              <Label htmlFor="space-slug" className="text-sm font-medium">Custom URL (Slug)</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground text-sm">/</span>
+                                <Input
+                                  id="space-slug"
+                                  defaultValue={selectedSpace.slug || ''}
+                                  className="h-11 pl-8 border border-input bg-background"
+                                  placeholder="my-space"
+                                  onBlur={async (e) => {
+                                    const slug = e.currentTarget.value.trim()
+                                    if (slug === (selectedSpace.slug || '')) return
+                                    const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ slug })
+                                    })
+                                    if (res.ok) { showSuccess('Slug updated'); await refreshSpaces() } else { showError('Failed to update slug') }
+                                  }}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">Custom URL: /{selectedSpace.slug || selectedSpace.id}/dashboard</p>
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="space-desc" className="text-sm font-medium">Description</Label>
-                          <Textarea 
-                            id="space-desc" 
-                            defaultValue={selectedSpace.description || ''} 
-                            rows={4} 
-                            className="resize-none border border-input bg-background"
-                            placeholder="Describe what this space is used for..."
-                            onBlur={async (e) => {
-                              const description = e.currentTarget.value
-                              if (description === (selectedSpace.description || '')) return
-                              const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                                method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ description })
-                              })
-                              if (res.ok) { showSuccess('Description updated'); await refreshSpaces() } else { showError('Failed to update description') }
-                            }} 
-                          />
-                          <p className="text-xs text-muted-foreground">A brief description of your space's purpose</p>
-                    </div>
-                  </CardContent>
-                </Card>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="space-desc" className="text-sm font-medium">Description</Label>
+                            <Textarea
+                              id="space-desc"
+                              defaultValue={selectedSpace.description || ''}
+                              rows={4}
+                              className="resize-none border border-input bg-background"
+                              placeholder="Describe what this space is used for..."
+                              onBlur={async (e) => {
+                                const description = e.currentTarget.value
+                                if (description === (selectedSpace.description || '')) return
+                                const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ description })
+                                })
+                                if (res.ok) { showSuccess('Description updated'); await refreshSpaces() } else { showError('Failed to update description') }
+                              }}
+                            />
+                            <p className="text-xs text-muted-foreground">A brief description of your space's purpose</p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
 
                     <TabsContent value="login" className="space-y-6 mt-6">
-                    <Card className="border-0 shadow-sm bg-card">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center space-x-2 text-lg">
-                      <Layout className="h-5 w-5" />
-                          <span>Login Page Customization</span>
-                    </CardTitle>
-                        <CardDescription>Customize the appearance of your space's login screen</CardDescription>
-                  </CardHeader>
-                      <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium">Login Background</Label>
-                          <ColorPickerPopover
-                            value={(() => {
-                              const features = spaceDetails?.features || null
-                              try {
-                                const parsed = typeof features === 'string' ? JSON.parse(features) : features
-                                return parsed?.login_image_url || parsed?.login_background || ''
-                              } catch {
-                                return ''
-                              }
-                            })()}
-                            onChange={async (value) => {
-                              setSavingLoginImage(true)
-                              try {
-                                // Merge into existing features JSON
-                                let features: any = {}
-                                if (spaceDetails?.features) {
-                                  if (typeof spaceDetails.features === 'string') {
-                                    try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
-                                  } else {
-                                    features = spaceDetails.features || {}
-                                  }
+                      <Card className="border-0 shadow-sm bg-card">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="flex items-center space-x-2 text-lg">
+                            <Layout className="h-5 w-5" />
+                            <span>Login Page Customization</span>
+                          </CardTitle>
+                          <CardDescription>Customize the appearance of your space's login screen</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium">Login Background</Label>
+                            <ColorPickerPopover
+                              value={(() => {
+                                const features = spaceDetails?.features || null
+                                try {
+                                  const parsed = typeof features === 'string' ? JSON.parse(features) : features
+                                  return parsed?.login_image_url || parsed?.login_background || ''
+                                } catch {
+                                  return ''
                                 }
-                                features.login_image_url = value || null
-                                features.login_background = value || null
-                                const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
-                                  method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ features })
-                                })
-                                if (res.ok) {
-                                  showSuccess('Login background saved')
-                                  const j = await res.json().catch(()=>({}))
-                                  setSpaceDetails(j.space || { ...spaceDetails, features })
-                                } else {
-                                  showError('Failed to save login background')
-                                }
-                              } finally {
-                                setSavingLoginImage(false)
-                              }
-                            }}
-                            allowImageVideo={true}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-10 h-10 rounded border border-border cursor-pointer"
-                                style={{
-                                  background: (() => {
-                                    const features = spaceDetails?.features || null
-                                    try {
-                                      const parsed = typeof features === 'string' ? JSON.parse(features) : features
-                                      const bg = parsed?.login_image_url || parsed?.login_background || ''
-                                      if (bg.startsWith('url(') || bg.startsWith('http') || bg.startsWith('video(')) {
-                                        return `url(${bg.replace('url(', '').replace(')', '').replace('video(', '').replace(')', '')})`
-                                      }
-                                      return bg || '#ffffff'
-                                    } catch {
-                                      return '#ffffff'
+                              })()}
+                              onChange={async (value) => {
+                                setSavingLoginImage(true)
+                                try {
+                                  // Merge into existing features JSON
+                                  let features: any = {}
+                                  if (spaceDetails?.features) {
+                                    if (typeof spaceDetails.features === 'string') {
+                                      try { features = JSON.parse(spaceDetails.features) || {} } catch { features = {} }
+                                    } else {
+                                      features = spaceDetails.features || {}
                                     }
-                                  })(),
-                                  backgroundSize: 'cover',
-                                  backgroundPosition: 'center'
-                                }}
-                              />
-                              <span className="text-sm text-muted-foreground">Click to choose solid color, gradient, image, or video</span>
-                            </div>
-                          </ColorPickerPopover>
-                          <p className="text-xs text-muted-foreground">Shown on the left side of the space-specific login page. Choose from solid color, gradient, image, or video.</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                                  }
+                                  features.login_image_url = value || null
+                                  features.login_background = value || null
+                                  const res = await fetch(`/api/spaces/${selectedSpace.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ features })
+                                  })
+                                  if (res.ok) {
+                                    showSuccess('Login background saved')
+                                    const j = await res.json().catch(() => ({}))
+                                    setSpaceDetails(j.space || { ...spaceDetails, features })
+                                  } else {
+                                    showError('Failed to save login background')
+                                  }
+                                } finally {
+                                  setSavingLoginImage(false)
+                                }
+                              }}
+                              allowImageVideo={true}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-10 h-10 rounded border border-border cursor-pointer"
+                                  style={{
+                                    background: (() => {
+                                      const features = spaceDetails?.features || null
+                                      try {
+                                        const parsed = typeof features === 'string' ? JSON.parse(features) : features
+                                        const bg = parsed?.login_image_url || parsed?.login_background || ''
+                                        if (bg.startsWith('url(') || bg.startsWith('http') || bg.startsWith('video(')) {
+                                          return `url(${bg.replace('url(', '').replace(')', '').replace('video(', '').replace(')', '')})`
+                                        }
+                                        return bg || '#ffffff'
+                                      } catch {
+                                        return '#ffffff'
+                                      }
+                                    })(),
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center'
+                                  }}
+                                />
+                                <span className="text-sm text-muted-foreground">Click to choose solid color, gradient, image, or video</span>
+                              </div>
+                            </ColorPickerPopover>
+                            <p className="text-xs text-muted-foreground">Shown on the left side of the space-specific login page. Choose from solid color, gradient, image, or video.</p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                   </Tabs>
                 </div>
@@ -1607,1285 +1432,11 @@ export default function SpaceSettingsPage() {
                 </div>
               </TabsContent>
 
-              
+
 
 
               <TabsContent value="data-model" className="space-y-6 w-full">
-                <DataModelTreeView
-                  models={models}
-                  folders={folders}
-                  loading={modelsLoading}
-                  searchValue={modelSearch}
-                  onSearchChange={setModelSearch}
-                  onModelEdit={openEditModel}
-                  onModelDelete={deleteModel}
-                  onModelMove={moveModelToFolder}
-                  onModelShare={openShareModel}
-                  onCreateModel={openCreateModel}
-                  onCreateFolder={handleCreateFolder}
-                  onEditFolder={handleEditFolder}
-                  onDeleteFolder={handleDeleteFolder}
-                  onFolderExpand={handleFolderExpand}
-                  onFolderCollapse={handleFolderCollapse}
-                  expandedFolders={expandedFolders}
-                />
-
-                <Drawer open={showModelDrawer} onOpenChange={setShowModelDrawer}>
-                  <DrawerContent widthClassName="w-[720px]">
-                    <DrawerHeader>
-                      <DrawerTitle>{editingModel ? 'Edit Data Model' : 'New Data Model'}</DrawerTitle>
-                      <DrawerDescription>{editingModel ? 'Update details' : 'Create a model for this space'}</DrawerDescription>
-                    </DrawerHeader>
-                    <div className="p-6 space-y-4">
-                      <div className="border-b">
-                        <div className="flex space-x-8 justify-start">
-                          <button
-                            onClick={() => setActiveModelTab('details')}
-                            className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
-                              activeModelTab === 'details'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
-                            }`}
-                          >
-                            <Database className="h-4 w-4" />
-                            Details
-                          </button>
-                          <button
-                            onClick={() => setActiveModelTab('attributes')}
-                            className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
-                              activeModelTab === 'attributes'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
-                            }`}
-                          >
-                            <Type className="h-4 w-4" />
-                            Attributes
-                          </button>
-                          <button
-                            onClick={() => setActiveModelTab('activity')}
-                            className={`flex items-center gap-2 px-1 py-4 text-sm font-medium border-b-2 transition-colors ${
-                              activeModelTab === 'activity'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/50'
-                            }`}
-                          >
-                            <History className="h-4 w-4" />
-                            Activity
-                          </button>
-                        </div>
-                      </div>
-
-                      {activeModelTab==='details' && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Name</Label>
-                              <Input value={modelForm.name} onChange={(e)=> setModelForm({ ...modelForm, name: e.target.value })} placeholder="e.g. customer" className="border border-input bg-background" />
-                            </div>
-                            <div>
-                              <Label>Display Name</Label>
-                              <Input value={modelForm.display_name} onChange={(e)=> setModelForm({ ...modelForm, display_name: e.target.value })} placeholder="e.g. Customer" className="border border-input bg-background" />
-                            </div>
-                          </div>
-                          <div>
-                            <Label>Slug</Label>
-                            <Input value={modelForm.slug} onChange={(e)=> setModelForm({ ...modelForm, slug: e.target.value.toLowerCase() })} placeholder="auto-generated-from-name" className="border border-input bg-background" />
-                          </div>
-                          <div>
-                            <Label>Description</Label>
-                            <Textarea value={modelForm.description} onChange={(e)=> setModelForm({ ...modelForm, description: e.target.value })} placeholder="Optional description" className="border border-input bg-background" />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Icon</Label>
-                              <div className="mt-1">
-                                <IconPickerPopover value={modelIcon} onChange={setModelIcon} />
-                              </div>
-                            </div>
-                            <div>
-                              <Label>Primary Color</Label>
-                              <ColorInput
-                                value={modelPrimaryColor}
-                                onChange={(color) => setModelPrimaryColor(color)}
-                                allowImageVideo={false}
-                                className="relative"
-                                placeholder="#3b82f6"
-                                inputClassName="h-8 text-xs pl-7"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label>Tags</Label>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {modelTags.map((t)=> (
-                                <span key={t} className="px-2 py-0.5 text-xs rounded-full border flex items-center gap-1">
-                                  {t}
-                                  <button className="text-muted-foreground hover:text-foreground" onClick={() => setModelTags(modelTags.filter(x=>x!==t))}>×</button>
-                                </span>
-                              ))}
-                            </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <Input value={newTag} onChange={(e)=>setNewTag(e.target.value)} placeholder="Add tag" className="border border-input bg-background" />
-                              <Button variant="outline" className="border-0" onClick={()=>{ const v = newTag.trim(); if (v && !modelTags.includes(v)) { setModelTags([...modelTags, v]); setNewTag('') } }}>Add</Button>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Group Folder</Label>
-                              <Input value={modelGroupFolder} onChange={(e)=> setModelGroupFolder(e.target.value)} placeholder="e.g. CRM/Customers" />
-                            </div>
-                            <div>
-                              <Label>Owner</Label>
-                              <Input value={modelOwnerName} onChange={(e)=> setModelOwnerName(e.target.value)} placeholder="Owner name or email" />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {activeModelTab === 'attributes' && (
-                        <DraggableAttributeList
-                          modelId={editingModel?.id || ''}
-                          onAttributesChange={(newAttributes) => {
-                            setAttributes(newAttributes)
-                          }}
-                        />
-                      )}
-
-                      {activeModelTab === 'activity' && (
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-medium">Activity</h3>
-                          <div className="text-center py-8 text-muted-foreground">
-                            <History className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                            <p className="text-lg font-medium">No activity yet</p>
-                            <p className="text-sm">Activity will appear here as you make changes</p>
-                          </div>
-                        </div>
-                      )}
-
-                    </div>
-                    <div className="flex justify-end gap-2 px-6 py-4 border-t">
-                      <Button variant="outline" className="border-0" onClick={()=>setShowModelDrawer(false)}>Close</Button>
-                      {activeModelTab === 'details' && (
-                        <Button onClick={saveModel}>
-                          {editingModel ? 'Update Model' : 'Create Model'}
-                          </Button>
-                      )}
-                    </div>
-                  </DrawerContent>
-                </Drawer>
-
-                {/* Create Attribute Drawer */}
-                <Drawer open={showCreateAttributeDrawer} onOpenChange={setShowCreateAttributeDrawer}>
-                  <DrawerContent widthClassName="w-[600px]">
-                    <DrawerHeader>
-                      <DrawerTitle>Create New Attribute</DrawerTitle>
-                      <DrawerDescription>Add a new attribute to this data model</DrawerDescription>
-                    </DrawerHeader>
-                    <div className="p-6 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label>Name *</Label>
-                            <Input 
-                              value={createAttributeForm.name} 
-                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, name: e.target.value })} 
-                              placeholder="e.g. customer_name" 
-                            />
-                          </div>
-                          <div>
-                            <Label>Display Name *</Label>
-                            <Input 
-                              value={createAttributeForm.display_name} 
-                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, display_name: e.target.value })} 
-                              placeholder="e.g. Customer Name" 
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label>Data Type *</Label>
-                            <select 
-                              value={createAttributeForm.type} 
-                            onChange={(e) => {
-                              const newType = e.target.value
-                              setCreateAttributeForm({ 
-                                ...createAttributeForm, 
-                                type: newType,
-                                // Reset reference fields when changing type
-                                reference_model_id: newType === 'data_model_entities' ? createAttributeForm.reference_model_id : '',
-                                reference_attribute_code: newType === 'data_model_entities' ? createAttributeForm.reference_attribute_code : '',
-                                reference_attribute_label: newType === 'data_model_entities' ? createAttributeForm.reference_attribute_label : ''
-                              })
-                            }} 
-                              className="w-full p-2 border rounded-md"
-                            >
-                              <option value="text">Text</option>
-                              <option value="number">Number</option>
-                              <option value="boolean">Boolean</option>
-                              <option value="date">Date</option>
-                              <option value="email">Email</option>
-                              <option value="phone">Phone</option>
-                              <option value="url">URL</option>
-                            <option value="rich_text">Rich Text</option>
-                            <option value="currency">Currency</option>
-                            <option value="phone_number">Phone Number</option>
-                            <option value="address">Address</option>
-                            <option value="rating">Rating</option>
-                            <option value="color">Color</option>
-                            <option value="duration">Duration</option>
-                            <option value="geolocation">Geolocation</option>
-                            <option value="tags">Tags</option>
-                            <option value="reference">Reference</option>
-                              <option value="select">Select</option>
-                              <option value="multi_select">Multi Select</option>
-                              <option value="textarea">Textarea</option>
-                              <option value="json">JSON</option>
-                            <option value="attachment">Attachment</option>
-                            <option value="data_model_entities">Data Model Entities</option>
-                            </select>
-                          </div>
-                          <div>
-                            <Label>Default Value</Label>
-                            <Input 
-                              value={createAttributeForm.default_value} 
-                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, default_value: e.target.value })} 
-                              placeholder="Optional" 
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                          <label className="inline-flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
-                              checked={createAttributeForm.is_required} 
-                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, is_required: e.target.checked })} 
-                            />
-                            <span className="text-sm">Required</span>
-                          </label>
-                          <label className="inline-flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
-                              checked={createAttributeForm.is_unique} 
-                              onChange={(e) => setCreateAttributeForm({ ...createAttributeForm, is_unique: e.target.checked })} 
-                            />
-                            <span className="text-sm">Unique</span>
-                          </label>
-                        </div>
-                        
-                        {(createAttributeForm.type === 'select' || createAttributeForm.type === 'multi_select') && (
-                          <div className="space-y-3">
-                            <Label>Options</Label>
-                            <div className="text-sm text-muted-foreground">Add selectable options for this attribute.</div>
-                            {createAttributeForm.options.map((opt: any, idx: number) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <Input 
-                                  value={typeof opt === 'string' ? opt : (opt?.label ?? '')} 
-                                  onChange={(e) => {
-                                    const next = [...createAttributeForm.options]
-                                    next[idx] = e.target.value
-                                    setCreateAttributeForm({ ...createAttributeForm, options: next })
-                                  }} 
-                                  placeholder={`Option ${idx + 1}`} 
-                                />
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="border-0"
-                                  onClick={() => {
-                                    const next = [...createAttributeForm.options]
-                                    next.splice(idx, 1)
-                                    setCreateAttributeForm({ ...createAttributeForm, options: next })
-                                  }}
-                                >
-                                  Remove
-                                </Button>
-                              </div>
-                            ))}
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="border-0"
-                              onClick={() => {
-                                setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  options: [...createAttributeForm.options, ''] 
-                                })
-                              }}
-                            >
-                              <Plus className="h-4 w-4 mr-1" /> Add Option
-                            </Button>
-                          </div>
-                        )}
-
-                      {createAttributeForm.type === 'data_model_entities' && (
-                        <div className="space-y-4">
-                          <Label>Data Model Reference</Label>
-                          <div className="text-sm text-muted-foreground mb-3">
-                            Select a data model to reference its records as dropdown options.
-                      </div>
-                          
-                          <div className="grid grid-cols-1 gap-4">
-                            <div>
-                              <Label>Reference Data Model *</Label>
-                              <select 
-                                value={createAttributeForm.reference_model_id} 
-                                onChange={(e) => {
-                                  const modelId = e.target.value
-                                  setCreateAttributeForm({ 
-                                    ...createAttributeForm, 
-                                    reference_model_id: modelId,
-                                    reference_attribute_code: '',
-                                    reference_attribute_label: ''
-                                  })
-                                  loadReferenceModelAttributes(modelId)
-                                }} 
-                                className="w-full p-2 border rounded-md"
-                              >
-                                <option value="">Select a data model</option>
-                                {availableModels.filter(m => m.id !== editingModel?.id).map((model: any) => (
-                                  <option key={model.id} value={model.id}>
-                                    {model.display_name || model.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            
-                            {createAttributeForm.reference_model_id && (
-                              <>
-                                <div>
-                                  <Label>Attribute Code *</Label>
-                                  <div className="text-xs text-muted-foreground mb-1">
-                                    The attribute that will store the record ID
-                                  </div>
-                                  <select 
-                                    value={createAttributeForm.reference_attribute_code} 
-                                    onChange={(e) => setCreateAttributeForm({ 
-                                      ...createAttributeForm, 
-                                      reference_attribute_code: e.target.value 
-                                    })} 
-                                    className="w-full p-2 border rounded-md"
-                                    disabled={loadingReferenceAttributes}
-                                  >
-                                    <option value="">Select attribute code</option>
-                                    {referenceModelAttributes.map((attr: any) => (
-                                      <option key={attr.id} value={attr.name}>
-                                        {attr.display_name || attr.name} ({attr.type})
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                                
-                                <div>
-                                  <Label>Attribute Label *</Label>
-                                  <div className="text-xs text-muted-foreground mb-1">
-                                    The attribute that will be displayed in the dropdown
-                                  </div>
-                                  <select 
-                                    value={createAttributeForm.reference_attribute_label} 
-                                    onChange={(e) => setCreateAttributeForm({ 
-                                      ...createAttributeForm, 
-                                      reference_attribute_label: e.target.value 
-                                    })} 
-                                    className="w-full p-2 border rounded-md"
-                                    disabled={loadingReferenceAttributes}
-                                  >
-                                    <option value="">Select attribute label</option>
-                                    {referenceModelAttributes.map((attr: any) => (
-                                      <option key={attr.id} value={attr.name}>
-                                        {attr.display_name || attr.name} ({attr.type})
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {createAttributeForm.type === 'currency' && (
-                        <div className="space-y-4">
-                          <Label>Currency Configuration</Label>
-                          <div className="text-sm text-muted-foreground mb-3">
-                            Configure currency settings for this attribute.
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Currency Code</Label>
-                              <select 
-                                value={createAttributeForm.currency_code || 'USD'}
-                                onChange={(e) => setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  currency_code: e.target.value 
-                                })}
-                                className="w-full p-2 border rounded-md"
-                              >
-                                <option value="USD">USD - US Dollar</option>
-                                <option value="EUR">EUR - Euro</option>
-                                <option value="GBP">GBP - British Pound</option>
-                                <option value="JPY">JPY - Japanese Yen</option>
-                                <option value="CAD">CAD - Canadian Dollar</option>
-                                <option value="AUD">AUD - Australian Dollar</option>
-                                <option value="CHF">CHF - Swiss Franc</option>
-                                <option value="CNY">CNY - Chinese Yuan</option>
-                                <option value="INR">INR - Indian Rupee</option>
-                                <option value="BRL">BRL - Brazilian Real</option>
-                              </select>
-                            </div>
-                            <div>
-                              <Label>Decimal Places</Label>
-                              <Input 
-                                type="number"
-                                placeholder="2"
-                                value={createAttributeForm.decimal_places || '2'}
-                                onChange={(e) => setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  decimal_places: e.target.value 
-                                })}
-                              />
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Number of decimal places (0-4)
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {createAttributeForm.type === 'rating' && (
-                        <div className="space-y-4">
-                          <Label>Rating Configuration</Label>
-                          <div className="text-sm text-muted-foreground mb-3">
-                            Configure rating scale and display options.
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Rating Scale</Label>
-                              <select 
-                                value={createAttributeForm.rating_scale || '5'}
-                                onChange={(e) => setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  rating_scale: e.target.value 
-                                })}
-                                className="w-full p-2 border rounded-md"
-                              >
-                                <option value="3">3 Stars</option>
-                                <option value="5">5 Stars</option>
-                                <option value="10">10 Points</option>
-                                <option value="100">100 Points</option>
-                              </select>
-                            </div>
-                            <div>
-                              <Label>Display Type</Label>
-                              <select 
-                                value={createAttributeForm.rating_display || 'stars'}
-                                onChange={(e) => setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  rating_display: e.target.value 
-                                })}
-                                className="w-full p-2 border rounded-md"
-                              >
-                                <option value="stars">Stars</option>
-                                <option value="numbers">Numbers</option>
-                                <option value="percentage">Percentage</option>
-                                <option value="thumbs">Thumbs Up/Down</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {createAttributeForm.type === 'address' && (
-                        <div className="space-y-4">
-                          <Label>Address Configuration</Label>
-                          <div className="text-sm text-muted-foreground mb-3">
-                            Configure address fields and formatting.
-                          </div>
-                          
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Country</Label>
-                                <select 
-                                  value={createAttributeForm.default_country || ''}
-                                  onChange={(e) => setCreateAttributeForm({ 
-                                    ...createAttributeForm, 
-                                    default_country: e.target.value 
-                                  })}
-                                  className="w-full p-2 border rounded-md"
-                                >
-                                  <option value="">No default</option>
-                                  <option value="US">United States</option>
-                                  <option value="CA">Canada</option>
-                                  <option value="GB">United Kingdom</option>
-                                  <option value="AU">Australia</option>
-                                  <option value="DE">Germany</option>
-                                  <option value="FR">France</option>
-                                  <option value="JP">Japan</option>
-                                  <option value="IN">India</option>
-                                  <option value="BR">Brazil</option>
-                                </select>
-                              </div>
-                              <div>
-                                <Label>Address Format</Label>
-                                <select 
-                                  value={createAttributeForm.address_format || 'standard'}
-                                  onChange={(e) => setCreateAttributeForm({ 
-                                    ...createAttributeForm, 
-                                    address_format: e.target.value 
-                                  })}
-                                  className="w-full p-2 border rounded-md"
-                                >
-                                  <option value="standard">Standard (Street, City, State, ZIP)</option>
-                                  <option value="international">International (Street, City, Province, Postal Code)</option>
-                                  <option value="simple">Simple (Address, City, Country)</option>
-                                </select>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-6">
-                              <label className="inline-flex items-center gap-2">
-                                <input 
-                                  type="checkbox" 
-                                  checked={createAttributeForm.require_country || false}
-                                  onChange={(e) => setCreateAttributeForm({ 
-                                    ...createAttributeForm, 
-                                    require_country: e.target.checked 
-                                  })} 
-                                />
-                                <span className="text-sm">Require Country</span>
-                              </label>
-                              <label className="inline-flex items-center gap-2">
-                                <input 
-                                  type="checkbox" 
-                                  checked={createAttributeForm.enable_geocoding || false}
-                                  onChange={(e) => setCreateAttributeForm({ 
-                                    ...createAttributeForm, 
-                                    enable_geocoding: e.target.checked 
-                                  })} 
-                                />
-                                <span className="text-sm">Enable Geocoding</span>
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {createAttributeForm.type === 'duration' && (
-                        <div className="space-y-4">
-                          <Label>Duration Configuration</Label>
-                          <div className="text-sm text-muted-foreground mb-3">
-                            Configure duration format and display options.
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Duration Format</Label>
-                              <select 
-                                value={createAttributeForm.duration_format || 'hh:mm:ss'}
-                                onChange={(e) => setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  duration_format: e.target.value 
-                                })}
-                                className="w-full p-2 border rounded-md"
-                              >
-                                <option value="mm:ss">Minutes:Seconds</option>
-                                <option value="hh:mm">Hours:Minutes</option>
-                                <option value="hh:mm:ss">Hours:Minutes:Seconds</option>
-                                <option value="days">Days</option>
-                                <option value="hours">Hours</option>
-                                <option value="minutes">Minutes</option>
-                                <option value="seconds">Seconds</option>
-                              </select>
-                            </div>
-                            <div>
-                              <Label>Max Duration (hours)</Label>
-                              <Input 
-                                type="number"
-                                placeholder="24"
-                                value={createAttributeForm.max_duration || ''}
-                                onChange={(e) => setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  max_duration: e.target.value 
-                                })}
-                              />
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Maximum duration in hours (optional)
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {createAttributeForm.type === 'tags' && (
-                        <div className="space-y-4">
-                          <Label>Tags Configuration</Label>
-                          <div className="text-sm text-muted-foreground mb-3">
-                            Configure tag behavior and options.
-                          </div>
-                          
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-6">
-                              <label className="inline-flex items-center gap-2">
-                                <input 
-                                  type="checkbox" 
-                                  checked={createAttributeForm.allow_custom_tags || true}
-                                  onChange={(e) => setCreateAttributeForm({ 
-                                    ...createAttributeForm, 
-                                    allow_custom_tags: e.target.checked 
-                                  })} 
-                                />
-                                <span className="text-sm">Allow Custom Tags</span>
-                              </label>
-                              <label className="inline-flex items-center gap-2">
-                                <input 
-                                  type="checkbox" 
-                                  checked={createAttributeForm.require_tags || false}
-                                  onChange={(e) => setCreateAttributeForm({ 
-                                    ...createAttributeForm, 
-                                    require_tags: e.target.checked 
-                                  })} 
-                                />
-                                <span className="text-sm">Require at least one tag</span>
-                              </label>
-                            </div>
-                            
-                            <div>
-                              <Label>Max Tags</Label>
-                              <Input 
-                                type="number"
-                                placeholder="10"
-                                value={createAttributeForm.max_tags || ''}
-                                onChange={(e) => setCreateAttributeForm({ 
-                                  ...createAttributeForm, 
-                                  max_tags: e.target.value 
-                                })}
-                              />
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Maximum number of tags allowed (optional)
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex justify-end gap-2 px-6 py-4 border-t">
-                      <Button variant="outline" className="border-0" onClick={() => setShowCreateAttributeDrawer(false)}>
-                        Cancel
-                      </Button>
-                      <Button 
-                        onClick={createAttribute}
-                        disabled={
-                          !createAttributeForm.name || 
-                          !createAttributeForm.display_name ||
-                          (createAttributeForm.type === 'data_model_entities' && (
-                            !createAttributeForm.reference_model_id ||
-                            !createAttributeForm.reference_attribute_code ||
-                            !createAttributeForm.reference_attribute_label
-                          ))
-                        }
-                      >
-                        Create Attribute
-                      </Button>
-                    </div>
-                  </DrawerContent>
-                </Drawer>
-
-                {/* Create Folder Dialog */}
-                <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Folder</DialogTitle>
-                      <DialogDescription>Create a folder to organize your data models</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="folder-name">Folder Name</Label>
-                        <Input
-                          id="folder-name"
-                          value={folderForm.name}
-                          onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
-                          placeholder="e.g. CRM Models"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="parent-folder">Parent Folder (Optional)</Label>
-                        <select
-                          id="parent-folder"
-                          value={folderForm.parent_id}
-                          onChange={(e) => setFolderForm({ ...folderForm, parent_id: e.target.value })}
-                          className="w-full p-2 border rounded-md"
-                        >
-                          <option value="">No parent (root level)</option>
-                          {folders.map((folder: any) => (
-                            <option key={folder.id} value={folder.id}>
-                              {folder.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" className="border-0" onClick={() => setShowCreateFolderDialog(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={createFolder} disabled={!folderForm.name.trim()}>
-                        Create Folder
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Share Model Dialog */}
-                <Dialog open={showShareModelDialog} onOpenChange={setShowShareModelDialog}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Share Data Model</DialogTitle>
-                      <DialogDescription>
-                        Share "{selectedModelForSharing?.display_name || selectedModelForSharing?.name}" with other spaces
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Select Spaces to Share With</Label>
-                        <div className="text-sm text-muted-foreground mb-2">
-                          Choose which spaces can access this data model
-                        </div>
-                        <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
-                          {availableSpaces.map((space: any) => (
-                            <label key={space.id} className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={shareForm.space_ids.includes(space.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setShareForm({ space_ids: [...shareForm.space_ids, space.id] })
-                                  } else {
-                                    setShareForm({ space_ids: shareForm.space_ids.filter(id => id !== space.id) })
-                                  }
-                                }}
-                              />
-                              <div>
-                                <div className="font-medium">{space.name}</div>
-                                <div className="text-xs text-muted-foreground">{space.description || 'No description'}</div>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" className="border-0" onClick={() => setShowShareModelDialog(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={shareModel}>
-                        Update Sharing
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Edit Folder Dialog */}
-                <Dialog open={showEditFolderDialog} onOpenChange={setShowEditFolderDialog}>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit Folder</DialogTitle>
-                      <DialogDescription>
-                        Rename the folder "{editingFolder?.name}"
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="edit-folder-name">Folder Name</Label>
-                        <Input
-                          id="edit-folder-name"
-                          value={editFolderName}
-                          onChange={(e) => setEditFolderName(e.target.value)}
-                          placeholder="Enter folder name"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && editFolderName.trim()) {
-                              saveFolderEdit()
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowEditFolderDialog(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={saveFolderEdit} disabled={!editFolderName.trim() || editFolderName === editingFolder?.name}>
-                        Save Changes
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Data Model Type Selection Dialog */}
-                <Dialog open={showDataModelTypeDialog} onOpenChange={setShowDataModelTypeDialog}>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Add Data Model</DialogTitle>
-                      <DialogDescription>
-                        Choose the type of data model you want to create
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <button
-                        onClick={() => handleSelectDataModelType('internal')}
-                        className="w-full p-6 text-left border-2 rounded-lg hover:border-primary hover:bg-primary/10 transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 bg-primary/10 rounded-lg">
-                            <Database className="h-6 w-6 text-primary" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-lg">Internal Data Model</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              Create a new data model within this space
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => handleSelectDataModelType('external')}
-                        className="w-full p-6 text-left border-2 rounded-lg hover:border-primary hover:bg-primary/10 transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 bg-primary/10 rounded-lg">
-                            <ExternalLink className="h-6 w-6 text-primary" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-lg">External Data Source</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              Connect to an external database or API endpoint
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowDataModelTypeDialog(false)}>
-                        Cancel
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Database Selection Dialog */}
-                <Dialog open={showDatabaseSelection} onOpenChange={(open) => {
-                  setShowDatabaseSelection(open)
-                  if (!open) {
-                    setDatabaseSearch('')
-                  }
-                }}>
-                  <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Select Data Source Type</DialogTitle>
-                      <DialogDescription>
-                        Choose the data source type you want to connect to
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      {/* Search */}
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder="Search data sources..."
-                          value={databaseSearch}
-                          onChange={(e) => setDatabaseSearch(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-
-                      {/* Database List */}
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {filteredDatabaseTypes.length === 0 ? (
-                          <div className="text-center py-8 text-muted-foreground">
-                            No data sources found
-                          </div>
-                        ) : (
-                          filteredDatabaseTypes.map((db) => (
-                            <button
-                              key={db.id}
-                              onClick={() => handleSelectDatabase(db.id as 'postgres' | 'mysql' | 'api')}
-                              className="w-full p-4 text-left border rounded-lg hover:border-primary hover:bg-primary/10 transition-all"
-                            >
-                              <div className="flex items-center gap-4">
-                                <div className="text-3xl">{db.icon}</div>
-                                <div className="flex-1">
-                                  <div className="font-semibold">{db.name}</div>
-                                  <div className="text-sm text-muted-foreground">{db.description}</div>
-                                </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                              </div>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => {
-                        setShowDatabaseSelection(false)
-                        setShowDataModelTypeDialog(true)
-                      }}>
-                        Back
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
-                {/* Connection Form Dialog */}
-                <Dialog open={showConnectionForm} onOpenChange={(open) => {
-                  setShowConnectionForm(open)
-                  if (!open) {
-                    setConnectionTestResult(null)
-                    setConnectionSchemas([])
-                    setConnectionTables({})
-                  }
-                }}>
-                  <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Configure External Connection</DialogTitle>
-                      <DialogDescription>
-                        {connectionForm.connection_type === 'api' 
-                          ? 'Enter API endpoint details'
-                          : `Enter connection details for ${selectedDatabaseType === 'postgres' ? 'PostgreSQL' : selectedDatabaseType === 'mysql' ? 'MySQL' : ''} database`}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      {/* Connection Name */}
-                      <div>
-                        <Label htmlFor="connection-name">Connection Name *</Label>
-                        <Input
-                          id="connection-name"
-                          value={connectionForm.name}
-                          onChange={(e) => setConnectionForm({ ...connectionForm, name: e.target.value })}
-                          placeholder={connectionForm.connection_type === 'api' ? 'e.g. My API Endpoint' : 'e.g. Production Database'}
-                          className="mt-1"
-                        />
-                      </div>
-
-                      {connectionForm.connection_type === 'api' ? (
-                        <>
-                          {/* API URL */}
-                          <div>
-                            <Label htmlFor="api-url">API URL *</Label>
-                            <Input
-                              id="api-url"
-                              value={connectionForm.api_url}
-                              onChange={(e) => setConnectionForm({ ...connectionForm, api_url: e.target.value })}
-                              placeholder="https://api.example.com/endpoint"
-                              className="mt-1"
-                            />
-                          </div>
-
-                          {/* HTTP Method */}
-                          <div>
-                            <Label htmlFor="api-method">HTTP Method</Label>
-                            <Select
-                              value={connectionForm.api_method}
-                              onValueChange={(value) => setConnectionForm({ ...connectionForm, api_method: value as any })}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="GET">GET</SelectItem>
-                                <SelectItem value="POST">POST</SelectItem>
-                                <SelectItem value="PUT">PUT</SelectItem>
-                                <SelectItem value="PATCH">PATCH</SelectItem>
-                                <SelectItem value="DELETE">DELETE</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Auth Type */}
-                          <div>
-                            <Label htmlFor="api-auth-type">Authentication Type</Label>
-                            <Select
-                              value={connectionForm.api_auth_type}
-                              onValueChange={(value) => setConnectionForm({ ...connectionForm, api_auth_type: value as any })}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                <SelectItem value="bearer">Bearer Token</SelectItem>
-                                <SelectItem value="basic">Basic Auth</SelectItem>
-                                <SelectItem value="apikey">API Key</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* Auth Fields based on type */}
-                          {connectionForm.api_auth_type === 'bearer' && (
-                            <div>
-                              <Label htmlFor="api-auth-token">Bearer Token *</Label>
-                              <Input
-                                id="api-auth-token"
-                                type="password"
-                                value={connectionForm.api_auth_token}
-                                onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_token: e.target.value })}
-                                placeholder="Enter bearer token"
-                                className="mt-1"
-                              />
-                            </div>
-                          )}
-
-                          {connectionForm.api_auth_type === 'basic' && (
-                            <>
-                              <div>
-                                <Label htmlFor="api-auth-username">Username *</Label>
-                                <Input
-                                  id="api-auth-username"
-                                  value={connectionForm.api_auth_username}
-                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_username: e.target.value })}
-                                  placeholder="Username"
-                                  className="mt-1"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="api-auth-password">Password *</Label>
-                                <Input
-                                  id="api-auth-password"
-                                  type="password"
-                                  value={connectionForm.api_auth_password}
-                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_password: e.target.value })}
-                                  placeholder="Password"
-                                  className="mt-1"
-                                />
-                              </div>
-                            </>
-                          )}
-
-                          {connectionForm.api_auth_type === 'apikey' && (
-                            <>
-                              <div>
-                                <Label htmlFor="api-auth-apikey-name">API Key Name/Header *</Label>
-                                <Input
-                                  id="api-auth-apikey-name"
-                                  value={connectionForm.api_auth_apikey_name}
-                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_apikey_name: e.target.value })}
-                                  placeholder="e.g. X-API-Key"
-                                  className="mt-1"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="api-auth-apikey-value">API Key Value *</Label>
-                                <Input
-                                  id="api-auth-apikey-value"
-                                  type="password"
-                                  value={connectionForm.api_auth_apikey_value}
-                                  onChange={(e) => setConnectionForm({ ...connectionForm, api_auth_apikey_value: e.target.value })}
-                                  placeholder="Enter API key"
-                                  className="mt-1"
-                                />
-                              </div>
-                            </>
-                          )}
-
-                          {/* Request Body (for POST, PUT, PATCH) */}
-                          {(connectionForm.api_method === 'POST' || connectionForm.api_method === 'PUT' || connectionForm.api_method === 'PATCH') && (
-                            <div>
-                              <Label htmlFor="api-body">Request Body (JSON)</Label>
-                              <Textarea
-                                id="api-body"
-                                value={connectionForm.api_body}
-                                onChange={(e) => setConnectionForm({ ...connectionForm, api_body: e.target.value })}
-                                placeholder='{"key": "value"}'
-                                className="mt-1 font-mono text-xs"
-                                rows={4}
-                              />
-                            </div>
-                          )}
-
-                          {/* Response Path */}
-                          <div>
-                            <Label htmlFor="api-response-path">Response Data Path (optional)</Label>
-                            <Input
-                              id="api-response-path"
-                              value={connectionForm.api_response_path}
-                              onChange={(e) => setConnectionForm({ ...connectionForm, api_response_path: e.target.value })}
-                              placeholder="e.g. data.items (JSON path to extract data)"
-                              className="mt-1"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Leave empty to use root response, or specify JSON path (e.g., "data.items" to extract items from data.items)
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          {/* Host */}
-                          <div>
-                            <Label htmlFor="host">Host *</Label>
-                            <Input
-                              id="host"
-                              value={connectionForm.host}
-                              onChange={(e) => setConnectionForm({ ...connectionForm, host: e.target.value })}
-                              placeholder="localhost or IP address"
-                              className="mt-1"
-                            />
-                          </div>
-
-                          {/* Port */}
-                          <div>
-                            <Label htmlFor="port">Port</Label>
-                            <Input
-                              id="port"
-                              type="number"
-                              value={connectionForm.port}
-                              onChange={(e) => setConnectionForm({ ...connectionForm, port: e.target.value })}
-                              placeholder={connectionForm.db_type === 'postgres' ? '5432' : '3306'}
-                              className="mt-1"
-                            />
-                          </div>
-
-                          {/* Database */}
-                          <div>
-                            <Label htmlFor="database">Database</Label>
-                            <Input
-                              id="database"
-                              value={connectionForm.database}
-                              onChange={(e) => setConnectionForm({ ...connectionForm, database: e.target.value })}
-                              placeholder="Database name"
-                              className="mt-1"
-                            />
-                          </div>
-
-                          {/* Username */}
-                          <div>
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                              id="username"
-                              value={connectionForm.username}
-                              onChange={(e) => setConnectionForm({ ...connectionForm, username: e.target.value })}
-                              placeholder="Database username"
-                              className="mt-1"
-                            />
-                          </div>
-
-                          {/* Password */}
-                          <div>
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                              id="password"
-                              type="password"
-                              value={connectionForm.password}
-                              onChange={(e) => setConnectionForm({ ...connectionForm, password: e.target.value })}
-                              placeholder="Database password"
-                              className="mt-1"
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {/* Schema and Table Selection (shown after test) */}
-                      {connectionTestResult?.success && connectionSchemas.length > 0 && (
-                        <>
-                          <div>
-                            <Label htmlFor="schema">
-                              Schema * {connectionForm.db_type === 'mysql' && <span className="text-xs text-muted-foreground">(typically the database name)</span>}
-                            </Label>
-                            <Select
-                              value={connectionForm.schema}
-                              onValueChange={(value) => {
-                                setConnectionForm({ ...connectionForm, schema: value, table: '' })
-                              }}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue placeholder="Select schema" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {connectionSchemas.map((schema) => (
-                                  <SelectItem key={schema} value={schema}>
-                                    {schema}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {connectionForm.schema && connectionTables[connectionForm.schema] && (
-                            <div>
-                              <Label htmlFor="table">Table *</Label>
-                              <Select
-                                value={connectionForm.table}
-                                onValueChange={(value) => setConnectionForm({ ...connectionForm, table: value })}
-                              >
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Select table" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {connectionTables[connectionForm.schema].map((table) => (
-                                    <SelectItem key={table} value={table}>
-                                      {table}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      {/* Test Result */}
-                      {connectionTestResult && (
-                        <div className={`p-4 rounded-lg ${
-                          connectionTestResult.success
-                            ? 'bg-primary/10 border border-primary/30'
-                            : 'bg-destructive/10 border border-destructive/30'
-                        }`}>
-                          <div className={`font-medium ${
-                            connectionTestResult.success ? 'text-primary' : 'text-destructive'
-                          }`}>
-                            {connectionTestResult.success ? '✓ Connection Successful' : '✗ Connection Failed'}
-                          </div>
-                          {connectionTestResult.error && (
-                            <div className="text-sm text-destructive mt-1">
-                              {connectionTestResult.error}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowConnectionForm(false)
-                          setShowDatabaseSelection(true)
-                        }}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={testConnection}
-                        disabled={
-                          testingConnection || 
-                          (connectionForm.connection_type === 'api' ? !connectionForm.api_url : !connectionForm.host)
-                        }
-                      >
-                        {testingConnection ? 'Testing...' : 'Test Connection'}
-                      </Button>
-                      <Button
-                        onClick={saveExternalConnection}
-                        disabled={
-                          !connectionForm.name || 
-                          (connectionForm.connection_type === 'api' 
-                            ? (!connectionForm.api_url || !connectionTestResult?.success)
-                            : (!connectionForm.host || !connectionTestResult?.success || !connectionForm.table || (connectionForm.db_type === 'postgres' && !connectionForm.schema)))
-                        }
-                      >
-                        Save Connection
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-
+                <DataModelBrowser spaceId={selectedSpace?.id || ''} />
               </TabsContent>
 
               <TabsContent value="data-sync" className="space-y-6 w-full">
@@ -2903,7 +1454,7 @@ export default function SpaceSettingsPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <Button onClick={async()=>{
+                      <Button onClick={async () => {
                         try {
                           const res = await fetch(`/api/spaces/${selectedSpace.id}/export`)
                           if (!res.ok) throw new Error('Export failed')
@@ -2919,7 +1470,7 @@ export default function SpaceSettingsPage() {
                         }
                       }}>Export Space Data</Button>
                       <label className="inline-flex items-center gap-2">
-                        <Input type="file" accept="application/json" onChange={async(e:any)=>{
+                        <Input type="file" accept="application/json" onChange={async (e: any) => {
                           const file = e.target?.files?.[0]
                           if (!file) return
                           const fd = new FormData()
@@ -2937,507 +1488,7 @@ export default function SpaceSettingsPage() {
               </TabsContent>
 
               <TabsContent value="attachments" className="space-y-6 w-full">
-                <Card className="bg-transparent">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Database className="h-5 w-5" />
-                      <span>Attachment Storage Configuration</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Configure how attachment attributes store files in this space. All attachment attributes will use the selected storage provider.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Storage Provider</Label>
-                        <Select 
-                          value={attachmentStorage.provider}
-                          onValueChange={(value) => setAttachmentStorage({ 
-                            ...attachmentStorage, 
-                            provider: value 
-                          })}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select storage provider" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            <SelectItem value="minio">
-                              <div className="flex items-center gap-2">
-                                {getStorageProviderIcon('minio')}
-                                <span>MinIO (Default)</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="s3">
-                              <div className="flex items-center gap-2">
-                                {getStorageProviderIcon('s3')}
-                                <span>AWS S3</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="sftp">
-                              <div className="flex items-center gap-2">
-                                {getStorageProviderIcon('sftp')}
-                                <span>SFTP</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="ftp">
-                              <div className="flex items-center gap-2">
-                                {getStorageProviderIcon('ftp')}
-                                <span>FTP</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Choose the storage provider for all attachment attributes in this space
-                        </div>
-                      </div>
-
-                      {/* MinIO Configuration */}
-                      {attachmentStorage.provider === 'minio' && (
-                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
-                          <h4 className="font-medium">MinIO Configuration</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Endpoint</Label>
-                              <Input 
-                                value={attachmentStorage.config.minio.endpoint}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    minio: {
-                                      ...attachmentStorage.config.minio,
-                                      endpoint: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="http://localhost:9000"
-                              />
-                            </div>
-                            <div>
-                              <Label>Access Key</Label>
-                              <Input 
-                                type="password"
-                                value={attachmentStorage.config.minio.access_key}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    minio: {
-                                      ...attachmentStorage.config.minio,
-                                      access_key: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="minioadmin"
-                              />
-                            </div>
-                            <div>
-                              <Label>Secret Key</Label>
-                              <Input 
-                                type="password"
-                                value={attachmentStorage.config.minio.secret_key}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    minio: {
-                                      ...attachmentStorage.config.minio,
-                                      secret_key: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="minioadmin"
-                              />
-                            </div>
-                            <div>
-                              <Label>Bucket Name</Label>
-                              <Input 
-                                value={attachmentStorage.config.minio.bucket}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    minio: {
-                                      ...attachmentStorage.config.minio,
-                                      bucket: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="attachments"
-                              />
-                            </div>
-                            <div>
-                              <Label>Region</Label>
-                              <Input 
-                                value={attachmentStorage.config.minio.region}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    minio: {
-                                      ...attachmentStorage.config.minio,
-                                      region: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="us-east-1"
-                              />
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input 
-                                type="checkbox" 
-                                checked={attachmentStorage.config.minio.use_ssl}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    minio: {
-                                      ...attachmentStorage.config.minio,
-                                      use_ssl: e.target.checked
-                                    }
-                                  }
-                                })}
-                              />
-                              <Label>Use SSL</Label>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* AWS S3 Configuration */}
-                      {attachmentStorage.provider === 's3' && (
-                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
-                          <h4 className="font-medium">AWS S3 Configuration</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Access Key ID</Label>
-                              <Input 
-                                value={attachmentStorage.config.s3.access_key_id}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    s3: {
-                                      ...attachmentStorage.config.s3,
-                                      access_key_id: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="AKIAIOSFODNN7EXAMPLE"
-                              />
-                            </div>
-                            <div>
-                              <Label>Secret Access Key</Label>
-                              <Input 
-                                type="password"
-                                value={attachmentStorage.config.s3.secret_access_key}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    s3: {
-                                      ...attachmentStorage.config.s3,
-                                      secret_access_key: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-                              />
-                            </div>
-                            <div>
-                              <Label>Bucket Name</Label>
-                              <Input 
-                                value={attachmentStorage.config.s3.bucket}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    s3: {
-                                      ...attachmentStorage.config.s3,
-                                      bucket: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="my-attachments-bucket"
-                              />
-                            </div>
-                            <div>
-                              <Label>Region</Label>
-                              <Input 
-                                value={attachmentStorage.config.s3.region}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    s3: {
-                                      ...attachmentStorage.config.s3,
-                                      region: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="us-east-1"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* SFTP Configuration */}
-                      {attachmentStorage.provider === 'sftp' && (
-                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
-                          <h4 className="font-medium">SFTP Configuration</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Host</Label>
-                              <Input 
-                                value={attachmentStorage.config.sftp.host}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    sftp: {
-                                      ...attachmentStorage.config.sftp,
-                                      host: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="sftp.example.com"
-                              />
-                            </div>
-                            <div>
-                              <Label>Port</Label>
-                              <Input 
-                                type="number"
-                                value={attachmentStorage.config.sftp.port}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    sftp: {
-                                      ...attachmentStorage.config.sftp,
-                                      port: parseInt(e.target.value) || 22
-                                    }
-                                  }
-                                })}
-                                placeholder="22"
-                              />
-                            </div>
-                            <div>
-                              <Label>Username</Label>
-                              <Input 
-                                value={attachmentStorage.config.sftp.username}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    sftp: {
-                                      ...attachmentStorage.config.sftp,
-                                      username: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="username"
-                              />
-                            </div>
-                            <div>
-                              <Label>Password</Label>
-                              <Input 
-                                type="password"
-                                value={attachmentStorage.config.sftp.password}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    sftp: {
-                                      ...attachmentStorage.config.sftp,
-                                      password: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="password"
-                              />
-                            </div>
-                            <div className="col-span-2">
-                              <Label>Upload Path</Label>
-                              <Input 
-                                value={attachmentStorage.config.sftp.path}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    sftp: {
-                                      ...attachmentStorage.config.sftp,
-                                      path: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="/uploads"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* FTP Configuration */}
-                      {attachmentStorage.provider === 'ftp' && (
-                        <div className="space-y-4 border rounded-lg p-4 bg-transparent shadow-lg">
-                          <h4 className="font-medium">FTP Configuration</h4>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label>Host</Label>
-                              <Input 
-                                value={attachmentStorage.config.ftp.host}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    ftp: {
-                                      ...attachmentStorage.config.ftp,
-                                      host: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="ftp.example.com"
-                              />
-                            </div>
-                            <div>
-                              <Label>Port</Label>
-                              <Input 
-                                type="number"
-                                value={attachmentStorage.config.ftp.port}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    ftp: {
-                                      ...attachmentStorage.config.ftp,
-                                      port: parseInt(e.target.value) || 21
-                                    }
-                                  }
-                                })}
-                                placeholder="21"
-                              />
-                            </div>
-                            <div>
-                              <Label>Username</Label>
-                              <Input 
-                                value={attachmentStorage.config.ftp.username}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    ftp: {
-                                      ...attachmentStorage.config.ftp,
-                                      username: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="username"
-                              />
-                            </div>
-                            <div>
-                              <Label>Password</Label>
-                              <Input 
-                                type="password"
-                                value={attachmentStorage.config.ftp.password}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    ftp: {
-                                      ...attachmentStorage.config.ftp,
-                                      password: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="password"
-                              />
-                            </div>
-                            <div>
-                              <Label>Upload Path</Label>
-                              <Input 
-                                value={attachmentStorage.config.ftp.path}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    ftp: {
-                                      ...attachmentStorage.config.ftp,
-                                      path: e.target.value
-                                    }
-                                  }
-                                })}
-                                placeholder="/uploads"
-                              />
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input 
-                                type="checkbox" 
-                                checked={attachmentStorage.config.ftp.passive}
-                                onChange={(e) => setAttachmentStorage({
-                                  ...attachmentStorage,
-                                  config: {
-                                    ...attachmentStorage.config,
-                                    ftp: {
-                                      ...attachmentStorage.config.ftp,
-                                      passive: e.target.checked
-                                    }
-                                  }
-                                })}
-                              />
-                              <Label>Passive Mode</Label>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Test Connection */}
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-4">
-                          <Button 
-                            onClick={testStorageConnection}
-                            disabled={testingStorage}
-                            variant="outline"
-                            className="border-0"
-                          >
-                            {testingStorage ? 'Testing...' : 'Test Connection'}
-                          </Button>
-                          <Button onClick={saveAttachmentStorageConfig}>
-                            Save Configuration
-                          </Button>
-                        </div>
-
-                        {storageTestResult && (
-                          <div className={`p-4 rounded-lg ${
-                            storageTestResult.success 
-                              ? 'bg-primary/10 border border-primary/30' 
-                              : 'bg-destructive/10 border border-destructive/30'
-                          }`}>
-                            <div className={`font-medium ${
-                              storageTestResult.success ? 'text-primary' : 'text-destructive'
-                            }`}>
-                              {storageTestResult.success ? 'Connection Successful' : 'Connection Failed'}
-                            </div>
-                            {storageTestResult.message && (
-                              <div className={`text-sm mt-1 ${
-                                storageTestResult.success ? 'text-primary' : 'text-destructive'
-                              }`}>
-                                {storageTestResult.message}
-                              </div>
-                            )}
-                            {storageTestResult.error && (
-                              <div className="text-sm mt-1 text-destructive">
-                                Error: {storageTestResult.error}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AttachmentBrowser spaceId={selectedSpace?.id || ''} />
               </TabsContent>
 
               <TabsContent value="danger" className="space-y-6 w-full">
@@ -3462,8 +1513,8 @@ export default function SpaceSettingsPage() {
                         </div>
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button 
-                              variant="destructive" 
+                            <Button
+                              variant="destructive"
                               className="ml-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -3488,11 +1539,11 @@ export default function SpaceSettingsPage() {
                               </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
-                              <Button variant="outline" className="border-0" onClick={() => {}}>
+                              <Button variant="outline" className="border-0" onClick={() => { }}>
                                 Cancel
                               </Button>
-                              <Button 
-                                variant="destructive" 
+                              <Button
+                                variant="destructive"
                                 className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                                 onClick={async () => {
                                   try {
@@ -3507,7 +1558,7 @@ export default function SpaceSettingsPage() {
 
                                     showSuccess('Space deleted successfully')
                                     await refreshSpaces()
-                                    
+
                                     // Redirect to spaces page or another space
                                     const remainingSpaces = spaces.filter(s => s.id !== selectedSpace.id)
                                     if (remainingSpaces.length > 0) {
@@ -3535,8 +1586,8 @@ export default function SpaceSettingsPage() {
                 </Card>
               </TabsContent>
             </div>
-        </div>
-            {/* <style jsx>{`
+          </div>
+          {/* <style jsx>{`
               
               :global(input:not([class*="border"])) { 
                 border: 1px solid hsl(var(--border)) !important; 
@@ -3554,10 +1605,10 @@ export default function SpaceSettingsPage() {
               }
             `}</style> */}
         </Tabs>
-      </div>
+      </div >
 
       {/* Attribute Detail Drawer */}
-      <AttributeDetailDrawer
+      < AttributeDetailDrawer
         open={showAttributeDrawer}
         onOpenChange={setShowAttributeDrawer}
         attribute={selectedAttribute}
@@ -3566,7 +1617,16 @@ export default function SpaceSettingsPage() {
         onReorder={handleAttributeReorder}
         allAttributes={attributes}
       />
-    </div>
+
+      {/* Create Storage Connection Dialog */}
+      <StorageConnectionDialog
+        open={showSharedConnectionDialog}
+        onOpenChange={setShowSharedConnectionDialog}
+        onSubmit={handleSharedConnectionSave}
+        title="Create Storage Connection"
+        description="Create a new shared storage connection available to all spaces."
+      />
+    </div >
   )
 }
 

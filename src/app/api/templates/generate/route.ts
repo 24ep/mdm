@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TemplateManager } from '@/lib/template-manager'
+import { updateStoredTemplate } from '@/lib/server-template-storage'
 import { TemplateGenerator } from '@/lib/template-generator'
-import { DataModel } from '@/lib/template-generator'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +33,8 @@ export async function POST(request: NextRequest) {
 
     // Save all generated templates
     for (const template of templates) {
-      await TemplateManager.saveTemplate(template)
+      // Using updateStoredTemplate to handle create (it's upsert basically in our simple store)
+      await updateStoredTemplate(template)
     }
 
     return NextResponse.json({

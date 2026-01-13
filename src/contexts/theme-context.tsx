@@ -102,13 +102,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Default theme based on mode
+        // Default theme based on mode - DO NOT AUTO APPLY
         const defaultTheme = getThemeByVariant(THEME_DEFAULTS.VARIANT, resolvedTheme)
+        // Only set if explicitly requested or strictly required, otherwise leave null
+        // to respect "default must not apply any theme"
         if (defaultTheme) {
-          setCurrentTheme(defaultTheme)
-          applyTheme(defaultTheme)
-          localStorage.setItem(THEME_STORAGE_KEYS.VARIANT_ID, defaultTheme.id)
-          localStorage.setItem(THEME_STORAGE_KEYS.LAST_APPLIED, Date.now().toString())
+          // Intentionally left empty to not force a theme
+          // user can explicitly set one later
         } else {
           setError(THEME_ERROR_MESSAGES.THEME_NOT_FOUND)
         }

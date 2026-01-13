@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Layers } from 'lucide-react'
 import { loadBrandingConfig } from '@/lib/branding'
 
 export default function SignInPage() {
@@ -20,16 +21,22 @@ export default function SignInPage() {
   const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
   const [loginBgStyle, setLoginBgStyle] = useState<React.CSSProperties>({})
   const [loginBgVideo, setLoginBgVideo] = useState<string | undefined>(undefined)
+  const [appName, setAppName] = useState('Unified Data Platform')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const router = useRouter()
 
   // Load branding config for login background
   useEffect(() => {
     loadBrandingConfig().then((branding) => {
-      // Check for security settings (assuming they might be merged into branding or we fetch separately)
-      // Since security settings are system settings, we probably need to fetch system settings here too.
-      // But for now, let's assume we can fetch settings or use a separate API call.
-      
-      // Fetch system settings for security
+      // Load app name and logo
+      if (branding?.applicationName) {
+        setAppName(branding.applicationName)
+      }
+      if (branding?.applicationLogo) {
+        setLogoUrl(branding.applicationLogo)
+      }
+
+      // Check for security settings
       fetch('/api/settings')
         .then(res => res.json())
         .then(settings => {
@@ -49,10 +56,10 @@ export default function SignInPage() {
                 e.preventDefault()
               }
             }
-            
+
             document.addEventListener('contextmenu', handleContextMenu)
             document.addEventListener('keydown', handleKeyDown)
-            
+
             return () => {
               document.removeEventListener('contextmenu', handleContextMenu)
               document.removeEventListener('keydown', handleKeyDown)
@@ -65,7 +72,7 @@ export default function SignInPage() {
         const bg = branding.loginBackground
         let style: React.CSSProperties = {}
         let videoUrl: string | undefined
-        
+
         if (bg.type === 'color' && bg.color) {
           style.backgroundColor = bg.color
         } else if (bg.type === 'gradient' && bg.gradient) {
@@ -75,11 +82,17 @@ export default function SignInPage() {
           style.backgroundSize = 'cover'
           style.backgroundPosition = 'center'
         } else if (bg.type === 'video' && bg.video) {
-            videoUrl = bg.video
+          videoUrl = bg.video
         }
-        
+
         setLoginBgStyle(style)
         setLoginBgVideo(videoUrl)
+      } else {
+        // Default light grey background
+        setLoginBgStyle({
+          background: 'linear-gradient(135deg, #f9fafb 0%, #d1d5db 100%)',
+          backgroundColor: '#f3f4f6'
+        })
       }
     })
   }, [])
@@ -106,7 +119,11 @@ export default function SignInPage() {
       })
 
       if (result?.error) {
-        setError(result.error)
+        if (result.error === 'CredentialsSignin') {
+          setError('Invalid email or password. Please try again.')
+        } else {
+          setError(result.error)
+        }
       } else {
         // Platform login - redirect to overview page
         router.push('/')
@@ -137,64 +154,78 @@ export default function SignInPage() {
   }
 
   const hasAnySSO = ssoProviders.google || ssoProviders.azure
-
-  // Get application name from branding or use default
-  const [appName, setAppName] = useState('Unified Data Platform')
-  useEffect(() => {
-    loadBrandingConfig().then((branding) => {
-      if (branding?.applicationName) {
-        setAppName(branding.applicationName)
-      }
-    })
-  }, [])
+  const hasCustomBg = Object.keys(loginBgStyle).length > 0 && !loginBgStyle.background?.toString().includes('radial-gradient')
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Background Image (70%) */}
-      <div className="w-[70%] relative" style={loginBgStyle}>
-        {loginBgVideo && (
-            <video 
-                src={loginBgVideo} 
-                className="absolute inset-0 w-full h-full object-cover" 
-                autoPlay 
-                muted 
-                loop 
-                playsInline 
-            />
-        )}
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative h-full flex items-center justify-center">
-          <div className="text-center text-white p-8">
-            <h1 className="text-4xl font-bold mb-4">Welcome to {appName}</h1>
-            <p className="text-xl opacity-90">Streamline your event organization with powerful unified data platform</p>
+    <div className="h-screen w-full flex flex-col md:flex-row relative overflow-hidden text-foreground" style={loginBgStyle}>
+
+      {/* Helper for video background */}
+      {loginBgVideo && (
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          <video
+            src={loginBgVideo}
+            className="absolute inset-0 w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{ filter: 'brightness(0.6)' }}
+          />
+        </div>
+      )}
+
+      {/* Left Column - App Name & Description */}
+      <div className="flex-1 flex flex-col justify-center p-8 md:p-12 lg:p-20 relative z-10">
+        <div className="max-w-3xl space-y-6">
+          <div className="flex items-center space-x-4 mb-2">
+            <div className="p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain" />
+              ) : (
+                <Layers className="h-10 w-10 text-primary fill-primary/10" />
+              )}
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 drop-shadow-sm">
+              {appName}
+            </h1>
           </div>
+          <p className="text-xl md:text-2xl text-gray-600 font-light max-w-lg leading-relaxed ml-1">
+            Experience the future of data management. Secure, scalable, and simple.
+          </p>
         </div>
       </div>
 
-      {/* Right side - Login Form (30%) */}
-      <div className="w-[30%] flex items-center justify-center p-8 bg-background">
-        <Card className="w-full max-w-sm border-0 shadow-none bg-transparent">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">
+      {/* Right Column - Login Panel (40% width on Desktop) */}
+      <div className="w-full md:w-[40%] min-w-[320px] p-4 md:p-6 flex flex-col justify-center relative z-10 h-full">
+        <Card
+          className="w-full h-full relative border border-gray-200 shadow-2xl backdrop-blur-xl flex flex-col justify-center rounded-2xl"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            color: '#1f2937',
+            borderColor: 'rgba(229, 231, 235, 0.5)',
+          }}
+        >
+          <CardHeader className="space-y-1 pb-2 flex flex-col items-center">
+            <CardTitle className="text-3xl font-bold tracking-tight text-center">
               Sign in
             </CardTitle>
-            <CardDescription className="text-center">
-              Enter your credentials to access your account
+            <CardDescription className="text-center text-muted-foreground/90 text-lg">
+              {appName === 'Unified Data Platform' ? 'Access your account' : `Welcome to ${appName}`}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 px-8 md:px-12">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Label htmlFor="email" className="font-medium">Email</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 bg-white/50 border-white/30 focus:bg-white/90 transition-all hover:bg-white/70"
                     required
                   />
                 </div>
@@ -202,62 +233,66 @@ export default function SignInPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
+                    className="pl-10 pr-10 bg-white/50 border-white/30 focus:bg-white/90 transition-all hover:bg-white/70"
                     required
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-0 top-0 h-full px-3"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
               </div>
 
               {error && (
-                <div className="text-sm text-destructive text-center">
-                  {error}
-                </div>
+                <Alert variant="destructive" className="border-red-500 animate-in fade-in zoom-in-95 duration-200">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    {error}
+                  </AlertDescription>
+                </Alert>
               )}
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
 
             {hasAnySSO && (
               <>
-                <div className="relative">
+                <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
+                    <Separator className="w-full bg-border/50" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
+                    <span className="bg-transparent px-2 text-muted-foreground backdrop-blur-sm rounded-full">
                       Or continue with
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="grid gap-2">
                   {ssoProviders.google && (
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full bg-white/50 hover:bg-white/80 border-white/40"
                       onClick={handleGoogleSignIn}
                       disabled={isLoading}
                     >
@@ -286,7 +321,7 @@ export default function SignInPage() {
                   {ssoProviders.azure && (
                     <Button
                       variant="outline"
-                      className="w-full"
+                      className="w-full bg-white/50 hover:bg-white/80 border-white/40"
                       onClick={handleAzureSignIn}
                       disabled={isLoading}
                     >

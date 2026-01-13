@@ -99,13 +99,14 @@ export function getWidgetConfig(chatbot: ChatbotConfig, theme?: any): WidgetConf
     // 3. Icon Color Logic (Smart Fallback)
     // If no specific icon color is set:
     // - If style is 'circle-with-label', use label color (usually contrasting with button bg)
-    // - Otherwise default to white (standard button style)
+    // - Otherwise default to white or black based on background luminance
     let avatarIconColor = c.avatarIconColor;
     if (!avatarIconColor) {
         if (avatarStyle === 'circle-with-label') {
             avatarIconColor = labelColor;
         } else {
-            avatarIconColor = '#ffffff';
+            // Smart fallback based on background color
+            avatarIconColor = isLightColorWidget(backgroundColor) ? '#000000' : '#ffffff';
         }
     }
 
@@ -246,4 +247,30 @@ function extractNumericValue(value: string): string {
     if (!value) return '0';
     const match = value.toString().match(/(\d+(?:\.\d+)?)/);
     return match ? match[1] : '0';
+}
+
+/**
+ * Simple luminance check to determine if a color is light or dark.
+ * Supports hex only for simplicity here.
+ */
+function isLightColorWidget(color: string): boolean {
+    if (!color || typeof color !== 'string') return true;
+
+    let hex = color.trim();
+    if (!hex.startsWith('#')) return false; // Fallback for gradients or non-hex
+
+    hex = hex.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+
+    if (hex.length !== 6) return false;
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    // Perceived brightness formula
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 155;
 }

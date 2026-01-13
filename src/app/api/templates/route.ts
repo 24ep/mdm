@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TemplateManager } from '@/lib/template-manager'
 import { Template } from '@/lib/template-generator'
+import { getStoredTemplates, updateStoredTemplate, deleteStoredTemplate } from '@/lib/server-template-storage'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,17 +9,25 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const search = searchParams.get('search')
 
-    let templates: Template[]
+    let templates = await getStoredTemplates()
 
+    // Filter by dataModelId
     if (dataModelId) {
-      templates = await TemplateManager.getTemplatesForModel(dataModelId)
-    } else if (search) {
-      templates = await TemplateManager.searchTemplates(search)
-    } else {
-      templates = await TemplateManager.getTemplates()
+      templates = templates.filter(t => t.dataModelId === dataModelId)
     }
 
-    // Filter by category if specified
+    // Search
+    if (search) {
+      const lowerSearch = search.toLowerCase()
+      templates = templates.filter(template =>
+        template.name.toLowerCase().includes(lowerSearch) ||
+        template.displayName.toLowerCase().includes(lowerSearch) ||
+        (template.description && template.description.toLowerCase().includes(lowerSearch)) ||
+        template.category.toLowerCase().includes(lowerSearch)
+      )
+    }
+
+    // Filter by category
     if (category) {
       templates = templates.filter(template => template.category === category)
     }
@@ -50,7 +58,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await TemplateManager.saveTemplate(template)
+    const templates = await getStoredTemplates()
+    const existingIndex = templates.findIndex(t => t.id === template.id)
+
+    if (existingIndex >= 0) {
+      // Update existing
+      templates[existingIndex] = { ...template, updatedAt: new Date().toISOString() }
+    } else {
+      // Create new
+      templates.push({
+        ...template,
+        createdAt: template.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+    }
+
+    await saveStoredTemplates(templates)
 
     return NextResponse.json({
       success: true,
@@ -78,7 +101,13 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await TemplateManager.deleteTemplate(templateId)
+    let templates = await getStoredTemplates()
+    const initialLength = templates.length
+    templates = templates.filter(t => t.id !== templateId)
+
+    if (templates.length !== initialLength) {
+      await saveStoredTemplates(templates)
+    }
 
     return NextResponse.json({
       success: true,
