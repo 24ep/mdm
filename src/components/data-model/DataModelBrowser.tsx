@@ -26,7 +26,8 @@ import {
     Edit,
     Trash2,
     ExternalLink,
-    Settings
+    Settings,
+    Users
 } from 'lucide-react'
 import { DataModelDrawer } from '@/app/admin/features/system/components/DataModelDrawer'
 import { ExternalConnectionWizard } from '@/app/admin/features/system/components/ExternalConnectionWizard'
@@ -78,6 +79,27 @@ interface DataModelBrowserProps {
 }
 
 const BUILTIN_CONNECTION_ID = 'builtin'
+const SPACE_MEMBERS_MODEL_ID = 'system-space-members'
+
+// Virtual Space Members model definition
+const SPACE_MEMBERS_MODEL: DataModel = {
+    id: SPACE_MEMBERS_MODEL_ID,
+    name: 'space_members',
+    display_name: 'Space Members',
+    slug: 'space-members',
+    description: 'Members of this space',
+    source_type: 'SYSTEM'
+}
+
+const SPACE_MEMBERS_ATTRIBUTES: Attribute[] = [
+    { id: 'sm-1', name: 'id', display_name: 'ID', type: 'text', is_required: true, is_unique: true },
+    { id: 'sm-2', name: 'name', display_name: 'Name', type: 'text', is_required: true },
+    { id: 'sm-3', name: 'email', display_name: 'Email', type: 'text', is_required: true, is_unique: true },
+    { id: 'sm-4', name: 'role', display_name: 'Role', type: 'text', is_required: true },
+    { id: 'sm-5', name: 'joined_at', display_name: 'Joined At', type: 'datetime' },
+    { id: 'sm-6', name: 'avatar_url', display_name: 'Avatar URL', type: 'text' },
+    { id: 'sm-7', name: 'status', display_name: 'Status', type: 'text' }
+]
 
 export function DataModelBrowser({ spaceId }: DataModelBrowserProps) {
     // Connection state
@@ -163,7 +185,8 @@ export function DataModelBrowser({ spaceId }: DataModelBrowserProps) {
             const res = await fetch(`/api/data-models?space_id=${spaceId}&page=1&limit=100`)
             if (res.ok) {
                 const data = await res.json()
-                setDataModels(data.dataModels || [])
+                // Prepend the virtual Space Members model
+                setDataModels([SPACE_MEMBERS_MODEL, ...(data.dataModels || [])])
             }
         } catch (error) {
             console.error('Failed to load data models:', error)
@@ -173,6 +196,11 @@ export function DataModelBrowser({ spaceId }: DataModelBrowserProps) {
     }
 
     const loadAttributes = async (modelId: string) => {
+        // Handle virtual Space Members model
+        if (modelId === SPACE_MEMBERS_MODEL_ID) {
+            setAttributes(SPACE_MEMBERS_ATTRIBUTES)
+            return
+        }
         setIsLoadingAttributes(true)
         try {
             const res = await fetch(`/api/data-models/${modelId}/attributes`)
@@ -452,11 +480,18 @@ export function DataModelBrowser({ spaceId }: DataModelBrowserProps) {
                                             className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left hover:bg-muted transition-colors ${selectedModel?.id === model.id ? 'bg-primary/10 text-primary' : ''
                                                 }`}
                                         >
-                                            <Database className="h-4 w-4 text-blue-500" />
+                                            {model.id === SPACE_MEMBERS_MODEL_ID ? (
+                                                <Users className="h-4 w-4 text-violet-500" />
+                                            ) : (
+                                                <Database className="h-4 w-4 text-blue-500" />
+                                            )}
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-medium text-sm truncate">{model.display_name || model.name}</div>
                                                 <div className="text-xs text-muted-foreground truncate">{model.slug}</div>
                                             </div>
+                                            {model.source_type === 'SYSTEM' && (
+                                                <Badge variant="secondary" className="text-xs">System</Badge>
+                                            )}
                                             {model.source_type === 'EXTERNAL' && (
                                                 <Badge variant="outline" className="text-xs">External</Badge>
                                             )}
@@ -480,8 +515,8 @@ export function DataModelBrowser({ spaceId }: DataModelBrowserProps) {
                                             key={`${table.table_schema}.${table.table_name}`}
                                             onClick={() => setSelectedTable(table)}
                                             className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left hover:bg-muted transition-colors ${selectedTable?.table_name === table.table_name && selectedTable?.table_schema === table.table_schema
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : ''
+                                                ? 'bg-primary/10 text-primary'
+                                                : ''
                                                 }`}
                                         >
                                             <Table className="h-4 w-4 text-green-500" />
@@ -514,7 +549,7 @@ export function DataModelBrowser({ spaceId }: DataModelBrowserProps) {
                                     </>
                                 )}
                             </CardTitle>
-                            {isBuiltIn && selectedModel && (
+                            {isBuiltIn && selectedModel && selectedModel.id !== SPACE_MEMBERS_MODEL_ID && (
                                 <div className="flex items-center gap-2">
                                     <Button variant="ghost" size="sm" onClick={() => { setEditingModel(selectedModel); setShowNewModelDrawer(true) }}>
                                         <Edit className="h-4 w-4" />

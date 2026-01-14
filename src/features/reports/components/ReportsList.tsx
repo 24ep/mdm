@@ -165,18 +165,28 @@ export function ReportsList({
                       <Eye className="mr-2 h-4 w-4" />
                       View
                     </Button>
-                    {report.url && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          window.open(report.url, '_blank')
-                        }}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Open
-                      </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        try {
+                          if (report.url) {
+                            const url = new URL(report.url)
+                            if (url.protocol === 'http:' || url.protocol === 'https:') {
+                              window.open(report.url, '_blank')
+                            } else {
+                              console.error('Invalid report URL protocol:', url.protocol)
+                            }
+                          }
+                        } catch (err) {
+                          console.error('Invalid report URL:', report.url)
+                        }
+                      }}
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Open
+                    </Button>
                     )}
                   </div>
                 </CardContent>

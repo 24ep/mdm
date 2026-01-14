@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+// deepcode ignore javascript/NoHardcodedPasswords: Test data for development seeding
 
 const prisma = new PrismaClient()
 
@@ -12,6 +13,7 @@ async function main() {
         create: {
             email: 'test@example.com',
             name: 'Test User',
+            // deepcode ignore NoHardcodedPasswords: Test data for development only
             password: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu/1u', // hashed 'password'
         }
     })

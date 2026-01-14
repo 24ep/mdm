@@ -1,10 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
-import { StorageConnectionDialog } from '@/app/admin/features/system/components/StorageConnectionDialog'
-import { StorageConnectionFormData } from '@/app/admin/features/system/components/StorageConnectionForm'
-import { DataModelDrawer } from '@/app/admin/features/system/components/DataModelDrawer'
-import { ExternalConnectionWizard } from '@/app/admin/features/system/components/ExternalConnectionWizard'
 import { useRouter } from 'next/navigation'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -21,7 +17,7 @@ import { UserInviteInput } from '@/components/ui/user-invite-input'
 import { MemberManagementPanel } from '@/components/space-management/MemberManagementPanel'
 import { MemberPermissionsPanel } from '@/components/space-management/MemberPermissionsPanel'
 import { MemberAuditLog } from '@/components/space-management/MemberAuditLog'
-import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3, CheckCircle2, Circle, Lock, Link as LinkIcon, Cloud, Server } from 'lucide-react'
+import { Building2, Layout, Database, History, Users as UsersIcon, UserCog, UserPlus, Plus, Edit, Trash2, Search, Type, AlertTriangle, FolderPlus, Share2, Folder, FolderOpen, Move, Settings, Palette, Shield, Archive, Trash, MoreVertical, ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Grid3X3, CheckCircle2, Circle, Lock } from 'lucide-react'
 import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 import { useSpace } from '@/contexts/space-context'
 import { useSession } from 'next-auth/react'
@@ -106,38 +102,6 @@ export default function SpaceSettingsPage() {
   }, [spaces, currentSpace, params.space])
 
   const [tab, setTab] = useState<string>(initialTab)
-
-  const [showSharedConnectionDialog, setShowSharedConnectionDialog] = useState(false)
-
-  const handleSharedConnectionSave = async (data: StorageConnectionFormData) => {
-    try {
-      const payload = {
-        name: data.name,
-        type: data.type,
-        description: data.description,
-        isActive: data.isActive,
-        config: data.config,
-      }
-
-      const response = await fetch('/api/admin/storage/connections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (!response.ok) throw new Error('Failed to create')
-
-      showSuccess('Storage connection created successfully')
-      setShowSharedConnectionDialog(false)
-
-      // Refresh connections list
-      if (typeof loadStorageConnections === 'function') {
-        loadStorageConnections()
-      }
-    } catch (error: any) {
-      showError(error.message || 'Failed to save storage connection')
-    }
-  }
-
   useEffect(() => {
     setTab(initialTab)
   }, [initialTab])
@@ -320,18 +284,50 @@ export default function SpaceSettingsPage() {
   const [modelSearch, setModelSearch] = useState('')
   const [showModelDrawer, setShowModelDrawer] = useState(false)
   const [editingModel, setEditingModel] = useState<any | null>(null)
+  const [modelForm, setModelForm] = useState({ name: '', display_name: '', description: '', slug: '' })
+
+  // Data Model Type Selection
+  const [showDataModelTypeDialog, setShowDataModelTypeDialog] = useState(false)
+  const [selectedDataModelType, setSelectedDataModelType] = useState<'internal' | 'external' | null>(null)
 
   // External Data Source Connection
-  const [showExternalWizard, setShowExternalWizard] = useState(false)
-
-  // Attribute creation state
+  const [showDatabaseSelection, setShowDatabaseSelection] = useState(false)
+  const [databaseSearch, setDatabaseSearch] = useState('')
+  const [selectedDatabaseType, setSelectedDatabaseType] = useState<'postgres' | 'mysql' | 'api' | null>(null)
+  const [showConnectionForm, setShowConnectionForm] = useState(false)
+  const [connectionForm, setConnectionForm] = useState({
+    name: '',
+    connection_type: 'database' as 'database' | 'api',
+    db_type: 'postgres' as 'postgres' | 'mysql',
+    host: '',
+    port: '',
+    database: '',
+    username: '',
+    password: '',
+    schema: '',
+    table: '',
+    // API fields
+    api_url: '',
+    api_method: 'GET' as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    api_headers: {} as Record<string, string>,
+    api_auth_type: 'none' as 'none' | 'bearer' | 'basic' | 'apikey',
+    api_auth_token: '',
+    api_auth_username: '',
+    api_auth_password: '',
+    api_auth_apikey_name: '',
+    api_auth_apikey_value: '',
+    api_body: '',
+    api_response_path: ''
+  })
+  const [testingConnection, setTestingConnection] = useState(false)
+  const [connectionTestResult, setConnectionTestResult] = useState<any>(null)
+  const [connectionSchemas, setConnectionSchemas] = useState<string[]>([])
+  const [connectionTables, setConnectionTables] = useState<Record<string, string[]>>({})
   const [activeModelTab, setActiveModelTab] = useState<'details' | 'attributes' | 'activity'>('details')
   const [attributes, setAttributes] = useState<any[]>([])
   const [attributesLoading, setAttributesLoading] = useState(false)
   const [showAttributeDrawer, setShowAttributeDrawer] = useState(false)
   const [selectedAttribute, setSelectedAttribute] = useState<any | null>(null)
-
-
 
   // For data model entities reference
   const [availableModels, setAvailableModels] = useState<any[]>([])
@@ -397,25 +393,7 @@ export default function SpaceSettingsPage() {
         password: '',
         path: '/uploads',
         passive: true
-      },
-      // Shared connection configuration
-      shared: {
-        connectionId: ''
       }
-    }
-  })
-  const [availableStorageConnections, setAvailableStorageConnections] = useState<any[]>([])
-  const [showCreateConnectionDialog, setShowCreateConnectionDialog] = useState(false)
-  const [newConnectionForm, setNewConnectionForm] = useState({
-    name: '',
-    type: 'minio',
-    config: {
-      endpoint: '',
-      access_key: '',
-      secret_key: '',
-      bucket: '',
-      region: 'us-east-1',
-      use_ssl: false
     }
   })
   const [storageTestResult, setStorageTestResult] = useState<any>(null)
@@ -482,8 +460,6 @@ export default function SpaceSettingsPage() {
     }
     if (tab === 'attachments' && selectedSpace?.id) {
       loadAttachmentStorageConfig()
-      loadAttachmentStorageConfig()
-      loadStorageConnections()
     }
   }, [tab, selectedSpace?.id])
 
@@ -518,7 +494,7 @@ export default function SpaceSettingsPage() {
     if (!selectedSpace?.id) return
     setModelsLoading(true)
     try {
-      const res = await fetch(`/api/data-models?page=1&limit=100&space_id=${selectedSpace.id}`)
+      const res = await fetch(`/api/data-models?page=1&limit=200&space_id=${selectedSpace.id}`)
       const json = await res.json().catch(() => ({}))
       setModels(json.dataModels || [])
     } catch (e) {
@@ -546,7 +522,7 @@ export default function SpaceSettingsPage() {
 
   const loadAvailableSpaces = async () => {
     try {
-      const res = await fetch('/api/spaces?page=1&limit=100')
+      const res = await fetch('/api/spaces?page=1&limit=200')
       const json = await res.json().catch(() => ({}))
       setAvailableSpaces((json.spaces || []).filter((s: any) => s.id !== selectedSpace?.id))
     } catch (e) {
@@ -554,75 +530,366 @@ export default function SpaceSettingsPage() {
     }
   }
 
-  const loadStorageConnections = async () => {
-    try {
-      const res = await fetch('/api/storage/available')
-      if (res.ok) {
-        const data = await res.json()
-        setAvailableStorageConnections(data.connections || [])
-      }
-    } catch (error) {
-      console.error('Error loading storage connections:', error)
+  const openCreateModel = () => {
+    // Show dialog to select data model type
+    setShowDataModelTypeDialog(true)
+    setSelectedDataModelType(null)
+    setShowDatabaseSelection(false)
+    setShowConnectionForm(false)
+    setDatabaseSearch('')
+    setSelectedDatabaseType(null)
+    setConnectionForm({
+      name: '',
+      connection_type: 'database',
+      db_type: 'postgres',
+      host: '',
+      port: '',
+      database: '',
+      username: '',
+      password: '',
+      schema: '',
+      table: '',
+      api_url: '',
+      api_method: 'GET',
+      api_headers: {},
+      api_auth_type: 'none',
+      api_auth_token: '',
+      api_auth_username: '',
+      api_auth_password: '',
+      api_auth_apikey_name: '',
+      api_auth_apikey_value: '',
+      api_body: '',
+      api_response_path: ''
+    })
+  }
+
+  const handleSelectDataModelType = (type: 'internal' | 'external') => {
+    setSelectedDataModelType(type)
+    if (type === 'external') {
+      setShowDatabaseSelection(true)
+      setShowDataModelTypeDialog(false)
+    } else {
+      // Internal - proceed with existing flow
+      setShowDataModelTypeDialog(false)
+      setEditingModel(null)
+      setModelForm({ name: '', display_name: '', description: '', slug: '' })
+      setModelIcon('')
+      setModelPrimaryColor('#1e40af')
+      setModelTags([])
+      setModelGroupFolder('')
+      setModelOwnerName('')
+      setShowModelDrawer(true)
     }
   }
 
-  const handleCreateConnection = async () => {
+  const handleSelectDatabase = (dbType: 'postgres' | 'mysql' | 'api') => {
+    setSelectedDatabaseType(dbType)
+    if (dbType === 'api') {
+      setConnectionForm(prev => ({
+        ...prev,
+        connection_type: 'api',
+        api_method: 'GET',
+        api_auth_type: 'none'
+      }))
+    } else {
+      setConnectionForm(prev => ({
+        ...prev,
+        connection_type: 'database',
+        db_type: dbType,
+        port: dbType === 'postgres' ? '5432' : '3306'
+      }))
+    }
+    setShowDatabaseSelection(false)
+    setShowConnectionForm(true)
+  }
+
+  const testConnection = async () => {
+    if (!selectedSpace?.id) return
+
+    setTestingConnection(true)
+    setConnectionTestResult(null)
+
     try {
-      const res = await fetch('/api/admin/storage/connections', {
+      if (connectionForm.connection_type === 'api') {
+        // Test API connection
+        const res = await fetch('/api/external-connections/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            space_id: selectedSpace.id,
+            connection_type: 'api',
+            api_url: connectionForm.api_url,
+            api_method: connectionForm.api_method,
+            api_headers: connectionForm.api_headers,
+            api_auth_type: connectionForm.api_auth_type,
+            api_auth_token: connectionForm.api_auth_token,
+            api_auth_username: connectionForm.api_auth_username,
+            api_auth_password: connectionForm.api_auth_password,
+            api_auth_apikey_name: connectionForm.api_auth_apikey_name,
+            api_auth_apikey_value: connectionForm.api_auth_apikey_value,
+            api_body: connectionForm.api_body
+          })
+        })
+
+        const json = await res.json()
+        if (res.ok && json.success) {
+          setConnectionTestResult({ success: true, data: json.data, sampleResponse: json.sampleResponse })
+          showSuccess('API connection test successful')
+        } else {
+          setConnectionTestResult({ success: false, error: json.error || 'API connection failed' })
+          showError('API connection test failed')
+        }
+      } else {
+        // Test database connection
+        const res = await fetch('/api/external-connections/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            space_id: selectedSpace.id,
+            connection_type: 'database',
+            db_type: connectionForm.db_type,
+            host: connectionForm.host,
+            port: connectionForm.port ? parseInt(connectionForm.port) : undefined,
+            database: connectionForm.database || undefined,
+            username: connectionForm.username || undefined,
+            password: connectionForm.password || undefined
+          })
+        })
+
+        const json = await res.json()
+        if (res.ok && json.ok) {
+          setConnectionTestResult({ success: true, schemas: json.schemas, tablesBySchema: json.tablesBySchema })
+          setConnectionSchemas(json.schemas || [])
+          setConnectionTables(json.tablesBySchema || {})
+          showSuccess('Connection test successful')
+        } else {
+          setConnectionTestResult({ success: false, error: json.error || 'Connection failed' })
+          showError('Connection test failed')
+        }
+      }
+    } catch (error: any) {
+      setConnectionTestResult({ success: false, error: error.message || 'Connection test failed' })
+      showError('Connection test failed')
+    } finally {
+      setTestingConnection(false)
+    }
+  }
+
+  const saveExternalConnection = async () => {
+    if (!selectedSpace?.id) return
+
+    if (!connectionForm.name) {
+      showError('Please provide a connection name')
+      return
+    }
+
+    if (connectionForm.connection_type === 'api') {
+      // Validate API connection
+      if (!connectionForm.api_url) {
+        showError('Please provide an API URL')
+        return
+      }
+    } else {
+      // Validate database connection
+      if (!connectionForm.host || !connectionForm.db_type) {
+        showError('Please fill in all required fields')
+        return
+      }
+
+      // For PostgreSQL, schema and table are required. For MySQL, schema might be optional
+      if (!connectionForm.table) {
+        showError('Please select a table')
+        return
+      }
+
+      // For PostgreSQL, schema is required. For MySQL, use database name as schema if not provided
+      const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
+      if (connectionForm.db_type === 'postgres' && !schemaToUse) {
+        showError('Please select a schema')
+        return
+      }
+    }
+
+    try {
+      let connectionPayload: any
+
+      if (connectionForm.connection_type === 'api') {
+        // Create API connection
+        connectionPayload = {
+          space_id: selectedSpace.id,
+          name: connectionForm.name,
+          connection_type: 'api',
+          db_type: 'api', // Store as 'api' for compatibility
+          api_url: connectionForm.api_url,
+          api_method: connectionForm.api_method,
+          api_headers: connectionForm.api_headers,
+          api_auth_type: connectionForm.api_auth_type,
+          api_auth_token: connectionForm.api_auth_token || null,
+          api_auth_username: connectionForm.api_auth_username || null,
+          api_auth_password: connectionForm.api_auth_password || null,
+          api_auth_apikey_name: connectionForm.api_auth_apikey_name || null,
+          api_auth_apikey_value: connectionForm.api_auth_apikey_value || null,
+          api_body: connectionForm.api_body || null,
+          api_response_path: connectionForm.api_response_path || null
+        }
+      } else {
+        // Create database connection
+        connectionPayload = {
+          space_id: selectedSpace.id,
+          name: connectionForm.name,
+          connection_type: 'database',
+          db_type: connectionForm.db_type,
+          host: connectionForm.host,
+          port: connectionForm.port ? parseInt(connectionForm.port) : (connectionForm.db_type === 'postgres' ? 5432 : 3306),
+          database: connectionForm.database || null,
+          username: connectionForm.username || null,
+          password: connectionForm.password || null,
+          options: {}
+        }
+      }
+
+      const connectionRes = await fetch('/api/external-connections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newConnectionForm.name,
-          type: newConnectionForm.type,
-          config: newConnectionForm.config,
-          isActive: true
-        })
+        body: JSON.stringify(connectionPayload)
       })
 
-      if (res.ok) {
-        const data = await res.json()
-        showSuccess('Storage connection created successfully')
-        setShowCreateConnectionDialog(false)
-        await loadStorageConnections()
-        // Auto-select the new connection
-        setAttachmentStorage(prev => ({
-          ...prev,
-          provider: 'shared',
-          config: {
-            ...prev.config,
-            shared: { connectionId: data.connection.id }
-          }
-        }))
-      } else {
-        const error = await res.json()
-        showError(error.error || 'Failed to create connection')
+      if (!connectionRes.ok) {
+        const error = await connectionRes.json().catch(() => ({}))
+        throw new Error(error.error || 'Failed to create connection')
       }
-    } catch (error) {
-      showError('Failed to create connection')
+
+      const connectionData = await connectionRes.json()
+      const connectionId = connectionData.connection?.id || connectionData.id
+
+      // Create data model linked to external connection
+      let modelPayload: any
+      if (connectionForm.connection_type === 'api') {
+        modelPayload = {
+          name: connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          display_name: connectionForm.name,
+          description: `External API data source: ${connectionForm.api_url}`,
+          slug: connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          space_ids: [selectedSpace.id],
+          source_type: 'EXTERNAL',
+          external_connection_id: connectionId
+        }
+      } else {
+        const schemaToUse = connectionForm.schema || (connectionForm.db_type === 'mysql' ? connectionForm.database : null)
+        modelPayload = {
+          name: connectionForm.table || connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          display_name: connectionForm.name,
+          description: `External data source: ${connectionForm.db_type} - ${connectionForm.host}/${connectionForm.database || ''}`,
+          slug: connectionForm.table || connectionForm.name.toLowerCase().replace(/\s+/g, '_'),
+          space_ids: [selectedSpace.id],
+          source_type: 'EXTERNAL',
+          external_connection_id: connectionId,
+          external_schema: schemaToUse || connectionForm.database || null,
+          external_table: connectionForm.table
+        }
+      }
+
+      const modelRes = await fetch('/api/data-models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(modelPayload)
+      })
+
+      if (!modelRes.ok) {
+        throw new Error('Failed to create data model')
+      }
+
+      showSuccess('External data source connected successfully')
+      setShowConnectionForm(false)
+      setShowDatabaseSelection(false)
+      setSelectedDataModelType(null)
+      setConnectionForm({
+        name: '',
+        connection_type: 'database',
+        db_type: 'postgres',
+        host: '',
+        port: '',
+        database: '',
+        username: '',
+        password: '',
+        schema: '',
+        table: '',
+        api_url: '',
+        api_method: 'GET',
+        api_headers: {},
+        api_auth_type: 'none',
+        api_auth_token: '',
+        api_auth_username: '',
+        api_auth_password: '',
+        api_auth_apikey_name: '',
+        api_auth_apikey_value: '',
+        api_body: '',
+        api_response_path: ''
+      })
+      await loadModels()
+    } catch (error: any) {
+      console.error('Error saving external connection:', error)
+      showError(error.message || 'Failed to save external connection')
     }
   }
 
-  const openCreateModel = () => {
-    // We now have a choice: New Internal Model or External Source
-    // For now, let's just show a simple selection or default to internal if we click "New Model"
-    // Ideally the UI would have two buttons or the drawer would handle it.
-    // For this refactor, let's assume we want to open the Internal Model Drawer initially, 
-    // but we need a way to trigger the External Wizard.
-    // Let's modify the UI to allow picking.
-    setEditingModel(null)
-    setShowModelDrawer(true)
-  }
+  // Data sources list (from asset management system)
+  const [allDataSources] = useState([
+    {
+      id: 'postgres',
+      name: 'PostgreSQL',
+      description: 'Connect to a PostgreSQL database',
+      icon: '🐘'
+    },
+    {
+      id: 'mysql',
+      name: 'MySQL',
+      description: 'Connect to a MySQL database',
+      icon: '🗄️'
+    },
+    {
+      id: 'api',
+      name: 'REST API',
+      description: 'Connect to a REST API endpoint',
+      icon: '🔌'
+    }
+  ])
+
+  // filteredDatabaseTypes is computed from allDataSources (which uses asset management system)
+  const filteredDatabaseTypes = useMemo(() => {
+    return allDataSources.filter(db =>
+      db.name.toLowerCase().includes(databaseSearch.toLowerCase()) ||
+      db.description.toLowerCase().includes(databaseSearch.toLowerCase())
+    )
+  }, [allDataSources, databaseSearch])
 
   const openEditModel = (model: any) => {
     setEditingModel(model)
+    setModelForm({
+      name: model.name || '',
+      display_name: model.display_name || '',
+      description: model.description || '',
+      slug: model.slug || ''
+    })
+    setModelIcon(model.icon || '')
+    setModelPrimaryColor(model.primary_color || '#1e40af')
+    setModelTags(model.tags || [])
+    setModelGroupFolder(model.group_folder || '')
+    setModelOwnerName(model.owner_name || '')
     setShowModelDrawer(true)
   }
 
-  const handleSaveModel = async (formData: any) => {
+
+  const saveModel = async () => {
     try {
       const body = {
-        ...formData,
+        ...modelForm,
+        icon: modelIcon,
         space_ids: [selectedSpace!.id],
+        primary_color: modelPrimaryColor,
+        tags: modelTags,
+        group_folder: modelGroupFolder,
+        owner_name: modelOwnerName
       }
 
       const url = editingModel ? `/api/data-models/${editingModel.id}` : '/api/data-models'
@@ -639,96 +906,6 @@ export default function SpaceSettingsPage() {
       showSuccess(editingModel ? 'Model updated' : 'Model created')
     } catch (e) {
       showError(editingModel ? 'Failed to update model' : 'Failed to create model')
-    }
-  }
-
-  const handleSaveExternalConnection = async (data: any) => {
-    // This logic corresponds to the old saveExternalConnection but adapted for the wizard's output
-    if (!selectedSpace?.id) return
-
-    try {
-      // 1. Create Connection
-      let connectionPayload: any
-
-      if (data.connection_type === 'api') {
-        connectionPayload = {
-          space_id: selectedSpace.id,
-          name: data.name,
-          connection_type: 'api',
-          db_type: 'api',
-          api_url: data.api_url,
-          api_method: data.api_method,
-          api_headers: data.api_headers || {},
-          api_auth_type: data.api_auth_type,
-          api_auth_token: data.api_auth_token || null,
-        }
-      } else {
-        connectionPayload = {
-          space_id: selectedSpace.id,
-          name: data.name,
-          connection_type: 'database',
-          db_type: data.db_type,
-          host: data.host,
-          port: parseInt(data.port),
-          database: data.database,
-          username: data.username,
-          password: data.password,
-          options: {}
-        }
-      }
-
-      const connectionRes = await fetch('/api/external-connections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(connectionPayload)
-      })
-
-      if (!connectionRes.ok) throw new Error('Failed to create connection')
-
-      const connectionData = await connectionRes.json()
-      const connectionId = connectionData.connection?.id || connectionData.id
-
-      // 2. Create Model
-      let modelPayload: any
-      if (data.connection_type === 'api') {
-        modelPayload = {
-          name: data.name.toLowerCase().replace(/\s+/g, '_'),
-          display_name: data.name,
-          description: `External API data source: ${data.api_url}`,
-          slug: data.name.toLowerCase().replace(/\s+/g, '_'),
-          space_ids: [selectedSpace.id],
-          source_type: 'EXTERNAL',
-          external_connection_id: connectionId
-        }
-      } else {
-        const schemaToUse = data.schema || (data.db_type === 'mysql' ? data.database : null)
-        modelPayload = {
-          name: data.table || data.name.toLowerCase().replace(/\s+/g, '_'),
-          display_name: data.name,
-          description: `External data source: ${data.db_type} - ${data.host}/${data.database}`,
-          slug: data.table || data.name.toLowerCase().replace(/\s+/g, '_'),
-          space_ids: [selectedSpace.id],
-          source_type: 'EXTERNAL',
-          external_connection_id: connectionId,
-          external_schema: schemaToUse || data.database || null,
-          external_table: data.table
-        }
-      }
-
-      const modelRes = await fetch('/api/data-models', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(modelPayload)
-      })
-
-      if (!modelRes.ok) throw new Error('Failed to create data model')
-
-      showSuccess('External data source connected successfully')
-      setShowExternalWizard(false)
-      await loadModels()
-
-    } catch (e: any) {
-      showError(e.message || 'Failed to save external connection')
     }
   }
 
@@ -758,7 +935,7 @@ export default function SpaceSettingsPage() {
   const loadAvailableModels = async () => {
     if (!selectedSpace?.id) return
     try {
-      const res = await fetch(`/api/data-models?page=1&limit=100&space_id=${selectedSpace.id}`)
+      const res = await fetch(`/api/data-models?page=1&limit=200&space_id=${selectedSpace.id}`)
       const json = await res.json().catch(() => ({}))
       setAvailableModels(json.dataModels || [])
     } catch (e) {
@@ -1432,13 +1609,9 @@ export default function SpaceSettingsPage() {
                 </div>
               </TabsContent>
 
-
-
-
-              <TabsContent value="data-model" className="space-y-6 w-full">
+              <TabsContent value="data-model" className="space-y-6 w-full mt-6">
                 <DataModelBrowser spaceId={selectedSpace?.id || ''} />
               </TabsContent>
-
               <TabsContent value="data-sync" className="space-y-6 w-full">
                 <DataSyncManagement spaceId={selectedSpace?.id || ''} />
               </TabsContent>
@@ -1605,10 +1778,10 @@ export default function SpaceSettingsPage() {
               }
             `}</style> */}
         </Tabs>
-      </div >
+      </div>
 
       {/* Attribute Detail Drawer */}
-      < AttributeDetailDrawer
+      <AttributeDetailDrawer
         open={showAttributeDrawer}
         onOpenChange={setShowAttributeDrawer}
         attribute={selectedAttribute}
@@ -1617,16 +1790,7 @@ export default function SpaceSettingsPage() {
         onReorder={handleAttributeReorder}
         allAttributes={attributes}
       />
-
-      {/* Create Storage Connection Dialog */}
-      <StorageConnectionDialog
-        open={showSharedConnectionDialog}
-        onOpenChange={setShowSharedConnectionDialog}
-        onSubmit={handleSharedConnectionSave}
-        title="Create Storage Connection"
-        description="Create a new shared storage connection available to all spaces."
-      />
-    </div >
+    </div>
   )
 }
 

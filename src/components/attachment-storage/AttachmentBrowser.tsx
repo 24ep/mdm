@@ -23,7 +23,8 @@ import {
     Film,
     Music,
     AlertCircle,
-    Home
+    Home,
+    Database
 } from 'lucide-react'
 import { StorageConnectionDialog } from '@/app/admin/features/system/components/StorageConnectionDialog'
 import { StorageConnectionFormData } from '@/app/admin/features/system/components/StorageConnectionForm'
@@ -227,13 +228,13 @@ export function AttachmentBrowser({ spaceId }: AttachmentBrowserProps) {
             {/* Connection Selector Header */}
             <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg border">
                 <div className="flex items-center gap-2">
-                    <HardDrive className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium">Storage Connection:</span>
+                    <Database className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">Database Connection:</span>
                 </div>
                 <div className="flex-1 max-w-md">
                     <Select value={selectedConnectionId} onValueChange={handleConnectionChange}>
                         <SelectTrigger>
-                            <SelectValue placeholder={isLoadingConnections ? 'Loading...' : 'Select a connection'} />
+                            <SelectValue placeholder={isLoadingConnections ? 'Loading...' : 'Select a database connection'} />
                         </SelectTrigger>
                         <SelectContent>
                             {connections.map(conn => (
@@ -270,7 +271,7 @@ export function AttachmentBrowser({ spaceId }: AttachmentBrowserProps) {
                     {/* Left Panel - Folder Tree */}
                     <Card className="col-span-4 bg-card">
                         <CardHeader className="py-3 px-4 border-b">
-                            <CardTitle className="text-sm font-medium">Folders</CardTitle>
+                            <CardTitle className="text-sm font-medium">Folders on Bucket</CardTitle>
                         </CardHeader>
                         <ScrollArea className="h-[450px]">
                             <div className="p-2">
@@ -307,6 +308,7 @@ export function AttachmentBrowser({ spaceId }: AttachmentBrowserProps) {
                     <Card className="col-span-8 bg-card">
                         <CardHeader className="py-3 px-4 border-b">
                             <div className="flex items-center justify-between">
+                                <CardTitle className="text-sm font-medium">Folder Directory</CardTitle>
                                 <div className="flex items-center gap-1 text-sm">
                                     {getBreadcrumbs().map((crumb, idx, arr) => (
                                         <span key={crumb.path} className="flex items-center">

@@ -30,12 +30,19 @@ async function getMinIOClient() {
   const port = endpointUrl.port ? parseInt(endpointUrl.port) : (endpointUrl.protocol === 'https:' ? 443 : 80)
   const useSSL = endpointUrl.protocol === 'https:' || process.env.MINIO_USE_SSL === 'true'
 
+  const accessKey = process.env.MINIO_ACCESS_KEY
+  const secretKey = process.env.MINIO_SECRET_KEY
+
+  if (!accessKey || !secretKey) {
+    throw new Error('MINIO_ACCESS_KEY and MINIO_SECRET_KEY must be set in .env')
+  }
+
   return new MinioClient({
     endPoint: endpointUrl.hostname,
     port: port,
     useSSL: useSSL,
-    accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-    secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+    accessKey: accessKey,
+    secretKey: secretKey,
     region: process.env.MINIO_REGION || 'us-east-1'
   })
 }
@@ -99,11 +106,11 @@ export async function getWorkflowCode(
     // Download workflow code
     const stream = await client.getObject(bucket, objectName)
     const chunks: Buffer[] = []
-    
+
     for await (const chunk of stream) {
       chunks.push(chunk)
     }
-    
+
     const code = Buffer.concat(chunks).toString('utf-8')
     return { success: true, code }
   } catch (error) {
@@ -150,7 +157,7 @@ export async function executeWorkflowCodeFromMinIO(
 ): Promise<{ success: boolean; output?: string; error?: string }> {
   const tempDir = join(tmpdir(), 'workflows')
   const tempFile = join(tempDir, `${workflowId}-${Date.now()}.mjs`) // Use .mjs for ES modules
-  
+
   try {
     // Ensure temp directory exists
     await mkdir(tempDir, { recursive: true })
@@ -203,14 +210,14 @@ export async function executeWorkflowCodeFromMinIO(
     // On Windows, we need to use pathToFileURL for proper URL encoding
     const { pathToFileURL } = await import('url')
     const fileUrl = pathToFileURL(tempFile).href
-    
+
     console.log('WorkflowCodeStorage: Importing module from file', {
       tempFile,
       fileUrl,
       platform: process.platform,
       fileExists: true
     })
-    
+
     const module = await import(fileUrl)
 
     // Get the runWorkflow function
@@ -218,9 +225,9 @@ export async function executeWorkflowCodeFromMinIO(
     // - export default function runWorkflow(...)
     // - export { runWorkflow }
     // - export default { runWorkflow }
-    const runWorkflow = 
-      module.default?.runWorkflow || 
-      module.runWorkflow || 
+    const runWorkflow =
+      module.default?.runWorkflow ||
+      module.runWorkflow ||
       (typeof module.default === 'function' ? module.default : null)
 
     if (!runWorkflow || typeof runWorkflow !== 'function') {
@@ -295,7 +302,7 @@ function getWorkflowStoragePath(): string {
   if (process.env.WORKFLOW_STORAGE_PATH) {
     return process.env.WORKFLOW_STORAGE_PATH
   }
-  
+
   // Use a persistent location in the user's app data (Windows) or home directory
   const homeDir = process.env.APPDATA || process.env.HOME || tmpdir()
   return join(homeDir, '.mdm', 'workflows')
@@ -325,7 +332,7 @@ export async function executeWorkflowCodeFromFile(
   console.log('WorkflowCodeStorage: Downloading workflow code from MinIO', {
     workflowId
   })
-  
+
   const codeResult = await getWorkflowCode(workflowId)
   if (codeResult.success && codeResult.code) {
     // Use code from MinIO (preferred)
@@ -341,15 +348,15 @@ export async function executeWorkflowCodeFromFile(
       codeLength: code.length
     })
   }
-  
+
   // Create a temporary file for execution (required by Node.js for ES modules)
   // This is a standard practice - we can't execute ES modules from memory/streams
   const tempDir = join(tmpdir(), 'workflows')
   const tempFile = join(tempDir, `${workflowId}-${Date.now()}.mjs`)
-  
+
   // Ensure temp directory exists
   await mkdir(tempDir, { recursive: true })
-  
+
   try {
     // Replace variables in code before writing
     let processedCode = code
@@ -392,14 +399,14 @@ export async function executeWorkflowCodeFromFile(
     // Note: Node.js requires a file path - this is a limitation of ES modules
     const { pathToFileURL } = await import('url')
     const fileUrl = pathToFileURL(tempFile).href
-    
+
     console.log('WorkflowCodeStorage: Importing module from temp file (code from MinIO)', {
       tempFile,
       fileUrl,
       platform: process.platform,
       source: 'MinIO -> Temp File -> Import'
     })
-    
+
     const module = await import(fileUrl)
 
     // Get the runWorkflow function
@@ -407,9 +414,9 @@ export async function executeWorkflowCodeFromFile(
     // - export default function runWorkflow(...)
     // - export { runWorkflow }
     // - export default { runWorkflow }
-    const runWorkflow = 
-      module.default?.runWorkflow || 
-      module.runWorkflow || 
+    const runWorkflow =
+      module.default?.runWorkflow ||
+      module.runWorkflow ||
       (typeof module.default === 'function' ? module.default : null)
 
     if (!runWorkflow || typeof runWorkflow !== 'function') {

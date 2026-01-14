@@ -5,14 +5,17 @@ import { ThemeConfigPanel } from './ThemeConfigPanel';
 import { useThemes } from '../../hooks/useThemes';
 import { ThemeLibrary } from './ThemeLibrary';
 import { CreateThemeDialog, CloneThemeDialog, DeleteThemeDialog } from './ThemeDialogs';
-import { Loader2, Palette } from 'lucide-react';
+import { Loader2, Palette, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Theme } from '../../types-theme';
 import { applyBrandingColors, applyGlobalStyling, applyComponentStyling, applyDrawerOverlay } from '@/lib/branding';
+import { useSystemSettingsSafe } from '@/contexts/system-settings-context';
 
 export function ThemeManager() {
+    const { settings, isLoading: settingsLoading } = useSystemSettingsSafe();
+
     const {
         themes,
         isLoading,
@@ -50,26 +53,26 @@ export function ThemeManager() {
     // Apply active theme branding on load and when themes change
     useEffect(() => {
         if (isLoading || themes.length === 0) return;
-        
+
         const activeTheme = themes.find(t => t.isActive);
         if (activeTheme) {
             getTheme(activeTheme.id)
                 .then((theme) => {
                     // Config is now flattened - no conversion needed
                     const brandingConfig = theme.config;
-                    
-                    console.log('Applying active theme branding:', { 
-                        themeId: theme.id, 
-                        themeName: theme.name, 
+
+                    console.log('Applying active theme branding:', {
+                        themeId: theme.id,
+                        themeName: theme.name,
                         themeMode: theme.themeMode,
                         hasConfig: !!theme.config,
                         configKeys: Object.keys(theme.config || {})
                     });
-                    
+
                     // Apply all branding functions (no isDarkMode parameter needed)
                     // applyBrandingColors already calls all other functions
                     applyBrandingColors(brandingConfig);
-                    
+
                     // Also update system_settings to ensure BrandingInitializer picks it up
                     fetch('/api/admin/branding', {
                         method: 'PUT',
@@ -161,7 +164,7 @@ export function ThemeManager() {
         }
     }, [themes, selectedThemeId]);
 
-    if (isLoading) {
+    if (isLoading || settingsLoading) {
         return (
             <div className="flex items-center justify-center h-screen">
                 <div className="text-center">
@@ -178,6 +181,41 @@ export function ThemeManager() {
                 <div className="text-center">
                     <p className="text-destructive mb-2">Error loading themes</p>
                     <p className="text-sm text-muted-foreground">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Check if theme configuration is disabled
+    if (!settings.enableThemeConfig) {
+        return (
+            <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between p-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-muted">
+                            <Palette className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">Theme Manager</h1>
+                            <p className="text-sm text-muted-foreground">
+                                Create, customize, and manage your application themes
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center justify-center flex-1">
+                    <Card className="max-w-md">
+                        <CardHeader className="text-center">
+                            <div className="mx-auto p-3 rounded-full bg-muted mb-2">
+                                <Lock className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <CardTitle>Theme Configuration Disabled</CardTitle>
+                            <CardDescription>
+                                Theme configuration has been disabled by a system administrator.
+                                Contact your administrator to enable this feature.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
                 </div>
             </div>
         );

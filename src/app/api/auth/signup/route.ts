@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { checkRateLimit } from '@/lib/rate-limiter'
 
@@ -20,6 +21,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check system settings
+    const settingsRecord = await prisma.systemSetting.findUnique({
+      where: { key: 'global' }
+    })
+
+    let enableUserRegistration = true
+    let requireAdminApproval = false
+
+    if (settingsRecord) {
+      try {
+        const settings = JSON.parse(settingsRecord.value)
+        enableUserRegistration = settings.enableUserRegistration ?? true
+        requireAdminApproval = settings.requireAdminApproval ?? false
+      } catch (e) {
+        console.error('Failed to parse system settings during signup', e)
+      }
+    }
+
+    if (!enableUserRegistration) {
+      return NextResponse.json(
+        { error: 'User registration is currently disabled' },
+        { status: 403 }
+      )
+    }
+
     const { email, password, name } = await request.json()
 
     if (!email || !password || !name) {
@@ -30,9 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existing = await query('SELECT id FROM public.users WHERE email = $1 LIMIT 1', [email])
+    const existing = await prisma.user.findFirst({
+      where: { email: email.toLowerCase() }
+    })
 
-    if (existing.rows.length > 0) {
+    if (existing) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 400 }
@@ -41,19 +69,31 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
+    const initialStatus = requireAdminApproval ? 'pending' : 'active'
 
     // Create user
-    const inserted = await query(
-      `INSERT INTO public.users (email, name, password, role) 
-       VALUES ($1, $2, $3, 'USER')
-       RETURNING id, email, name`,
-      [email, name, hashedPassword]
-    )
+    const newUser = await prisma.user.create({
+      data: {
+        email: email.toLowerCase(),
+        name,
+        password: hashedPassword,
+        role: 'USER',
+        status: initialStatus
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        status: true
+      }
+    })
 
-    const newUser = inserted.rows[0]
+    const message = requireAdminApproval
+      ? 'Account created successfully. Please wait for admin approval.'
+      : 'User created successfully'
 
     return NextResponse.json(
-      { message: 'User created successfully', user: { id: newUser.id, email: newUser.email, name: newUser.name } },
+      { message, user: newUser },
       { status: 201 }
     )
 

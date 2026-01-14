@@ -29,7 +29,7 @@ const CACHE_HEADERS = {
  * Generate a hash of content for change detection
  */
 function generateContentHash(content: any): string {
-  const hash = crypto.createHash('md5')
+  const hash = crypto.createHash('sha256')
   hash.update(JSON.stringify(content))
   return hash.digest('hex').substring(0, 16)
 }
@@ -40,7 +40,7 @@ export async function GET(
 ) {
   try {
     const { spaceId } = await params
-    
+
     // Validate spaceId
     if (!spaceId || spaceId === 'undefined') {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function GET(
 
     // Get spaces editor config
     const config = await SpacesEditorManager.getSpacesEditorConfig(spaceId)
-    
+
     if (!config) {
       return NextResponse.json(
         { error: 'Space configuration not found' },
@@ -88,16 +88,16 @@ export async function GET(
     const manifest = {
       // Schema information
       schemaVersion: MOBILE_SCHEMA_VERSION,
-      
+
       // App identification
       spaceId,
       appVersion: config.version || '1.0.0',
-      
+
       // Timestamps
       createdAt: config.createdAt,
       updatedAt: config.updatedAt,
       generatedAt: new Date().toISOString(),
-      
+
       // Content hashes for change detection
       contentHashes: {
         pages: pagesHash,
@@ -105,28 +105,28 @@ export async function GET(
         login: loginHash,
         combined: generateContentHash({ pagesHash, sidebarHash, loginHash }),
       },
-      
+
       // Page index (lightweight list)
       pages: {
         total: pageIndex.length,
         active: pageIndex.filter(p => p.isActive).length,
         items: pageIndex,
       },
-      
+
       // Navigation summary
       navigation: {
         drawerItemCount: config.sidebarConfig?.items?.length || 0,
         hasLoginPage: !!config.loginPageConfig,
         initialPageId: config.postAuthRedirectPageId,
       },
-      
+
       // Theme summary
       theme: {
         hasBranding: !!branding,
         primaryColor: branding?.primaryColor || '#3B82F6',
         mode: 'auto', // Could be derived from branding
       },
-      
+
       // Feature flags
       features: {
         offlineSupport: false,
@@ -134,7 +134,7 @@ export async function GET(
         analytics: false,
         darkMode: true,
       },
-      
+
       // API endpoints
       endpoints: {
         content: `/api/mobile/content/${spaceId}`,
@@ -144,10 +144,10 @@ export async function GET(
         data: `/api/data-records`,
         auth: `/api/auth`,
       },
-      
+
       // Required client version (for forced updates)
       minimumClientVersion: '1.0.0',
-      
+
       // Feature compatibility
       requiredFeatures: ['components-v1', 'navigation-v1'],
     }
@@ -165,7 +165,7 @@ export async function GET(
   } catch (error) {
     console.error('[Mobile Manifest API] Error:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to fetch manifest',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
@@ -184,9 +184,9 @@ export async function HEAD(
 ) {
   try {
     const { spaceId } = await params
-    
+
     const config = await SpacesEditorManager.getSpacesEditorConfig(spaceId)
-    
+
     if (!config) {
       return new NextResponse(null, { status: 404 })
     }

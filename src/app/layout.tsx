@@ -9,6 +9,7 @@ import { Suspense } from 'react'
 import { LoadingPage } from '@/components/ui/loading-spinner'
 import { GlobalErrorHandler } from '@/components/global-error-handler'
 import { SecurityProvider } from '@/components/providers/SecurityProvider'
+import { SystemSettingsProvider } from '@/contexts/system-settings-context'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -53,9 +54,11 @@ export default function RootLayout({
           <SecurityProvider>
             <SidebarProvider>
               <Suspense fallback={<LoadingPage />}>
-                <SpaceProvider>
-                  {children}
-                </SpaceProvider>
+                <SystemSettingsProvider>
+                  <SpaceProvider>
+                    {children}
+                  </SpaceProvider>
+                </SystemSettingsProvider>
               </Suspense>
             </SidebarProvider>
           </SecurityProvider>

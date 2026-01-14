@@ -1,4 +1,5 @@
 import { query } from './db'
+import prisma from '@/lib/prisma'
 
 // Dynamic import for Elasticsearch (server-side only)
 const getElasticsearchLogger = async () => {
@@ -43,6 +44,22 @@ export interface AuditLogData {
 
 export async function createAuditLog(data: AuditLogData) {
   try {
+    // Check system settings for audit trail
+    const settingsRecord = await prisma.systemSetting.findUnique({
+      where: { key: 'global' }
+    })
+
+    if (settingsRecord) {
+      try {
+        const settings = JSON.parse(settingsRecord.value)
+        if (settings.enableAuditTrail === false) {
+          return null // Audit trail disabled
+        }
+      } catch (e) {
+        // Fallback to enabled if settings parse fails
+      }
+    }
+
     // Helper function to check if a string is a valid UUID
     const isValidUUID = (str: string): boolean => {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

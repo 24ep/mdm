@@ -131,8 +131,7 @@ async function putHandler(
       minio: ['endpoint', 'access_key', 'secret_key', 'bucket'],
       s3: ['access_key_id', 'secret_access_key', 'bucket'],
       sftp: ['host', 'username', 'password'],
-      ftp: ['host', 'username', 'password'],
-      shared: ['connectionId']
+      ftp: ['host', 'username', 'password']
     }
 
     const providerConfig = config[provider]

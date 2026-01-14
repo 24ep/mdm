@@ -46,50 +46,29 @@ async function postHandler(
       return NextResponse.json({ error: 'Provider and config are required' }, { status: 400 })
     }
 
-    let activeProvider = provider
-    let activeConfig = config[provider]
-
-    // Handle shared connection
-    if (provider === 'shared') {
-      const sharedConfig = config.shared
-      if (!sharedConfig?.connectionId) {
-        return NextResponse.json({ error: 'Shared connection ID is required' }, { status: 400 })
-      }
-
-      const connection = await db.storageConnection.findUnique({
-        where: { id: sharedConfig.connectionId }
-      })
-
-      if (!connection) {
-        return NextResponse.json({ error: 'Storage connection not found' }, { status: 404 })
-      }
-
-      activeProvider = connection.type
-      activeConfig = connection.config
-    }
-
-    if (!activeConfig) {
-      return NextResponse.json({ error: `Invalid configuration for provider: ${activeProvider}` }, { status: 400 })
+    const providerConfig = config[provider]
+    if (!providerConfig) {
+      return NextResponse.json({ error: `Invalid provider: ${provider}` }, { status: 400 })
     }
 
     // Test connection based on provider
     let testResult
 
-    switch (activeProvider) {
+    switch (provider) {
       case 'minio':
-        testResult = await testMinIOConnection(activeConfig)
+        testResult = await testMinIOConnection(providerConfig)
         break
       case 's3':
-        testResult = await testS3Connection(activeConfig)
+        testResult = await testS3Connection(providerConfig)
         break
       case 'sftp':
-        testResult = await testSFTPConnection(activeConfig)
+        testResult = await testSFTPConnection(providerConfig)
         break
       case 'ftp':
-        testResult = await testFTPConnection(activeConfig)
+        testResult = await testFTPConnection(providerConfig)
         break
       default:
-        return NextResponse.json({ error: `Unsupported provider: ${activeProvider}` }, { status: 400 })
+        return NextResponse.json({ error: `Unsupported provider: ${provider}` }, { status: 400 })
     }
 
     return NextResponse.json(testResult)

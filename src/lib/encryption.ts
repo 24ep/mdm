@@ -36,7 +36,6 @@ let cachedKey: Buffer | null = null
 
 /**
  * Get encryption key from environment variable
- * Falls back to a default key if not set (WARNING: Not secure for production)
  */
 function getEncryptionKey(): Buffer {
   if (cachedKey) {
@@ -45,22 +44,25 @@ function getEncryptionKey(): Buffer {
 
   const crypto = getCrypto()
   const envKey = process.env.ENCRYPTION_KEY
-  
+
   if (!envKey) {
-    console.warn('⚠️  ENCRYPTION_KEY not set. Using default key (NOT SECURE FOR PRODUCTION)')
-    // Default key - MUST be changed in production
-    cachedKey = crypto.pbkdf2Sync('default-key-change-in-production', 'salt', 1000, KEY_LENGTH, 'sha256')
-    return cachedKey
+    // Strictly require the environment variable to avoid hardcoded secrets in codebase
+    throw new Error('ENCRYPTION_KEY environment variable is not set. Please set it in your .env file.')
   }
-  
+
   // If key is provided as hex string, convert it
   if (envKey.length === 64) {
     cachedKey = Buffer.from(envKey, 'hex')
     return cachedKey
   }
-  
+
   // Otherwise derive key from the environment variable
-  cachedKey = crypto.pbkdf2Sync(envKey, 'encryption-salt', ITERATIONS, KEY_LENGTH, 'sha256')
+  const salt = process.env.ENCRYPTION_SALT
+  if (!salt) {
+    throw new Error('ENCRYPTION_SALT environment variable is not set. Please set it in your .env file.')
+  }
+
+  cachedKey = crypto.pbkdf2Sync(envKey, salt, ITERATIONS, KEY_LENGTH, 'sha256')
   return cachedKey
 }
 
@@ -82,17 +84,17 @@ export function encrypt(value: string): string {
     const key = getEncryptionKey()
     const salt = crypto.randomBytes(SALT_LENGTH)
     const iv = crypto.randomBytes(IV_LENGTH)
-    
+
     // Derive a key from the master key and salt
     const derivedKey = crypto.pbkdf2Sync(key, salt, ITERATIONS, KEY_LENGTH, 'sha256')
-    
+
     const cipher = crypto.createCipheriv(ALGORITHM, derivedKey, iv)
-    
+
     let encrypted = cipher.update(value, 'utf8', 'hex')
     encrypted += cipher.final('hex')
-    
+
     const tag = cipher.getAuthTag()
-    
+
     // Combine: salt + iv + tag + encrypted data
     const combined = Buffer.concat([
       salt,
@@ -100,7 +102,7 @@ export function encrypt(value: string): string {
       tag,
       Buffer.from(encrypted, 'hex')
     ])
-    
+
     return combined.toString('hex')
   } catch (error) {
     console.error('Encryption error:', error)
@@ -131,29 +133,29 @@ export function decrypt(encryptedValue: string): string {
     const crypto = getCrypto()
     const key = getEncryptionKey()
     const combined = Buffer.from(encryptedValue, 'hex')
-    
+
     // Validate buffer length
     const minLength = SALT_LENGTH + IV_LENGTH + TAG_LENGTH
     if (combined.length < minLength) {
       // Too short to be encrypted, return as plain text
       return encryptedValue
     }
-    
+
     // Extract components
     const salt = combined.subarray(0, SALT_LENGTH)
     const iv = combined.subarray(SALT_LENGTH, SALT_LENGTH + IV_LENGTH)
     const tag = combined.subarray(SALT_LENGTH + IV_LENGTH, SALT_LENGTH + IV_LENGTH + TAG_LENGTH)
     const encrypted = combined.subarray(SALT_LENGTH + IV_LENGTH + TAG_LENGTH)
-    
+
     // Derive the same key using the salt
     const derivedKey = crypto.pbkdf2Sync(key, salt, ITERATIONS, KEY_LENGTH, 'sha256')
-    
+
     const decipher = crypto.createDecipheriv(ALGORITHM, derivedKey, iv)
     decipher.setAuthTag(tag)
-    
+
     let decrypted = decipher.update(encrypted, undefined, 'utf8')
     decrypted += decipher.final('utf8')
-    
+
     return decrypted
   } catch (error) {
     // If decryption fails, it might be plain text (for backward compatibility)
@@ -167,11 +169,11 @@ export function decrypt(encryptedValue: string): string {
  */
 export function isEncrypted(value: string | null | undefined): boolean {
   if (!value) return false
-  
+
   // Encrypted values are hex strings with minimum length
   // salt (64) + iv (16) + tag (16) + at least some encrypted data = ~96+ bytes = 192+ hex chars
   const minEncryptedLength = (SALT_LENGTH + IV_LENGTH + TAG_LENGTH) * 2 // Convert bytes to hex chars
-  
+
   return /^[0-9a-f]+$/i.test(value) && value.length >= minEncryptedLength
 }
 
@@ -180,12 +182,12 @@ export function isEncrypted(value: string | null | undefined): boolean {
  */
 export function encryptApiKey(apiKey: string | null | undefined): string | null {
   if (!apiKey) return null
-  
+
   // If already encrypted, return as-is
   if (isEncrypted(apiKey)) {
     return apiKey
   }
-  
+
   return encrypt(apiKey)
 }
 
@@ -194,7 +196,7 @@ export function encryptApiKey(apiKey: string | null | undefined): string | null 
  */
 export function decryptApiKey(encryptedApiKey: string | null | undefined): string | null {
   if (!encryptedApiKey) return null
-  
+
   // If it appears to be encrypted, try to decrypt
   if (isEncrypted(encryptedApiKey)) {
     try {
@@ -204,7 +206,7 @@ export function decryptApiKey(encryptedApiKey: string | null | undefined): strin
       return null
     }
   }
-  
+
   // Otherwise, assume it's plain text (for backward compatibility)
   return encryptedApiKey
 }

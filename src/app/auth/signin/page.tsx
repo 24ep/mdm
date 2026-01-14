@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Layers } from 'lucide-react'
 import { loadBrandingConfig } from '@/lib/branding'
+import { useSystemSettingsSafe } from '@/contexts/system-settings-context'
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
@@ -21,9 +22,17 @@ export default function SignInPage() {
   const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
   const [loginBgStyle, setLoginBgStyle] = useState<React.CSSProperties>({})
   const [loginBgVideo, setLoginBgVideo] = useState<string | undefined>(undefined)
-  const [appName, setAppName] = useState('Unified Data Platform')
+  const { settings } = useSystemSettingsSafe()
+  const [appName, setAppName] = useState(settings?.appName || 'Unified Data Platform')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const router = useRouter()
+
+  // Update appName when settings load
+  useEffect(() => {
+    if (settings?.appName) {
+      setAppName(settings.appName)
+    }
+  }, [settings])
 
   // Load branding config for login background
   useEffect(() => {
