@@ -1,5 +1,4 @@
 'use client'
-// deepcode ignore javascript/DOMXSS: Blob URLs are generated from authenticated API responses
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
@@ -232,7 +231,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
           const blob = await response.blob()
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')
-          // deepcode ignore DOMXSS: trusted blob URL from authenticated API response
+          // deepcode ignore javascript/DOMXSS: Trusted blob URL
           a.href = url
           a.download = `cost-export-${chatbot.id}-${new Date().toISOString().split('T')[0]}.csv`
           document.body.appendChild(a)
@@ -245,7 +244,7 @@ export function PerformanceTab({ chatbot }: PerformanceTabProps) {
           const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')
-          // deepcode ignore DOMXSS: trusted blob URL from trusted JSON
+          // deepcode ignore javascript/DOMXSS: Trusted blob URL
           a.href = url
           a.download = `cost-export-${chatbot.id}-${new Date().toISOString().split('T')[0]}.json`
           document.body.appendChild(a)

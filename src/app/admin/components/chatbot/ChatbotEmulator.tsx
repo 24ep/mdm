@@ -93,7 +93,7 @@ export function ChatbotEmulator({
 
     const sendPreviewMode = () => {
       try {
-        emulatorRef.current?.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, '*')
+        emulatorRef.current?.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, window.location.origin)
       } catch { }
     }
 
@@ -110,14 +110,14 @@ export function ChatbotEmulator({
     const handleLoad = () => {
       setTimeout(() => {
         try {
-          iframe.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, '*')
+          iframe.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, window.location.origin)
           iframe.contentWindow?.postMessage(
             {
               type: 'emulator-config-update',
               id: selectedChatbot.id,
               emulatorConfig: emulatorConfig,
             },
-            '*'
+            window.location.origin
           )
         } catch { }
       }, 200)
@@ -144,7 +144,7 @@ export function ChatbotEmulator({
             id: selectedChatbot.id,
           },
         },
-        '*'
+        window.location.origin
       )
     } catch (e) {
       // ignore
@@ -162,7 +162,7 @@ export function ChatbotEmulator({
           id: selectedChatbot.id,
           emulatorConfig: emulatorConfig,
         },
-        '*'
+        window.location.origin
       )
     } catch (e) {
       // ignore

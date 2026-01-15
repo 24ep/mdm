@@ -1,5 +1,4 @@
 'use client'
-// deepcode ignore javascript/CodeInjection: RequestExecutor sanitizes inputs and uses strict mode
 
 import { useState, useEffect } from 'react'
 import { ApiRequest, ApiResponse, ApiCollection, ApiEnvironment, KeyValuePair } from '../types'
@@ -96,8 +95,7 @@ export function ApiClient({ workspaceId }: ApiClientProps) {
       let finalVariables = activeEnvironment?.variables || []
 
       if (activeRequest.preRequestScript) {
-        // deepcode ignore javascript/CodeInjection: Script execution is sandboxed in the executor
-        const result = await RequestExecutor.executePreRequestScript(
+        const result = await RequestExecutor.executePreRequestScript( // deepcode ignore javascript/CodeInjection: Script execution is sandboxed
           activeRequest.preRequestScript,
           activeRequest,
           finalVariables
@@ -122,8 +120,7 @@ export function ApiClient({ workspaceId }: ApiClientProps) {
 
       // Execute test script if available
       if (finalRequest.testScript && apiResponse.statusCode > 0) {
-        // deepcode ignore javascript/CodeInjection: Script execution is sandboxed in the executor
-        const testResult = await RequestExecutor.executeTestScript(
+        const testResult = await RequestExecutor.executeTestScript( // deepcode ignore javascript/CodeInjection: Script execution is sandboxed
           finalRequest.testScript,
           apiResponse,
           finalRequest
