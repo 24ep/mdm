@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Building2, Search, Plus, ArrowRight, Layout, Settings, FolderPlus, Shield, Database, BarChart3 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import toast from 'react-hot-toast'
-import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
 
 interface Space {
   id: string
@@ -29,7 +28,6 @@ export default function SpaceSelectionPage() {
   const [search, setSearch] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
-  const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [createFormData, setCreateFormData] = useState({
     name: '',
     description: '',
@@ -91,7 +89,7 @@ export default function SpaceSelectionPage() {
       setIsCreateDialogOpen(false)
       setCreateFormData({ name: '', description: '', is_default: false })
       await refreshSpaces()
-      
+
       // If this is the first space or it's set as default, navigate to it
       if (spaces.length === 0 || result.space.is_default) {
         setCurrentSpace(result.space)
@@ -143,10 +141,10 @@ export default function SpaceSelectionPage() {
             <h1 className="text-3xl font-bold">Select a workspace</h1>
             <p className="text-muted-foreground">Choose a workspace to continue</p>
             <div className="mt-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => setShowSettingsModal(true)}
+                onClick={() => router.push('/system/settings')}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 System settings
@@ -298,7 +296,7 @@ export default function SpaceSelectionPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Admin Space Card */}
-          <Card 
+          <Card
             className="border-2 border-dashed border-primary/20 bg-primary/5 hover:shadow-md transition-shadow cursor-pointer group"
             onClick={handleAdminConsole}
           >
@@ -346,8 +344,8 @@ export default function SpaceSelectionPage() {
           </Card>
 
           {filtered.map(space => (
-            <Card 
-              key={space.id} 
+            <Card
+              key={space.id}
               className="hover:shadow-md transition-shadow cursor-pointer group"
               onClick={() => handleSpaceSelect(space)}
             >
@@ -397,11 +395,6 @@ export default function SpaceSelectionPage() {
           ))}
         </div>
       </div>
-      
-      <SystemSettingsModal 
-        open={showSettingsModal} 
-        onOpenChange={setShowSettingsModal} 
-      />
     </div>
   )
 }

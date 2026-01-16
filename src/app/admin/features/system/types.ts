@@ -45,10 +45,7 @@ export interface SystemSettings {
   secureLoginPage: boolean
 
   // Features
-  allowRegistration: boolean
-  allowGuestAccess: boolean
-  enableNotifications: boolean
-  enableAnalytics: boolean
+  enableThemeConfig: boolean
 
   // Storage
   maxFileSize: number

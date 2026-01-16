@@ -6,11 +6,11 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  BarChart3, 
-  Plus, 
-  Eye, 
-  Edit, 
+import {
+  BarChart3,
+  Plus,
+  Eye,
+  Edit,
   Settings,
   TrendingUp,
   Table,
@@ -23,6 +23,14 @@ import {
 } from 'lucide-react'
 import { useSpace } from '@/contexts/space-context'
 import toast from 'react-hot-toast'
+import { IntegrationSelectionModal } from '@/components/reports/IntegrationSelectionModal'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ChevronDown } from 'lucide-react'
 
 type Dashboard = {
   id: string
@@ -48,6 +56,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showIntegrationModal, setShowIntegrationModal] = useState(false)
 
   const loadDefaultDashboard = async () => {
     if (disabled) return
@@ -66,7 +75,7 @@ export default function DashboardPage() {
 
       const data = await response.json()
       const dashboards = data.dashboards || []
-      
+
       // Find default dashboard for current space
       const defaultDash = dashboards.find((d: Dashboard) => d.is_default)
       setDefaultDashboard(defaultDash || null)
@@ -94,7 +103,7 @@ export default function DashboardPage() {
 
   const exportToExcel = async () => {
     if (!defaultDashboard || disabled) return
-    
+
     try {
       const response = await fetch(`/api/dashboards/${defaultDashboard.id}/export/excel`, {
         method: 'POST',
@@ -123,7 +132,7 @@ export default function DashboardPage() {
 
   const exportToPDF = async () => {
     if (!defaultDashboard) return
-    
+
     try {
       const response = await fetch(`/api/dashboards/${defaultDashboard.id}/export/pdf`, {
         method: 'POST',
@@ -134,7 +143,7 @@ export default function DashboardPage() {
       }
 
       const data = await response.json()
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Failed to export dashboard')
       }
@@ -193,67 +202,82 @@ export default function DashboardPage() {
               <p className="text-muted-foreground">This feature is disabled for the current space.</p>
             ) : (
               <p className="text-muted-foreground">
-                {defaultDashboard 
-                  ? `Welcome to ${defaultDashboard.name}` 
+                {defaultDashboard
+                  ? `Welcome to ${defaultDashboard.name}`
                   : 'Welcome to your unified data platform'
                 }
               </p>
             )}
           </div>
           {!disabled && (
-          <div className="flex items-center space-x-2">
-            {defaultDashboard && (
-              <>
-                {defaultDashboard.is_realtime && (
+            <div className="flex items-center space-x-2">
+              {defaultDashboard && (
+                <>
+                  {defaultDashboard.is_realtime && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsPlaying(!isPlaying)}
+                    >
+                      {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+                      {isPlaying ? 'Pause' : 'Play'}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsPlaying(!isPlaying)}
+                    onClick={refreshDashboard}
+                    disabled={refreshing}
                   >
-                    {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                    {isPlaying ? 'Pause' : 'Play'}
+                    <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                    Refresh
                   </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={refreshDashboard}
-                  disabled={refreshing}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/dashboards/${defaultDashboard.id}/builder`)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportToExcel}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Excel
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportToPDF}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  PDF
-                </Button>
-              </>
-            )}
-            <Button onClick={() => router.push('/dashboards')}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Dashboard
-            </Button>
-          </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/dashboards/${defaultDashboard.id}/builder`)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportToExcel}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportToPDF}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    PDF
+                  </Button>
+                </>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create/Import
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router.push('/dashboards')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowIntegrationModal(true)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Import from External
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
@@ -377,10 +401,25 @@ export default function DashboardPage() {
                 There are no dashboards configured for this space yet. Create your first dashboard to start visualizing your data.
               </p>
               <div className="flex items-center space-x-4">
-                <Button onClick={() => router.push('/dashboards')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Dashboard
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create/Import Dashboard
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center">
+                    <DropdownMenuItem onClick={() => router.push('/dashboards')}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowIntegrationModal(true)}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Import from External
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button variant="outline" onClick={() => router.push('/dashboards')}>
                   <Eye className="h-4 w-4 mr-2" />
                   View All Dashboards
@@ -389,6 +428,16 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        <IntegrationSelectionModal
+          open={showIntegrationModal}
+          onOpenChange={setShowIntegrationModal}
+          spaceId={currentSpace?.id}
+          onSuccess={() => {
+            setShowIntegrationModal(false)
+            loadDefaultDashboard()
+          }}
+        />
       </div>
     </MainLayout>
   )

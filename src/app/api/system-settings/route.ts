@@ -1,18 +1,17 @@
 'use server'
 
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/db'
 
 // Default system settings
 const defaultSettings = {
     appName: 'Unified Data Platform',
     deletePolicyDays: 30,
     enableAuditTrail: true,
-    enableNotifications: true,
     enableThemeConfig: true,
-    enableUserRegistration: true,
     requireEmailVerification: true,
-    requireAdminApproval: false
+    requireAdminApproval: false,
+    disableRightClick: false
 }
 
 // GET /api/system-settings - Get current system settings

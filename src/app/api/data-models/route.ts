@@ -104,6 +104,7 @@ async function postHandler(request: NextRequest) {
   // Validate request body
   const bodyValidation = await validateBody(request, z.object({
     name: z.string().min(1, 'Name is required'),
+    display_name: z.string().optional(),
     description: z.string().optional(),
     space_ids: z.array(commonSchemas.id).min(1, 'At least one space ID is required'),
   }))
@@ -135,8 +136,8 @@ async function postHandler(request: NextRequest) {
   // Associate the data model with all specified spaces
   for (const spaceId of space_ids) {
     await query(
-      'INSERT INTO public.data_model_spaces (data_model_id, space_id, created_by) VALUES ($1, $2, $3)',
-      [dataModel.id, spaceId, session.user.id]
+      'INSERT INTO public.data_model_spaces (data_model_id, space_id) VALUES ($1, $2)',
+      [dataModel.id, spaceId]
     )
   }
 

@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Bell, Search, Settings, LogOut, User as UserIcon, Moon, Sun, Monitor } from 'lucide-react'
 import { AnimatedIcon } from '@/components/ui/animated-icon'
 import { NotificationBell } from '@/components/notifications/notification-bell'
-import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
 import { ProfileSettingsModal } from '@/components/settings/ProfileSettingsModal'
 
 interface HeaderProps {
@@ -34,7 +33,6 @@ interface HeaderProps {
 
 export function Header({ user }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const router = useRouter()
   const { theme, setTheme } = useTheme()
@@ -47,12 +45,12 @@ export function Header({ user }: HeaderProps) {
     <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6">
       <div className="flex items-center space-x-4">
         <div className="relative">
-          <AnimatedIcon 
-            icon="Search" 
-            size={16} 
-            animation="scale" 
+          <AnimatedIcon
+            icon="Search"
+            size={16}
+            animation="scale"
             trigger="hover"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" 
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
           <input
             type="text"
@@ -93,7 +91,7 @@ export function Header({ user }: HeaderProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onSelect={(e) => {
                 e.preventDefault()
                 setShowProfileModal(true)
@@ -111,12 +109,8 @@ export function Header({ user }: HeaderProps) {
         </DropdownMenu>
       </div>
 
-      <SystemSettingsModal 
-        open={showSettingsModal} 
-        onOpenChange={setShowSettingsModal} 
-      />
-      <ProfileSettingsModal 
-        open={showProfileModal} 
+      <ProfileSettingsModal
+        open={showProfileModal}
         onOpenChange={setShowProfileModal}
         user={user}
       />

@@ -133,7 +133,16 @@ async function getHandler(request: NextRequest) {
     total = parseInt(countResult.rows[0]?.total || '0')
   } catch (dbError: any) {
     // Handle case where knowledge_collections table doesn't exist yet
-    if (dbError?.code === 'P2010' || dbError?.message?.includes('does not exist')) {
+    // PostgreSQL error codes: 42P01 = undefined_table, 42703 = undefined_column
+    const isTableMissing =
+      dbError?.code === 'P2010' ||
+      dbError?.code === '42P01' ||
+      dbError?.code === '42703' ||
+      dbError?.message?.includes('does not exist') ||
+      dbError?.message?.includes('relation') ||
+      dbError?.message?.includes('undefined_table')
+
+    if (isTableMissing) {
       console.warn('Knowledge collections table does not exist. Please run migrations.')
       return NextResponse.json({
         collections: [],

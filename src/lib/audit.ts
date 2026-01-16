@@ -1,5 +1,4 @@
-import { query } from './db'
-import prisma from '@/lib/prisma'
+import { query, prisma } from './db'
 
 // Dynamic import for Elasticsearch (server-side only)
 const getElasticsearchLogger = async () => {
@@ -197,9 +196,23 @@ export async function createAuditLog(data: AuditLogData) {
     })
 
     return auditLog
-  } catch (error) {
+  } catch (error: any) {
+    // Handle missing table error gracefully
+    const isTableMissing =
+      error?.code === '42P01' ||
+      error?.message?.includes('does not exist') ||
+      error?.message?.includes('relation') ||
+      error?.message?.includes('undefined_table')
+
+    if (isTableMissing) {
+      console.warn('Audit logs table does not exist. Skipping audit log creation.')
+      return null
+    }
+
     console.error('Error creating audit log:', error)
-    throw error
+    // Don't rethrow, just return null to prevent breaking the main operation
+    // The calling function should ideally also handle this, but being defensive here helps
+    return null
   }
 }
 

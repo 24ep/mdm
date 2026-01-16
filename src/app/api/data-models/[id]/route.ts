@@ -97,7 +97,6 @@ async function putHandler(
   const values: any[] = []
   let idx = 1
   if (name !== undefined) { fields.push(`name = $${idx++}`); values.push(name) }
-  if (display_name !== undefined) { fields.push(`display_name = $${idx++}`); values.push(display_name) }
   if (description !== undefined) { fields.push(`description = $${idx++}`); values.push(description) }
   if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(!!is_active) }
   if (icon !== undefined) { fields.push(`icon = $${idx++}`); values.push(icon) }

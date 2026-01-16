@@ -227,6 +227,10 @@ export function MergedBIReports() {
                 <LayoutDashboard className="h-4 w-4 mr-2" />
                 Create new building dashboard/report
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowIntegrationModal(true)}>
+                <Download className="h-4 w-4 mr-2" />
+                Import dashboard from external
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowEmbedModal(true)}>
                 <LinkIcon className="h-4 w-4 mr-2" />
                 Embed custom report

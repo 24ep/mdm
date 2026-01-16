@@ -38,7 +38,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { SystemSettingsModal } from '@/components/settings/SystemSettingsModal'
+import { useMenuConfig, MenuGroupConfig, MenuItemConfig } from '@/hooks/useMenuConfig'
+import * as LucideIcons from 'lucide-react'
+import { sanitizeUrl } from '@/lib/utils/url'
+import DOMPurify from 'dompurify'
 
 interface MenuItem {
   title: string
@@ -114,10 +117,10 @@ export function Sidebar({ className }: SidebarProps) {
   const router = useRouter()
   const { settings, isHydrated } = useSidebar()
   const { currentSpace, spaces, setCurrentSpace, isLoading: spacesLoading } = useSpace()
+  const { menuConfig, loading: menuLoading } = useMenuConfig()
   const [dynamicModels, setDynamicModels] = useState<any[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
   const [modelsError, setModelsError] = useState<string | null>(null)
-  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   const isActive = (href: string) => pathname === href
 
@@ -199,18 +202,7 @@ export function Sidebar({ className }: SidebarProps) {
   }
 
   const customMenu = currentSpace?.sidebar_config?.menu
-  const menuItems = (customMenu && customMenu.length > 0)
-    ? customMenu as any
-    : getMenuItems(
-      currentSpace?.slug || currentSpace?.id || null,
-      currentSpace?.features || {
-        assignments: (currentSpace as any)?.enable_assignments,
-        bulk_activity: (currentSpace as any)?.enable_bulk_activity,
-        workflows: (currentSpace as any)?.enable_workflows,
-        dashboard: (currentSpace as any)?.enable_dashboard,
-        projects: (currentSpace as any)?.enable_projects !== false, // Default to true
-      }
-    )
+  const groups = (menuConfig?.groups || [])
 
   return (
     <div
@@ -287,123 +279,140 @@ export function Sidebar({ className }: SidebarProps) {
         />
       </div>
 
-      <nav className="flex-1 space-y-2 px-4">
+      <nav className="flex-1 space-y-2 px-4 overflow-y-auto">
         {!currentSpace && (
           <div className="px-2 text-xs" style={{ color: settings.fontColor, opacity: 0.7 }}>
             Select a space to view content
           </div>
         )}
-        <Accordion type="single" collapsible defaultValue="General">
-          {menuItems.map((item: any, index: number) => (
-            <React.Fragment key={item.title}>
-              <AccordionItem value={item.title} className="border-none">
-                <AccordionTrigger className="py-2 hover:no-underline md:py-2 px-2" style={{ color: settings.fontColor, opacity: 0.9 }}>
-                  <div className="flex items-center text-xs font-medium uppercase tracking-wide">
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.title}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-2">
-                  {item.children && (
-                    <div className="ml-2 space-y-1">
-                      {item.children.map((child: any) => (
-                        child.title === 'System Settings' ? (
-                          <Button
-                            key={child.href}
-                            variant="ghost"
-                            className="w-full justify-start text-sm"
-                            onClick={() => setShowSettingsModal(true)}
-                            style={{
-                              color: settings.fontColor,
-                              backgroundColor: 'transparent'
-                            }}
-                          >
-                            <child.icon className="mr-2 h-4 w-4" />
-                            {child.title}
-                          </Button>
-                        ) : (
-                          <Link key={child.href} href={child.href!}>
-                            <Button
-                              variant={isActive(child.href!) ? "secondary" : "ghost"}
-                              className="w-full justify-start text-sm"
-                              style={{
-                                color: settings.fontColor,
-                                backgroundColor: isActive(child.href!) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
-                              }}
-                            >
-                              <child.icon className="mr-2 h-4 w-4" />
-                              {child.title}
-                            </Button>
-                          </Link>
-                        )
-                      ))}
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
 
-              {index === 0 && currentSpace && (
-                <AccordionItem value="Data Entities" className="border-none mt-2">
+        {menuLoading ? (
+          <div className="px-2 py-4 flex items-center justify-center">
+            <LucideIcons.RefreshCw className="h-5 w-5 animate-spin" style={{ color: settings.fontColor, opacity: 0.5 }} />
+          </div>
+        ) : (
+          <Accordion type="single" collapsible defaultValue={groups[0]?.name}>
+            {groups.map((group: MenuGroupConfig) => {
+              const IconComponent = (LucideIcons as any)[group.icon] || LucideIcons.Grid
+
+              // Group items by section
+              const itemsBySection: Record<string, MenuItemConfig[]> = {}
+              group.items.forEach(item => {
+                const section = item.section || 'General'
+                if (!itemsBySection[section]) itemsBySection[section] = []
+                itemsBySection[section].push(item)
+              })
+
+              return (
+                <AccordionItem key={group.slug} value={group.name} className="border-none">
                   <AccordionTrigger className="py-2 hover:no-underline md:py-2 px-2" style={{ color: settings.fontColor, opacity: 0.9 }}>
                     <div className="flex items-center text-xs font-medium uppercase tracking-wide">
-                      <Database className="mr-2 h-4 w-4" />
-                      Data Entities
+                      <IconComponent className="mr-2 h-4 w-4" />
+                      {group.name}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pb-2">
-                    <div className="ml-2 space-y-1">
-                      {loadingModels && (
-                        <div className="px-2 text-xs" style={{ color: settings.fontColor, opacity: 0.7 }}>Loading...</div>
-                      )}
-                      {modelsError && (
-                        <div className="px-2 text-xs text-red-500">{modelsError}</div>
-                      )}
-                      {(!loadingModels && !modelsError) && (dynamicModels || []).map((m) => {
-                        const slug = (m as any).slug || m.id
-                        const href = `/${(currentSpace?.slug || currentSpace?.id)}/data/entities/${encodeURIComponent(slug)}`
-                        return (
-                          <Link key={m.id} href={href}>
-                            <Button
-                              variant={isActive(href) ? "secondary" : "ghost"}
-                              className="w-full justify-start text-sm"
-                              style={{
-                                color: settings.fontColor,
-                                backgroundColor: isActive(href) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
-                              }}
-                            >
-                              {m.icon ? (
-                                <AnimatedIcon
-                                  icon={m.icon}
-                                  size={16}
-                                  animation="float"
-                                  trigger="hover"
-                                  className="mr-2"
-                                />
-                              ) : (
-                                <span className="mr-2 inline-flex h-4 w-4 items-center justify-center rounded bg-black/10">
-                                  {(String(m.display_name || m.name || '')?.slice(0, 1) || '?').toUpperCase()}
-                                </span>
+                    <div className="ml-2 space-y-4">
+                      {Object.entries(itemsBySection).map(([section, items]) => (
+                        <div key={section} className="space-y-1">
+                          {Object.keys(itemsBySection).length > 1 && (
+                            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider opacity-40" style={{ color: settings.fontColor }}>
+                              {section}
+                            </div>
+                          )}
+                          {items.map((item) => {
+                            const ItemIcon = (LucideIcons as any)[item.icon] || LucideIcons.FileText
+                            const isSystemSettings = item.slug === 'settings' && item.href === '/admin/settings'
+
+                            return (
+                              <div key={item.slug}>
+                                {isSystemSettings ? (
+                                  <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-sm h-8"
+                                    onClick={() => router.push('/system/settings')}
+                                    style={{
+                                      color: settings.fontColor,
+                                      backgroundColor: 'transparent'
+                                    }}
+                                  >
+                                    <ItemIcon className="mr-2 h-4 w-4" />
+                                    {item.name}
+                                  </Button>
+                                ) : (
+                                  <Link href={typeof window !== 'undefined' ? DOMPurify.sanitize(item.href) : item.href}>
+                                    <Button
+                                      variant={isActive(item.href) ? "secondary" : "ghost"}
+                                      className="w-full justify-start text-sm h-8"
+                                      style={{
+                                        color: settings.fontColor,
+                                        backgroundColor: isActive(item.href) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+                                      }}
+                                    >
+                                      <ItemIcon className="mr-2 h-4 w-4" />
+                                      {item.name}
+                                    </Button>
+                                  </Link>
+                                )}
+                              </div>
+                            )
+                          })}
+
+                          {/* Insert Data Entities if this is the Data Workspace group and it's the right section */}
+                          {group.slug === 'data-workspace' && section === 'Definition' && currentSpace && (
+                            <div className="mt-4 space-y-1">
+                              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider opacity-40" style={{ color: settings.fontColor }}>
+                                Data Entities
+                              </div>
+                              {loadingModels && (
+                                <div className="px-2 text-xs" style={{ color: settings.fontColor, opacity: 0.7 }}>Loading...</div>
                               )}
-                              {m.display_name || m.name}
-                            </Button>
-                          </Link>
-                        )
-                      })}
+                              {modelsError && (
+                                <div className="px-2 text-xs text-red-500">{modelsError}</div>
+                              )}
+                              {(!loadingModels && !modelsError) && (dynamicModels || []).map((m) => {
+                                const slug = (m as any).slug || m.id
+                                const href = `/${(currentSpace?.slug || currentSpace?.id)}/data/entities/${encodeURIComponent(slug)}`
+                                return (
+                                  <Link key={m.id} href={typeof window !== 'undefined' ? DOMPurify.sanitize(href) : href}>
+                                    <Button
+                                      variant={isActive(href) ? "secondary" : "ghost"}
+                                      className="w-full justify-start text-sm h-8"
+                                      style={{
+                                        color: settings.fontColor,
+                                        backgroundColor: isActive(href) ? 'rgba(255, 255, 255, 0.1)' : 'transparent'
+                                      }}
+                                    >
+                                      {m.icon ? (
+                                        <AnimatedIcon
+                                          icon={m.icon}
+                                          size={16}
+                                          animation="float"
+                                          trigger="hover"
+                                          className="mr-2"
+                                        />
+                                      ) : (
+                                        <span className="mr-2 inline-flex h-4 w-4 items-center justify-center rounded bg-black/10">
+                                          {(String(m.display_name || m.name || '')?.slice(0, 1) || '?').toUpperCase()}
+                                        </span>
+                                      )}
+                                      {m.display_name || m.name}
+                                    </Button>
+                                  </Link>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-              )}
-
-              {/* Divider logic moved inside visual flow or removed if Accordion style suffices */}
-            </React.Fragment>
-          ))}
-        </Accordion>
+              )
+            })}
+          </Accordion>
+        )}
       </nav>
-
-      <SystemSettingsModal
-        open={showSettingsModal}
-        onOpenChange={setShowSettingsModal}
-      />
     </div>
   )
 }

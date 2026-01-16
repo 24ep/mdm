@@ -192,7 +192,7 @@ export default function DataEntitiesPage() {
     if (sortConfig?.key !== attributeName) {
       return <ArrowUpDown className="h-4 w-4" />
     }
-    return sortConfig.direction === 'asc' 
+    return sortConfig.direction === 'asc'
       ? <ArrowUp className="h-4 w-4" />
       : <ArrowDown className="h-4 w-4" />
   }
@@ -210,7 +210,7 @@ export default function DataEntitiesPage() {
       </MainLayout>
     )
   }
-  
+
   if (loading && !dataModel) {
     return (
       <MainLayout>
@@ -370,7 +370,7 @@ export default function DataEntitiesPage() {
         {/* Settings Drawer */}
         <SettingsDrawer
           open={false}
-          onOpenChange={() => {}}
+          onOpenChange={() => { }}
           attributes={attributes}
           columnOrder={columnOrder}
           hiddenColumns={hiddenColumns}

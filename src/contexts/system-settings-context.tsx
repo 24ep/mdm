@@ -6,11 +6,10 @@ export interface SystemSettings {
     appName: string
     deletePolicyDays: number
     enableAuditTrail: boolean
-    enableNotifications: boolean
     enableThemeConfig: boolean
-    enableUserRegistration: boolean
     requireEmailVerification: boolean
     requireAdminApproval: boolean
+    disableRightClick: boolean
 }
 
 interface SystemSettingsContextType {
@@ -25,11 +24,10 @@ const defaultSettings: SystemSettings = {
     appName: 'Unified Data Platform',
     deletePolicyDays: 30,
     enableAuditTrail: true,
-    enableNotifications: true,
     enableThemeConfig: true,
-    enableUserRegistration: true,
     requireEmailVerification: true,
-    requireAdminApproval: false
+    requireAdminApproval: false,
+    disableRightClick: false
 }
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined)
@@ -90,6 +88,21 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
     useEffect(() => {
         refreshSettings()
     }, [refreshSettings])
+
+    // Prevent right-click if setting is enabled
+    useEffect(() => {
+        const handleContextMenu = (e: MouseEvent) => {
+            if (settings.disableRightClick) {
+                e.preventDefault()
+                return false
+            }
+        }
+
+        window.addEventListener('contextmenu', handleContextMenu)
+        return () => {
+            window.removeEventListener('contextmenu', handleContextMenu)
+        }
+    }, [settings.disableRightClick])
 
     return (
         <SystemSettingsContext.Provider

@@ -23,7 +23,8 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Palette
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SSOConfiguration } from '../../security'
@@ -74,10 +75,7 @@ export function SystemSettings() {
     secureLoginPage: true,
 
     // Features
-    allowRegistration: true,
-    allowGuestAccess: false,
-    enableNotifications: true,
-    enableAnalytics: false,
+    enableThemeConfig: true,
 
     // Storage
     maxFileSize: 10485760, // 10MB
@@ -113,6 +111,7 @@ export function SystemSettings() {
           orgWebsite: data.orgWebsite || prev.orgWebsite,
           disableRightClick: data.disableRightClick !== undefined ? data.disableRightClick : prev.disableRightClick,
           secureLoginPage: data.secureLoginPage !== undefined ? data.secureLoginPage : prev.secureLoginPage,
+          enableThemeConfig: data.enableThemeConfig !== undefined ? data.enableThemeConfig === 'true' || data.enableThemeConfig === true : prev.enableThemeConfig,
         }))
       }
     } catch (error) {
@@ -133,7 +132,6 @@ export function SystemSettings() {
         body: JSON.stringify({
           settings: {
             sessionTimeout: String(settings.sessionTimeout),
-            disableRightClick: settings.disableRightClick,
             secureLoginPage: settings.secureLoginPage,
             faviconUrl: settings.faviconUrl,
             logoUrl: settings.logoUrl,
@@ -143,6 +141,8 @@ export function SystemSettings() {
             orgPhone: settings.orgPhone,
             orgEmail: settings.orgEmail,
             orgWebsite: settings.orgWebsite,
+            enableThemeConfig: settings.enableThemeConfig,
+            disableRightClick: settings.disableRightClick,
           }
         }),
       })
@@ -878,57 +878,18 @@ export function SystemSettings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="allowRegistration">Allow User Registration</Label>
+                      <Label htmlFor="enableThemeConfig" className="flex items-center gap-2">
+                        <Palette className="h-4 w-4" />
+                        Enable Theme Configuration
+                      </Label>
                       <p className="text-sm text-muted-foreground">
-                        Allow new users to register accounts
+                        Allow users to customize theme and colors
                       </p>
                     </div>
                     <Switch
-                      id="allowRegistration"
-                      checked={settings.allowRegistration}
-                      onCheckedChange={(checked) => setSettings({ ...settings, allowRegistration: checked })}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="allowGuestAccess">Allow Guest Access</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Allow users to access without accounts
-                      </p>
-                    </div>
-                    <Switch
-                      id="allowGuestAccess"
-                      checked={settings.allowGuestAccess}
-                      onCheckedChange={(checked) => setSettings({ ...settings, allowGuestAccess: checked })}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="enableNotifications">Enable Notifications</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Send email and in-app notifications
-                      </p>
-                    </div>
-                    <Switch
-                      id="enableNotifications"
-                      checked={settings.enableNotifications}
-                      onCheckedChange={(checked) => setSettings({ ...settings, enableNotifications: checked })}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="enableAnalytics">Enable Analytics</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Track usage and performance metrics
-                      </p>
-                    </div>
-                    <Switch
-                      id="enableAnalytics"
-                      checked={settings.enableAnalytics}
-                      onCheckedChange={(checked) => setSettings({ ...settings, enableAnalytics: checked })}
+                      id="enableThemeConfig"
+                      checked={settings.enableThemeConfig}
+                      onCheckedChange={(checked) => setSettings({ ...settings, enableThemeConfig: checked })}
                     />
                   </div>
                 </div>

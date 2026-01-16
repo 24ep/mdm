@@ -14,8 +14,8 @@ async function getHandler(
   const startTime = Date.now()
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
@@ -24,11 +24,11 @@ async function getHandler(
     const paramValidation = validateParams(resolvedParams, z.object({
       id: commonSchemas.id,
     }))
-    
+
     if (!paramValidation.success) {
       return addSecurityHeaders(paramValidation.response)
     }
-    
+
     const { id } = paramValidation.data
     logger.apiRequest('GET', `/api/data-models/${id}/spaces`, { userId: session.user.id })
 
@@ -61,8 +61,8 @@ async function putHandler(
   const startTime = Date.now()
   try {
     const authResult = await requireAuthWithId()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
     if (!session?.user) {
       return addSecurityHeaders(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
     }
@@ -72,22 +72,22 @@ async function putHandler(
     const paramValidation = validateParams(resolvedParams, z.object({
       id: commonSchemas.id,
     }))
-    
+
     if (!paramValidation.success) {
       return addSecurityHeaders(paramValidation.response)
     }
-    
+
     const { id } = paramValidation.data
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
       space_ids: z.array(commonSchemas.id),
     }))
-    
+
     if (!bodyValidation.success) {
       return addSecurityHeaders(bodyValidation.response)
     }
-    
+
     const { space_ids } = bodyValidation.data
     logger.apiRequest('PUT', `/api/data-models/${id}/spaces`, { userId: session.user.id, spaceIdsCount: space_ids.length })
 
@@ -114,8 +114,8 @@ async function putHandler(
     // Add new associations
     for (const spaceId of space_ids) {
       await query(
-        'INSERT INTO data_model_spaces (data_model_id, space_id, created_by) VALUES ($1::uuid, $2::uuid, $3::uuid)',
-        [id, spaceId, session.user.id]
+        'INSERT INTO data_model_spaces (data_model_id, space_id) VALUES ($1::uuid, $2::uuid)',
+        [id, spaceId]
       )
     }
 

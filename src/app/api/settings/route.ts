@@ -47,40 +47,70 @@ async function putHandler(request: NextRequest) {
 
   const { settings } = bodyValidation.data
 
-  // Get current settings for audit log
-  const currentSettingsResult = await query('SELECT key, value FROM system_settings')
-  const currentSettings = (currentSettingsResult.rows || []).reduce((acc: Record<string, any>, setting: any) => {
-    acc[setting.key] = setting.value
-    return acc
-  }, {})
+  try {
+    // Get current settings for audit log
+    const currentSettingsResult = await query('SELECT key, value FROM system_settings')
+    const currentSettings = (currentSettingsResult.rows || []).reduce((acc: Record<string, any>, setting: any) => {
+      acc[setting.key] = setting.value
+      return acc
+    }, {})
 
-  const updatedSettings: Record<string, any> = {}
-  for (const [key, value] of Object.entries(settings)) {
-    const res = await (prisma as any).systemSetting.upsert({
-      where: { key },
-      update: { value: String(value), updatedAt: new Date() },
-      create: { key, value: String(value) }
+    const updatedSettings: Record<string, any> = {}
+    for (const [key, value] of Object.entries(settings)) {
+      // Properly serialize the value - if it's an object, JSON stringify it
+      const serializedValue = typeof value === 'object' && value !== null
+        ? JSON.stringify(value)
+        : String(value)
+
+      const res = await prisma.systemSetting.upsert({
+        where: { key },
+        update: { value: serializedValue, updatedAt: new Date() },
+        create: { key, value: serializedValue }
+      })
+      updatedSettings[key] = res.value
+    }
+
+    // Create audit log
+    // Create audit log - wrap in try/catch so it doesn't fail the request
+    try {
+      await createAuditLog({
+        action: 'UPDATE',
+        entityType: 'SystemSettings',
+        entityId: 'system',
+        oldValue: currentSettings,
+        newValue: updatedSettings,
+        userId: session.user.id,
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      })
+    } catch (auditError: any) {
+      logger.warn('Failed to create audit log for settings update', { error: auditError.message })
+      // Continue execution - don't fail the request just because audit logging failed
+    }
+
+    const duration = Date.now() - startTime
+    logger.apiResponse('PUT', '/api/settings', 200, duration, {
+      updatedCount: Object.keys(updatedSettings).length
     })
-    updatedSettings[key] = res.value
+    return NextResponse.json(updatedSettings)
+  } catch (error: any) {
+    // Handle missing table error gracefully
+    const isTableMissing =
+      error?.code === '42P01' ||
+      error?.message?.includes('does not exist') ||
+      error?.message?.includes('relation')
+
+    if (isTableMissing) {
+      logger.error('System settings table does not exist', { error: error.message })
+      return NextResponse.json(
+        { error: 'System settings table not found. Please run database migrations.' },
+        { status: 503 }
+      )
+    }
+
+    logger.error('Failed to update settings', { error: error.message })
+    throw error
   }
-
-  // Create audit log
-  await createAuditLog({
-    action: 'UPDATE',
-    entityType: 'SystemSettings',
-    entityId: 'system',
-    oldValue: currentSettings,
-    newValue: updatedSettings,
-    userId: session.user.id,
-    ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-    userAgent: request.headers.get('user-agent') || 'unknown'
-  })
-
-  const duration = Date.now() - startTime
-  logger.apiResponse('PUT', '/api/settings', 200, duration, {
-    updatedCount: Object.keys(updatedSettings).length
-  })
-  return NextResponse.json(updatedSettings)
 }
 
 export const PUT = withErrorHandling(putHandler, 'PUT /api/settings')
