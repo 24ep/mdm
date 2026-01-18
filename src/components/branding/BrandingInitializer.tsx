@@ -109,6 +109,35 @@ export function BrandingInitializer() {
       try {
         setError(null)
 
+        // Check system settings for enableThemeConfig
+        try {
+          const settingsResponse = await fetch('/api/system-settings')
+          if (settingsResponse.ok) {
+            const settingsData = await settingsResponse.json()
+            if (settingsData.success && settingsData.settings?.enableThemeConfig === false) {
+              console.log('[BrandingInitializer] Theme configuration is disabled in system settings. Clearing branding styles.')
+              clearBrandingStyles()
+              
+              // Apply default mode
+              if (theme !== THEME_DEFAULTS.MODE) {
+                setTheme(THEME_DEFAULTS.MODE)
+              }
+              if (THEME_DEFAULTS.MODE === 'light') {
+                document.documentElement.classList.remove('dark')
+              } else {
+                document.documentElement.classList.add('dark')
+              }
+              
+              appliedRef.current = null
+              fetchingRef.current = false
+              return
+            }
+          }
+        } catch (settingsError) {
+          console.warn('[BrandingInitializer] Failed to fetch system settings:', settingsError)
+          // Continue with theme loading if settings fetch fails
+        }
+
         // Check for stored database theme ID (UUID format)
         const storedDbThemeId = localStorage.getItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
 

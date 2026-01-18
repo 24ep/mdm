@@ -21,10 +21,12 @@ async function getHandler(
         rp.*,
         u.name as user_name,
         u.email as user_email,
-        r.name as role_name
+        r.name as role_name,
+        g.name as group_name
       FROM report_permissions rp
       LEFT JOIN users u ON u.id = rp.user_id
       LEFT JOIN roles r ON r.id = rp.role_id
+      LEFT JOIN user_groups g ON g.id = rp.group_id
       WHERE rp.report_id = $1
       ORDER BY rp.created_at DESC
     `
@@ -35,10 +37,12 @@ async function getHandler(
       id: row.id,
       user_id: row.user_id,
       role_id: row.role_id,
+      group_id: row.group_id,
       permission: row.permission,
       user_name: row.user_name,
       role_name: row.role_name,
-      type: row.user_id ? 'user' : 'role'
+      group_name: row.group_name,
+      type: row.user_id ? 'user' : (row.group_id ? 'group' : 'role')
     }))
 
     return NextResponse.json({ permissions })
@@ -63,10 +67,10 @@ async function postHandler(
 
     const { id } = await params
     const body = await request.json()
-    const { user_id, role_id, permission } = body
+    const { user_id, role_id, group_id, permission } = body
 
-    if (!permission || (!user_id && !role_id)) {
-      return NextResponse.json({ error: 'Permission and user_id or role_id required' }, { status: 400 })
+    if (!permission || (!user_id && !role_id && !group_id)) {
+      return NextResponse.json({ error: 'Permission and user_id, group_id or role_id required' }, { status: 400 })
     }
 
     // Check if user owns the report
@@ -79,14 +83,17 @@ async function postHandler(
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
-    if (ownerCheck.rows[0].created_by !== session.user.id) {
-      return NextResponse.json({ error: 'Only report owner can manage permissions' }, { status: 403 })
+    // Admin or owner can manage permissions
+    const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN'
+    if (!isAdmin && ownerCheck.rows[0].created_by !== session.user.id) {
+      return NextResponse.json({ error: 'Only report owner or admin can manage permissions' }, { status: 403 })
     }
 
+    const dummyUuid = '00000000-0000-0000-0000-000000000000'
     const sql = `
-      INSERT INTO report_permissions (report_id, user_id, role_id, permission, created_by)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (report_id, COALESCE(user_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(role_id, '00000000-0000-0000-0000-000000000000'::uuid), permission)
+      INSERT INTO report_permissions (report_id, user_id, role_id, group_id, permission, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (report_id, COALESCE(user_id, $7::uuid), COALESCE(role_id, $7::uuid), COALESCE(group_id, $7::uuid), permission)
       DO UPDATE SET permission = EXCLUDED.permission
       RETURNING *
     `
@@ -95,8 +102,10 @@ async function postHandler(
       id,
       user_id || null,
       role_id || null,
+      group_id || null,
       permission,
-      session.user.id
+      session.user.id,
+      dummyUuid
     ])
 
     // Log audit event

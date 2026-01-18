@@ -41,6 +41,7 @@ interface PagesTabProps {
   setSelectedPageForPermissions: React.Dispatch<React.SetStateAction<SpacesEditorPage | null>>
   setPermissionsRoles: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsUserIds: React.Dispatch<React.SetStateAction<string[]>>
+  setPermissionsGroupIds: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
   handlePageReorder: (fromIndex: number, toIndex: number, currentPages: UnifiedPage[], currentCustomPages: SpacesEditorPage[]) => Promise<void>
   // Sidebar visibility functions removed - pages now use secondary platform sidebar
@@ -63,6 +64,7 @@ export function PagesTab({
   setSelectedPageForPermissions,
   setPermissionsRoles,
   setPermissionsUserIds,
+  setPermissionsGroupIds,
   setPermissionsDialogOpen,
   handlePageReorder,
   componentConfigs,
@@ -322,6 +324,7 @@ export function PagesTab({
                       setSelectedPageForPermissions={setSelectedPageForPermissions}
                       setPermissionsRoles={setPermissionsRoles}
                       setPermissionsUserIds={setPermissionsUserIds}
+                      setPermissionsGroupIds={setPermissionsGroupIds}
                       setPermissionsDialogOpen={setPermissionsDialogOpen}
                       setComponentSettingsOpen={setComponentSettingsOpen}
                       setIconPickerOpen={setIconPickerOpen}
@@ -459,6 +462,7 @@ export function PagesTab({
                       setSelectedPageForPermissions={setSelectedPageForPermissions}
                       setPermissionsRoles={setPermissionsRoles}
                       setPermissionsUserIds={setPermissionsUserIds}
+                      setPermissionsGroupIds={setPermissionsGroupIds}
                       setPermissionsDialogOpen={setPermissionsDialogOpen}
                       setComponentSettingsOpen={setComponentSettingsOpen}
                       setIconPickerOpen={setIconPickerOpen}
@@ -522,6 +526,7 @@ export function PagesTab({
                               setSelectedPageForPermissions={setSelectedPageForPermissions}
                               setPermissionsRoles={setPermissionsRoles}
                               setPermissionsUserIds={setPermissionsUserIds}
+                              setPermissionsGroupIds={setPermissionsGroupIds}
                               setPermissionsDialogOpen={setPermissionsDialogOpen}
                               setComponentSettingsOpen={setComponentSettingsOpen}
                               setIconPickerOpen={setIconPickerOpen}
@@ -645,6 +650,7 @@ export function PagesTab({
                               setSelectedPageForPermissions={setSelectedPageForPermissions}
                               setPermissionsRoles={setPermissionsRoles}
                               setPermissionsUserIds={setPermissionsUserIds}
+                              setPermissionsGroupIds={setPermissionsGroupIds}
                               setPermissionsDialogOpen={setPermissionsDialogOpen}
                               setComponentSettingsOpen={setComponentSettingsOpen}
                               setIconPickerOpen={setIconPickerOpen}

@@ -7,8 +7,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Building2, Layout, Users as UsersIcon, Database, FolderPlus, Archive, AlertTriangle, ChevronDown, ChevronRight, Settings, Plus, MoreVertical, Trash2, Pencil, FileIcon } from 'lucide-react'
+import { Building2, Layout, Users as UsersIcon, Database, FolderPlus, Archive, AlertTriangle, ChevronDown, ChevronRight, Settings, Plus, MoreVertical, Trash2, Pencil, FileIcon, Search, Lock } from 'lucide-react'
 import { SpacesEditorManager, SpacesEditorPage } from '@/lib/space-studio-manager'
+import { PermissionsDialog } from '@/components/studio/layout-config/PermissionsDialog'
 import { useSpace } from '@/contexts/space-context'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -81,6 +82,7 @@ interface SortablePageItemProps {
   onPageClick: (page: SpacesEditorPage) => void
   onDelete: (pageId: string) => void
   onRename: (page: SpacesEditorPage) => void
+  onPermissions: (page: SpacesEditorPage) => void
   menuOpen: string | null
   onMenuOpenChange: (pageId: string | null) => void
 }
@@ -92,6 +94,7 @@ function SortablePageItem({
   onPageClick,
   onDelete,
   onRename,
+  onPermissions,
   menuOpen,
   onMenuOpenChange
 }: SortablePageItemProps) {
@@ -189,6 +192,16 @@ function SortablePageItem({
                     </button>
                     <button
                       onClick={() => {
+                        onPermissions(page)
+                        onMenuOpenChange(null)
+                      }}
+                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                    >
+                      <Lock className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">Permissions</span>
+                    </button>
+                    <button
+                      onClick={() => {
                         if (confirm('Are you sure you want to delete this page?')) {
                           onDelete(page.id)
                         }
@@ -232,6 +245,15 @@ export const SpaceSidebar = memo(function SpaceSidebar({
   const [selectedIcon, setSelectedIcon] = useState<string>('')
   const [pageMenuOpen, setPageMenuOpen] = useState<string | null>(null)
 
+  // Permissions state
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false)
+  const [selectedPageForPermissions, setSelectedPageForPermissions] = useState<SpacesEditorPage | null>(null)
+  const [spaceUsers, setSpaceUsers] = useState<Array<{ id: string; name: string; email: string; space_role: string }>>([])
+  const [permissionsRoles, setPermissionsRoles] = useState<string[]>([])
+  const [permissionsUserIds, setPermissionsUserIds] = useState<string[]>([])
+  const [permissionsGroupIds, setPermissionsGroupIds] = useState<string[]>([])
+  const [userGroups, setUserGroups] = useState<Array<{ id: string; name: string }>>([])
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -261,6 +283,24 @@ export const SpaceSidebar = memo(function SpaceSidebar({
         }
       }
     })()
+
+    // Load users and groups if spaceId is available
+    if (spaceId) {
+      fetch(`/api/spaces/${spaceId}/users`)
+        .then(res => res.json())
+        .then(data => {
+          if (mounted) setSpaceUsers(data.users || [])
+        })
+        .catch(err => console.error('Failed to load users', err))
+        
+      fetch('/api/user-groups')
+        .then(res => res.json())
+        .then(data => {
+          if (mounted) setUserGroups(data.groups || [])
+        })
+        .catch(err => console.error('Failed to load groups', err))
+    }
+
     return () => { mounted = false }
   }, [spaceId])
 
@@ -483,6 +523,13 @@ export const SpaceSidebar = memo(function SpaceSidebar({
                             onPageClick={handlePageClick}
                             onDelete={handleDeletePage}
                             onRename={openRenameDialog}
+                            onPermissions={(page: SpacesEditorPage) => {
+                              setSelectedPageForPermissions(page)
+                              setPermissionsRoles(page.permissions?.roles || [])
+                              setPermissionsUserIds(page.permissions?.userIds || [])
+                              setPermissionsGroupIds(page.permissions?.groupIds || [])
+                              setPermissionsDialogOpen(true)
+                            }}
                             menuOpen={pageMenuOpen}
                             onMenuOpenChange={setPageMenuOpen}
                           />
@@ -635,6 +682,25 @@ export const SpaceSidebar = memo(function SpaceSidebar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {spaceId && (
+        <PermissionsDialog
+          open={permissionsDialogOpen}
+          onOpenChange={setPermissionsDialogOpen}
+          spaceId={spaceId}
+          selectedPageForPermissions={selectedPageForPermissions}
+          spaceUsers={spaceUsers}
+          permissionsRoles={permissionsRoles}
+          permissionsUserIds={permissionsUserIds}
+          permissionsGroupIds={permissionsGroupIds}
+          userGroups={userGroups}
+          setPermissionsRoles={setPermissionsRoles}
+          setPermissionsUserIds={setPermissionsUserIds}
+          setPermissionsGroupIds={setPermissionsGroupIds}
+          setSelectedPageForPermissions={setSelectedPageForPermissions}
+          setPages={setPages}
+        />
+      )}
     </TooltipProvider>
   )
 })

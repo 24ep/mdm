@@ -24,10 +24,12 @@ interface Permission {
   id?: string
   user_id?: string
   role_id?: string
+  group_id?: string
   permission: 'view' | 'edit' | 'delete' | 'share'
   user_name?: string
   role_name?: string
-  type: 'user' | 'role'
+  group_name?: string
+  type: 'user' | 'role' | 'group'
 }
 
 export function ReportPermissionsDialog({
@@ -39,10 +41,11 @@ export function ReportPermissionsDialog({
   const [permissions, setPermissions] = useState<Permission[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [roles, setRoles] = useState<any[]>([])
+  const [groups, setGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const addDialog = useModal()
   const [newPermission, setNewPermission] = useState({
-    type: 'user' as 'user' | 'role',
+    type: 'user' as 'user' | 'role' | 'group',
     id: '',
     permission: 'view' as 'view' | 'edit' | 'delete' | 'share'
   })
@@ -52,6 +55,7 @@ export function ReportPermissionsDialog({
       loadPermissions()
       loadUsers()
       loadRoles()
+      loadGroups()
     }
   }, [open, reportId])
 
@@ -91,19 +95,36 @@ export function ReportPermissionsDialog({
     }
   }
 
+  const loadGroups = async () => {
+    try {
+      const response = await fetch('/api/admin/user-groups')
+      if (response.ok) {
+        const data = await response.json()
+        setGroups(data.groups || [])
+      }
+    } catch (error) {
+      console.error('Error loading groups:', error)
+    }
+  }
+
   const handleAddPermission = async () => {
     if (!newPermission.id) {
-      showError('Please select a user or role')
+      showError('Please select a user, role, or group')
       return
     }
 
     try {
       setLoading(true)
+      const field_map = {
+        user: 'user_id',
+        role: 'role_id',
+        group: 'group_id'
+      }
       const response = await fetch(`/api/reports/${reportId}/permissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          [newPermission.type === 'user' ? 'user_id' : 'role_id']: newPermission.id,
+          [field_map[newPermission.type]]: newPermission.id,
           permission: newPermission.permission
         })
       })
@@ -166,7 +187,7 @@ export function ReportPermissionsDialog({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User/Role</TableHead>
+                    <TableHead>User/Role/Group</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Permission</TableHead>
                     <TableHead>Actions</TableHead>
@@ -176,21 +197,28 @@ export function ReportPermissionsDialog({
                   {permissions.map((perm) => (
                     <TableRow key={perm.id}>
                       <TableCell>
-                        {perm.type === 'user' ? (
+                        {perm.type === 'user' && (
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
                             {perm.user_name || 'Unknown User'}
                           </div>
-                        ) : (
+                        )}
+                        {perm.type === 'role' && (
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             {perm.role_name || 'Unknown Role'}
                           </div>
                         )}
+                        {perm.type === 'group' && (
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-blue-500" />
+                            {perm.group_name || 'Unknown Group'}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">
-                          {perm.type === 'user' ? 'User' : 'Role'}
+                        <Badge variant="outline" className="capitalize">
+                          {perm.type}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -226,7 +254,7 @@ export function ReportPermissionsDialog({
           <DialogHeader>
             <DialogTitle>Add Permission</DialogTitle>
             <DialogDescription>
-              Grant access to a user or role
+              Grant access to a user, role, or group
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -234,19 +262,20 @@ export function ReportPermissionsDialog({
               <Label>Type</Label>
               <Select
                 value={newPermission.type}
-                  onValueChange={(value) => setNewPermission({ ...newPermission, type: value as 'user' | 'role', id: '' })}
+                  onValueChange={(value) => setNewPermission({ ...newPermission, type: value as any, id: '' })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="role">Role</SelectItem>
+                  <SelectItem value="group">User Group</SelectItem>
+                  <SelectItem value="role">System Role</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>{newPermission.type === 'user' ? 'User' : 'Role'}</Label>
+              <Label className="capitalize">{newPermission.type}</Label>
               <Select
                 value={newPermission.id}
                 onValueChange={(value) => setNewPermission({ ...newPermission, id: value })}
@@ -255,15 +284,24 @@ export function ReportPermissionsDialog({
                   <SelectValue placeholder={`Select ${newPermission.type}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {newPermission.type === 'user' 
-                    ? users.map(user => (
+                  {newPermission.type === 'user' && 
+                    users.map(user => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.name || user.email}
                         </SelectItem>
                       ))
-                    : roles.map(role => (
+                  }
+                  {newPermission.type === 'role' &&
+                     roles.map(role => (
                         <SelectItem key={role.id} value={role.id}>
                           {role.name}
+                        </SelectItem>
+                      ))
+                  }
+                  {newPermission.type === 'group' &&
+                     groups.map(group => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
                         </SelectItem>
                       ))
                   }

@@ -32,8 +32,8 @@ export function IconPicker({
   onOpenChange,
 }: IconPickerProps) {
   const [iconSearchQuery, setIconSearchQuery] = useState('')
-  const [iconPickerTab, setIconPickerTab] = useState<'icons' | 'lucide' | 'react-icons' | 'alphabet' | 'numbers' | 'roman' | 'colors'>('icons')
-  const [iconLibraryTab, setIconLibraryTab] = useState<'all' | 'fa' | 'md' | 'fi' | 'ai' | 'bs' | 'hi'>('all')
+  const [iconPickerTab, setIconPickerTab] = useState<'icons' | 'lucide' | 'heroicons' | 'react-icons' | 'alphabet' | 'numbers' | 'roman' | 'colors'>('heroicons')
+  const [iconLibraryTab, setIconLibraryTab] = useState<'all' | 'ho' | 'hs' | 'fa' | 'md' | 'fi' | 'ai' | 'bs' | 'hi'>('all')
   
   // Common icons for pages
   const commonIcons = [
@@ -88,6 +88,13 @@ export function IconPicker({
     
     if (iconPickerTab === 'icons' || iconPickerTab === 'lucide') {
       iconsToFilter = [...commonIcons, ...allIcons]
+    } else if (iconPickerTab === 'heroicons') {
+      iconsToFilter = reactIcons.filter(icon => icon.library === 'ho' || icon.library === 'hs')
+      
+      // Filter by library if selected (ho or hs)
+      if (iconLibraryTab !== 'all' && (iconLibraryTab === 'ho' || iconLibraryTab === 'hs')) {
+        iconsToFilter = iconsToFilter.filter(icon => icon.library === iconLibraryTab)
+      }
     } else if (iconPickerTab === 'react-icons') {
       iconsToFilter = reactIcons
       
@@ -198,14 +205,45 @@ export function IconPicker({
             setIconLibraryTab('all') // Reset library tab when switching
           }}>
             <div className="mt-3">
-              <TabsList className="grid grid-cols-7 w-full h-8">
+              <TabsList className="grid grid-cols-8 w-full h-8">
               <TabsTrigger value="icons" className="text-[10px] px-1">Lucide</TabsTrigger>
+              <TabsTrigger value="heroicons" className="text-[10px] px-1">Hero</TabsTrigger>
               <TabsTrigger value="react-icons" className="text-[10px] px-1">React</TabsTrigger>
               <TabsTrigger value="alphabet" className="text-[10px] px-1">A-Z</TabsTrigger>
               <TabsTrigger value="numbers" className="text-[10px] px-1">0-9</TabsTrigger>
               <TabsTrigger value="roman" className="text-[10px] px-1">Roman</TabsTrigger>
               <TabsTrigger value="colors" className="text-[10px] px-1">Colors</TabsTrigger>
             </TabsList>
+            
+            {/* Heroicons Library Selector */}
+            {iconPickerTab === 'heroicons' && (
+              <div className="mt-2 p-2 border-b">
+                <div className="text-xs font-semibold text-foreground mb-1">Heroicons Style:</div>
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    { value: 'all', label: 'All' },
+                    { value: 'ho', label: 'Outline (24px)' },
+                    { value: 'hs', label: 'Solid (24px)' },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIconLibraryTab(value as any)
+                      }}
+                      className={`px-2 py-1 text-[10px] rounded border transition-colors ${
+                        iconLibraryTab === value
+                          ? 'bg-primary/10 border-primary text-primary'
+                          : 'bg-background border-border hover:bg-muted'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {/* React Icons Library Selector */}
             {iconPickerTab === 'react-icons' && (
@@ -240,6 +278,38 @@ export function IconPicker({
                 </div>
               </div>
             )}
+            
+            <TabsContent value="heroicons" className="mt-2 p-2 max-h-[350px] overflow-y-auto">
+              {filteredIcons.length === 0 ? (
+                <div className="text-center py-4 text-xs text-muted-foreground">
+                  {iconSearchQuery ? 'No icons found' : 'Loading Heroicons...'}
+                </div>
+              ) : (
+                <div className="grid grid-cols-8 gap-2">
+                  {filteredIcons.map(({ name, icon: IconComp }) => {
+                    const isSelected = page.icon === name || page.icon?.startsWith(name)
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleIconSelect(name)
+                        }}
+                        className={`p-2 rounded-md border transition-colors ${
+                          isSelected 
+                            ? 'bg-primary/10 border-primary' 
+                            : 'bg-background border-border hover:bg-muted hover:border-border'
+                        }`}
+                        title={name}
+                      >
+                        <IconComp className={`h-4 w-4 mx-auto ${isSelected ? 'text-primary' : 'text-foreground'}`} />
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </TabsContent>
             
             <TabsContent value="icons" className="mt-2 p-2 max-h-[350px] overflow-y-auto">
               {filteredIcons.length === 0 ? (

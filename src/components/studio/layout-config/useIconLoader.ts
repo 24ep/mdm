@@ -48,6 +48,19 @@ export function useIconLoader() {
           loadLibrary('ai'),
           loadLibrary('bs'),
           loadLibrary('hi'),
+          // Adding Heroicons support
+          (async () => {
+            try {
+              const icons = await createDynamicImport('@heroicons/react/24/outline')
+              return { prefix: 'ho', icons } // 'ho' for Heroicons Outline
+            } catch { return null }
+          })(),
+          (async () => {
+            try {
+              const icons = await createDynamicImport('@heroicons/react/24/solid')
+              return { prefix: 'hs', icons } // 'hs' for Heroicons Solid
+            } catch { return null }
+          })(),
         ])
         
         const validSets = iconSets.filter(set => set !== null) as Array<{ prefix: string; icons: any }>
@@ -55,7 +68,7 @@ export function useIconLoader() {
         
         validSets.forEach(({ prefix, icons }) => {
           Object.entries(icons).forEach(([name, Icon]: [string, any]) => {
-            if (typeof Icon === 'function') {
+            if (typeof Icon === 'function' || (typeof Icon === 'object' && '$$typeof' in Icon)) {
               allReactIcons.push({
                 name: `${prefix}-${name}`,
                 icon: Icon as React.ComponentType<{ className?: string }>,
@@ -67,10 +80,11 @@ export function useIconLoader() {
         
         setReactIcons(allReactIcons)
       } catch (err) {
-        // react-icons not available, silently continue without it
-        console.warn('react-icons not available, using Lucide icons only', err)
+        // react-icons or heroicons not available, silently continue without it
+        console.warn('Icon sets not fully available, using Lucide icons only', err)
         setReactIcons([])
       }
+
     }
     
     loadReactIcons()

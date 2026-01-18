@@ -39,6 +39,7 @@ interface GroupItemProps {
   setSelectedPageForPermissions: React.Dispatch<React.SetStateAction<SpacesEditorPage | null>>
   setPermissionsRoles: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsUserIds: React.Dispatch<React.SetStateAction<string[]>>
+  setPermissionsGroupIds: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
   setComponentSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>
   setIconPickerOpen: React.Dispatch<React.SetStateAction<string | null>>
@@ -208,6 +209,7 @@ export function GroupItem(props: GroupItemProps) {
                     setSelectedPageForPermissions={props.setSelectedPageForPermissions}
                     setPermissionsRoles={props.setPermissionsRoles}
                     setPermissionsUserIds={props.setPermissionsUserIds}
+                    setPermissionsGroupIds={props.setPermissionsGroupIds}
                     setPermissionsDialogOpen={props.setPermissionsDialogOpen}
                     setComponentSettingsOpen={props.setComponentSettingsOpen}
                     setIconPickerOpen={props.setIconPickerOpen}

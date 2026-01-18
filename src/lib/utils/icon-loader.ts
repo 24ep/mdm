@@ -33,6 +33,26 @@ export function loadIcon(iconName: string): LazyIconComponent | null {
         // Create lazy component that dynamically imports the specific icon
         const LazyIcon = lazy(async () => {
             try {
+                // Check for Heroicons prefix
+                if (iconName.startsWith('ho-') || iconName.startsWith('hs-')) {
+                    const [prefix, ...rest] = iconName.split('-')
+                    const realName = rest.join('-')
+                    const path = prefix === 'ho' 
+                        ? '@heroicons/react/24/outline' 
+                        : '@heroicons/react/24/solid'
+                    
+                    const module = await import(path)
+                    const Icon = module[realName] as IconComponent
+                    
+                    if (!Icon) {
+                        console.warn(`Icon "${realName}" not found in ${path}`)
+                        const lucideModule = await import(`lucide-react`)
+                        return { default: lucideModule.HelpCircle as IconComponent }
+                    }
+                    
+                    return { default: Icon }
+                }
+
                 // Dynamic import of specific icon only
                 const module = await import(`lucide-react`)
                 const Icon = module[iconName as keyof typeof module] as IconComponent
@@ -70,19 +90,42 @@ export async function getIconNames(): Promise<string[]> {
     }
 
     try {
-        // Import just to get the keys, but modern bundlers should tree-shake unused exports
-        const module = await import('lucide-react')
+        const names: string[] = [];
 
-        // Filter to get only icon components (PascalCase exports)
-        iconNames = Object.keys(module).filter((key) => {
-            // Lucide icons are all PascalCase and are components
+        // 1. Load Lucide icon names
+        const lucideModule = await import('lucide-react')
+        const lucideNames = Object.keys(lucideModule).filter((key) => {
             return key[0] === key[0]?.toUpperCase() &&
                 key !== 'createLucideIcon' &&
                 key !== 'Icon' &&
-                typeof module[key as keyof typeof module] !== 'string'
+                typeof lucideModule[key as keyof typeof lucideModule] !== 'string'
         })
+        names.push(...lucideNames);
 
-        return iconNames
+        // 2. Load Heroicons Outline names
+        try {
+            const hoModule = await import('@heroicons/react/24/outline')
+            const hoNames = Object.keys(hoModule)
+                .filter(key => key[0] === key[0].toUpperCase())
+                .map(name => `ho-${name}`)
+            names.push(...hoNames)
+        } catch (e) {
+            console.warn('Failed to load Heroicons Outline names')
+        }
+
+        // 3. Load Heroicons Solid names
+        try {
+            const hsModule = await import('@heroicons/react/24/solid')
+            const hsNames = Object.keys(hsModule)
+                .filter(key => key[0] === key[0].toUpperCase())
+                .map(name => `hs-${name}`)
+            names.push(...hsNames)
+        } catch (e) {
+            console.warn('Failed to load Heroicons Solid names')
+        }
+
+        iconNames = names;
+        return names;
     } catch (error) {
         console.error('Failed to load icon names:', error)
         return []

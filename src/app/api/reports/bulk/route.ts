@@ -24,11 +24,14 @@ async function postHandler(request: NextRequest) {
       const ownershipCheck = await query(
         `SELECT id FROM reports 
          WHERE id = ANY($1::uuid[]) 
-         AND (created_by = $2 OR EXISTS (
+         AND (created_by::text = $2 OR EXISTS (
            SELECT 1 FROM report_permissions 
            WHERE report_id = reports.id 
-           AND user_id = $2 
-           AND permission = 'delete'
+           AND (
+             user_id::text = $2 OR
+             group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $2)
+           )
+           AND (permission = 'delete' OR permission = 'admin')
          ))`,
         [report_ids, session.user.id]
       )
@@ -41,11 +44,14 @@ async function postHandler(request: NextRequest) {
         `UPDATE reports 
          SET deleted_at = NOW() 
          WHERE id = ANY($1::uuid[]) 
-         AND (created_by = $2 OR EXISTS (
+         AND (created_by::text = $2 OR EXISTS (
            SELECT 1 FROM report_permissions 
            WHERE report_id = reports.id 
-           AND user_id = $2 
-           AND permission = 'delete'
+           AND (
+             user_id::text = $2 OR
+             group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $2)
+           )
+           AND (permission = 'delete' OR permission = 'admin')
          ))`,
         [report_ids, session.user.id]
       )
@@ -65,11 +71,14 @@ async function postHandler(request: NextRequest) {
         `UPDATE reports 
          SET is_active = $1, updated_at = NOW() 
          WHERE id = ANY($2::uuid[]) 
-         AND (created_by = $3 OR EXISTS (
+         AND (created_by::text = $3 OR EXISTS (
            SELECT 1 FROM report_permissions 
            WHERE report_id = reports.id 
-           AND user_id = $3 
-           AND permission = 'edit'
+           AND (
+             user_id::text = $3 OR
+             group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $3)
+           )
+           AND (permission = 'edit' OR permission = 'admin')
          ))`,
         [actionData.is_active, report_ids, session.user.id]
       )
@@ -86,11 +95,14 @@ async function postHandler(request: NextRequest) {
              folder_id = COALESCE($2, folder_id),
              updated_at = NOW() 
          WHERE id = ANY($3::uuid[]) 
-         AND (created_by = $4 OR EXISTS (
+         AND (created_by::text = $4 OR EXISTS (
            SELECT 1 FROM report_permissions 
            WHERE report_id = reports.id 
-           AND user_id = $4 
-           AND permission = 'edit'
+           AND (
+             user_id::text = $4 OR
+             group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $4)
+           )
+           AND (permission = 'edit' OR permission = 'admin')
          ))`,
         [
           actionData.category_id || null,

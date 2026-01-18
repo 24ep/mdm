@@ -187,7 +187,6 @@ export function ReportsList({
                       <ExternalLink className="mr-2 h-4 w-4" />
                       Open
                     </Button>
-                    )}
                   </div>
                 </CardContent>
               </Card>

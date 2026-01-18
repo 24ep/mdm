@@ -10,7 +10,7 @@ async function getHandler(request: NextRequest) {
 
   const sql = `
     SELECT * FROM report_integrations
-    WHERE created_by = $1 AND deleted_at IS NULL
+    WHERE created_by::text = $1 AND deleted_at IS NULL
     ORDER BY created_at DESC
   `
 

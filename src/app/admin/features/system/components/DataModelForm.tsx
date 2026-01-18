@@ -140,7 +140,7 @@ export function DataModelForm({
             <div className="space-y-2">
                 <Label>Tags</Label>
                 <div className="flex flex-wrap gap-2 mt-1 mb-2">
-                    {formData.tags.map((tag) => (
+                    {(formData.tags || []).map((tag) => (
                         <span key={tag} className="px-2 py-0.5 text-xs rounded-full border flex items-center gap-1 bg-secondary/50">
                             {tag}
                             <button

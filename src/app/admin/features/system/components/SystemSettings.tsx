@@ -31,6 +31,7 @@ import { SSOConfiguration } from '../../security'
 import { SystemSettings as SystemSettingsType } from '../types'
 import { StorageConnections } from './StorageConnections'
 import { SystemIntegrations } from './SystemIntegrations'
+import { EmailTemplates } from './EmailTemplates'
 
 export function SystemSettings() {
   const [settings, setSettings] = useState<SystemSettingsType>({
@@ -69,6 +70,7 @@ export function SystemSettings() {
     maxLoginAttempts: 5,
     passwordMinLength: 8,
     requireTwoFactor: false,
+    enableLoginAlert: false,
 
     // UI Protection
     disableRightClick: false,
@@ -112,6 +114,7 @@ export function SystemSettings() {
           disableRightClick: data.disableRightClick !== undefined ? data.disableRightClick : prev.disableRightClick,
           secureLoginPage: data.secureLoginPage !== undefined ? data.secureLoginPage : prev.secureLoginPage,
           enableThemeConfig: data.enableThemeConfig !== undefined ? data.enableThemeConfig === 'true' || data.enableThemeConfig === true : prev.enableThemeConfig,
+          enableLoginAlert: data.enableLoginAlert !== undefined ? data.enableLoginAlert === 'true' || data.enableLoginAlert === true : prev.enableLoginAlert,
         }))
       }
     } catch (error) {
@@ -143,6 +146,8 @@ export function SystemSettings() {
             orgWebsite: settings.orgWebsite,
             enableThemeConfig: settings.enableThemeConfig,
             disableRightClick: settings.disableRightClick,
+            requireTwoFactor: settings.requireTwoFactor,
+            enableLoginAlert: settings.enableLoginAlert,
           }
         }),
       })
@@ -323,6 +328,13 @@ export function SystemSettings() {
               General
             </TabsTrigger>
             <TabsTrigger
+              value="appearance"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              <Palette className="h-4 w-4" />
+              Appearance
+            </TabsTrigger>
+            <TabsTrigger
               value="database"
               className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-0 pb-3 data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
@@ -385,139 +397,6 @@ export function SystemSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="siteName">Site Name</Label>
-                    <Input
-                      id="siteName"
-                      value={settings.siteName}
-                      onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                      placeholder="My Application"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="siteUrl">Site URL</Label>
-                    <Input
-                      id="siteUrl"
-                      value={settings.siteUrl}
-                      onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
-                      placeholder="https://myapp.com"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="faviconUpload">Favicon</Label>
-                  <div className="flex items-start gap-4 mt-2">
-                    <div className="h-16 w-16 flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
-                      {settings.faviconUrl ? (
-                        <>
-                          <img
-                            src={settings.faviconUrl}
-                            alt="Favicon"
-                            className="max-h-full max-w-full object-contain p-2"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => document.getElementById('faviconUpload')?.click()}
-                            >
-                              <RefreshCw className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          className="h-full w-full flex flex-col gap-1 text-muted-foreground p-0"
-                          onClick={() => document.getElementById('faviconUpload')?.click()}
-                        >
-                          <Globe className="h-6 w-6 opacity-20" />
-                          <span className="text-[10px]">Upload</span>
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <p className="text-xs text-muted-foreground">
-                        Upload a favicon image (.ico, .png, .svg). Max 1MB. Recommended size: 32x32px.
-                      </p>
-                      <Input
-                        id="faviconUpload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFaviconUpload}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="logoUpload">Application Logo</Label>
-                  <div className="flex items-start gap-4 mt-2">
-                    <div className="h-24 w-48 flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
-                      {settings.logoUrl ? (
-                        <>
-                          <img
-                            src={settings.logoUrl}
-                            alt="App Logo"
-                            className="max-h-full max-w-full object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => document.getElementById('logoUpload')?.click()}
-                            >
-                              Change
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          className="h-full w-full flex flex-col gap-2 text-muted-foreground"
-                          onClick={() => document.getElementById('logoUpload')?.click()}
-                        >
-                          <Globe className="h-8 w-8 opacity-20" />
-                          <span className="text-xs">Upload Logo</span>
-                        </Button>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-xs text-muted-foreground">
-                        Upload a logo (max 2MB). Recommended size: 200x50px or similar aspect ratio.
-                      </p>
-                      <Input
-                        id="logoUpload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoUpload}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="siteDescription">Site Description</Label>
-                  <Textarea
-                    id="siteDescription"
-                    value={settings.siteDescription}
-                    onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
-                    placeholder="Brief description of your application"
-                    rows={3}
-                  />
-                </div>
-
                 <div>
                   <Label htmlFor="supportEmail">Support Email</Label>
                   <Input
@@ -609,6 +488,156 @@ export function SystemSettings() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="appearance" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="h-5 w-5" />
+                  Appearance & Branding
+                </CardTitle>
+                <CardDescription>
+                   Customize your application's look and feel
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="siteName">Application Name</Label>
+                    <Input
+                      id="siteName"
+                      value={settings.siteName}
+                      onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                      placeholder="My Application"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="siteUrl">Application URL</Label>
+                    <Input
+                      id="siteUrl"
+                      value={settings.siteUrl}
+                      onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
+                      placeholder="https://myapp.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <Label htmlFor="logoUpload">Application Logo</Label>
+                      <div className="flex flex-col gap-3 mt-2">
+                        <div className="h-32 w-full flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
+                          {settings.logoUrl ? (
+                            <>
+                              <img
+                                src={settings.logoUrl}
+                                alt="App Logo"
+                                className="max-h-full max-w-full object-contain p-2"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => document.getElementById('logoUpload')?.click()}
+                                >
+                                  Change Logo
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              className="h-full w-full flex flex-col gap-2 text-muted-foreground hover:bg-transparent"
+                              onClick={() => document.getElementById('logoUpload')?.click()}
+                            >
+                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                <Globe className="h-5 w-5 opacity-40" />
+                              </div>
+                              <span className="text-xs">Upload Logo</span>
+                            </Button>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Recommended size: 200x50px. Max 2MB.
+                        </div>
+                        <Input
+                          id="logoUpload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleLogoUpload}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="faviconUpload">Favicon</Label>
+                      <div className="flex flex-col gap-3 mt-2">
+                        <div className="h-32 w-32 flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
+                          {settings.faviconUrl ? (
+                            <>
+                              <img
+                                src={settings.faviconUrl}
+                                alt="Favicon"
+                                className="h-16 w-16 object-contain"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 rounded-full"
+                                  onClick={() => document.getElementById('faviconUpload')?.click()}
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              className="h-full w-full flex flex-col gap-2 text-muted-foreground hover:bg-transparent"
+                              onClick={() => document.getElementById('faviconUpload')?.click()}
+                            >
+                               <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                <Globe className="h-5 w-5 opacity-40" />
+                              </div>
+                              <span className="text-[10px]">Upload</span>
+                            </Button>
+                          )}
+                        </div>
+                         <div className="text-xs text-muted-foreground">
+                          Recommended size: 32x32px. Max 1MB.
+                        </div>
+                        <Input
+                          id="faviconUpload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFaviconUpload}
+                        />
+                      </div>
+                    </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="siteDescription">Application Description</Label>
+                  <Textarea
+                    id="siteDescription"
+                    value={settings.siteDescription}
+                    onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
+                    placeholder="Brief description of your application"
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="database" className="space-y-6">
             <Card>
               <CardHeader>
@@ -690,82 +719,101 @@ export function SystemSettings() {
           </TabsContent>
 
           <TabsContent value="email" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
-                  Email Configuration
-                </CardTitle>
-                <CardDescription>
-                  SMTP settings for email notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="smtpHost">SMTP Host</Label>
-                    <Input
-                      id="smtpHost"
-                      value={settings.smtpHost}
-                      onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="smtpPort">Port</Label>
-                    <Input
-                      id="smtpPort"
-                      type="number"
-                      value={settings.smtpPort}
-                      onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}
-                      placeholder="587"
-                    />
-                  </div>
-                </div>
+             <Tabs defaultValue="config" className="w-full">
+               <div className="flex items-center justify-between mb-4">
+                  <TabsList>
+                    <TabsTrigger value="config">Configuration</TabsTrigger>
+                    <TabsTrigger value="templates">Templates</TabsTrigger>
+                  </TabsList>
+               </div>
+               
+               <TabsContent value="config">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Mail className="h-5 w-5" />
+                        Email Configuration
+                      </CardTitle>
+                      <CardDescription>
+                        SMTP settings for email notifications
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* SMTP settings content */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="smtpHost">SMTP Host</Label>
+                          <Input
+                            id="smtpHost"
+                            value={settings.smtpHost}
+                            onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                            placeholder="smtp.gmail.com"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="smtpPort">Port</Label>
+                          <Input
+                            id="smtpPort"
+                            type="number"
+                            value={settings.smtpPort}
+                            onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}
+                            placeholder="587"
+                          />
+                        </div>
+                      </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="smtpUser">Username</Label>
-                    <Input
-                      id="smtpUser"
-                      value={settings.smtpUser}
-                      onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
-                      placeholder="your-email@gmail.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="smtpPassword">Password</Label>
-                    <Input
-                      id="smtpPassword"
-                      type="password"
-                      value={settings.smtpPassword}
-                      onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
-                      placeholder="App password"
-                    />
-                  </div>
-                </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="smtpUser">Username</Label>
+                          <Input
+                            id="smtpUser"
+                            value={settings.smtpUser}
+                            onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                            placeholder="your-email@gmail.com"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="smtpPassword">Password</Label>
+                          <Input
+                            id="smtpPassword"
+                            type="password"
+                            value={settings.smtpPassword}
+                            onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
+                            placeholder="App password"
+                          />
+                        </div>
+                      </div>
 
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="smtpSecure"
-                    checked={settings.smtpSecure}
-                    onCheckedChange={(checked) => setSettings({ ...settings, smtpSecure: checked })}
-                  />
-                  <Label htmlFor="smtpSecure">Use SSL/TLS</Label>
-                </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="smtpSecure"
+                          checked={settings.smtpSecure}
+                          onCheckedChange={(checked) => setSettings({ ...settings, smtpSecure: checked })}
+                        />
+                        <Label htmlFor="smtpSecure">Use SSL/TLS</Label>
+                      </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => testConnection('email')}
-                    disabled={testResults.email === 'pending'}
-                  >
-                    {getTestIcon('email')}
-                    <span className="ml-2">Test Email</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => testConnection('email')}
+                          disabled={testResults.email === 'pending'}
+                        >
+                          {getTestIcon('email')}
+                          <span className="ml-2">Test Email</span>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+               </TabsContent>
+               <TabsContent value="templates">
+                  <Card>
+                     <CardContent className="p-6">
+                        <EmailTemplates />
+                     </CardContent>
+                  </Card>
+               </TabsContent>
+             </Tabs>
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
@@ -821,6 +869,15 @@ export function SystemSettings() {
                     onCheckedChange={(checked) => setSettings({ ...settings, requireTwoFactor: checked })}
                   />
                   <Label htmlFor="requireTwoFactor">Require Two-Factor Authentication</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="enableLoginAlert"
+                    checked={settings.enableLoginAlert}
+                    onCheckedChange={(checked) => setSettings({ ...settings, enableLoginAlert: checked })}
+                  />
+                  <Label htmlFor="enableLoginAlert">Enable Login Email Alerts</Label>
                 </div>
 
                 <div className="pt-4 border-t">

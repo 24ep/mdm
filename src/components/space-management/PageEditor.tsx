@@ -14,8 +14,10 @@ import { DataModelExplorer } from '@/components/studio/layout-config/DataModelEx
 import { ComponentConfig, UnifiedPage } from '@/components/studio/layout-config/types'
 import { useUndoRedo } from '@/hooks/useUndoRedo'
 import { Button } from '@/components/ui/button'
-import { Box } from 'lucide-react'
+import { Box, X } from 'lucide-react'
 import { Z_INDEX } from '@/lib/z-index'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { WidgetSelectionContent } from '@/components/studio/layout-config/WidgetSelectionDrawer'
 
 interface PageEditorProps {
   spaceSlug: string
@@ -65,7 +67,7 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
   const [clipboardWidget, setClipboardWidget] = useState<PlacedWidget | null>(null)
   const [clipboardWidgets, setClipboardWidgets] = useState<PlacedWidget[]>([])
   const [versionsDialogOpen, setVersionsDialogOpen] = useState(false)
-  const [widgetDrawerOpen, setWidgetDrawerOpen] = useState(false)
+  const [widgetPopoverOpen, setWidgetPopoverOpen] = useState(false)
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
   const [expandedComponent, setExpandedComponent] = useState<string | null>(null)
   const [canvasMode, setCanvasMode] = useState<'freeform' | 'grid'>('freeform')
@@ -437,7 +439,7 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
       {/* Main Content */}
       <div className="flex-1 flex border overflow-hidden min-h-0 relative">
         {/* Canvas/Preview area */}
-        <div className={`${showDataModelPanel ? 'w-[60%]' : 'w-[80%]'} overflow-hidden h-full flex flex-col min-h-0 border-r relative`}>
+        <div className={`flex-1 overflow-hidden h-full flex flex-col min-h-0 border-r relative`}>
           <Preview
             isMobileViewport={isMobileViewport}
             deviceMode={deviceMode}
@@ -469,33 +471,46 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
         </div>
 
         {/* Settings Panel */}
-        {!isMobileViewport && (
-          <div className="w-[20%] border-r overflow-auto min-h-0">
-            <SettingsPanelContent
-              spaceId={spaceId}
-              isMobileViewport={isMobileViewport}
-              allPages={allPages}
-              pages={pages}
-              selectedPageId={selectedPageId}
-              selectedWidgetId={selectedWidgetId}
-              selectedComponent={selectedComponent}
-              placedWidgets={placedWidgets}
-              componentConfigs={componentConfigs}
-              expandedComponent={expandedComponent}
-              setPages={setPages}
-              setSelectedComponent={setSelectedComponent}
-              setSelectedPageId={setSelectedPageId}
-              setPlacedWidgets={setPlacedWidgets}
-              setSelectedWidgetId={setSelectedWidgetId}
-              setExpandedComponent={setExpandedComponent}
-              setSelectedPageForPermissions={() => {}}
-              setPermissionsRoles={() => {}}
-              setPermissionsUserIds={() => {}}
-              setPermissionsDialogOpen={() => {}}
-              handlePageReorder={async () => {}}
-              handleComponentConfigUpdate={handleComponentConfigUpdate}
-              setAllPages={setAllPages}
-            />
+        {/* Floating Settings Panel - Only show when a widget is selected */}
+        {!isMobileViewport && selectedWidgetId && (
+          <div 
+            className="absolute right-4 top-4 w-80 max-h-[calc(100vh-100px)] overflow-auto bg-popover/50 border shadow-lg rounded-lg z-20 flex flex-col backdrop-blur-xl"
+            style={{ zIndex: Z_INDEX.configurationPanel }}
+          >
+            <div className="p-2 border-b flex justify-between items-center bg-muted/60">
+              <span className="text-xs font-semibold px-2">Configuration</span>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedWidgetId(null)}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="overflow-auto max-h-[600px]">
+              <SettingsPanelContent
+                spaceId={spaceId}
+                isMobileViewport={isMobileViewport}
+                allPages={allPages}
+                pages={pages}
+                selectedPageId={selectedPageId}
+                selectedWidgetId={selectedWidgetId}
+                selectedComponent={selectedComponent}
+                placedWidgets={placedWidgets}
+                componentConfigs={componentConfigs}
+                expandedComponent={expandedComponent}
+                setPages={setPages}
+                setSelectedComponent={setSelectedComponent}
+                setSelectedPageId={setSelectedPageId}
+                setPlacedWidgets={setPlacedWidgets}
+                setSelectedWidgetId={setSelectedWidgetId}
+                setExpandedComponent={setExpandedComponent}
+                setSelectedPageForPermissions={() => {}}
+                setPermissionsRoles={() => {}}
+                setPermissionsUserIds={() => {}}
+                setPermissionsGroupIds={() => {}}
+                setPermissionsDialogOpen={() => {}}
+                handlePageReorder={async () => {}}
+                handleComponentConfigUpdate={handleComponentConfigUpdate}
+                setAllPages={setAllPages}
+              />
+            </div>
           </div>
         )}
 
@@ -524,33 +539,31 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
 
         {/* Floating Action Button - Widget - Only show when editMode is enabled */}
         {!!editMode && (
-        <div 
-          className="fixed right-6 bottom-6 flex flex-col items-end gap-2"
-          style={{ zIndex: Z_INDEX.overlay - 100 }}
-        >
-          <Button
-            size="lg"
-            className="h-auto px-4 py-3 shadow-lg hover:shadow-xl transition-shadow flex items-center gap-2 text-sm font-medium overflow-hidden !rounded-full"
-            style={{ borderRadius: '9999px' }}
-            aria-label="Widget"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              setWidgetDrawerOpen(true)
-            }}
+          <div 
+            className="absolute left-6 bottom-6 flex flex-col items-start gap-2"
+            style={{ zIndex: Z_INDEX.overlay - 100 }}
           >
-            <Box className="h-5 w-5" />
-            Widget
-          </Button>
-        </div>
+            <Popover open={widgetPopoverOpen} onOpenChange={setWidgetPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="lg"
+                  className="h-auto px-4 py-3 shadow-lg hover:shadow-xl transition-shadow flex items-center gap-2 text-sm font-medium overflow-hidden !rounded-full"
+                  style={{ borderRadius: '9999px' }}
+                  aria-label="Widget"
+                >
+                  <Box className="h-5 w-5" />
+                  Widget
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[380px] p-0 h-[500px] bg-popover" align="start">
+                <WidgetSelectionContent onClose={() => setWidgetPopoverOpen(false)} />
+              </PopoverContent>
+            </Popover>
+          </div>
         )}
       </div>
 
-      {/* Widget Selection Drawer */}
-      <WidgetSelectionDrawer
-        open={widgetDrawerOpen}
-        onOpenChange={setWidgetDrawerOpen}
-      />
+      {/* Widget Selection Drawer Removed - replaced by Popover */}
 
       {/* Version Control Dialog */}
       <LayoutVersionControlDialog

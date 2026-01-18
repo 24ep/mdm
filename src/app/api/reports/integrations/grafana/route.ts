@@ -14,7 +14,7 @@ async function getHandler(request: NextRequest) {
   const sql = `
     SELECT * FROM report_integrations
     WHERE source = 'grafana' 
-      AND created_by = $1 
+      AND created_by::text = $1 
       AND deleted_at IS NULL
       ${spaceId ? 'AND space_id = $2' : ''}
     ORDER BY created_at DESC
@@ -108,7 +108,7 @@ async function putHandler(request: NextRequest) {
   const sql = `
     UPDATE report_integrations
     SET name = $1, access_type = $2, config = $3, is_active = $4, updated_at = NOW()
-    WHERE id = $5 AND created_by = $6
+    WHERE id::text = $5 AND created_by::text = $6
     RETURNING *
   `
 

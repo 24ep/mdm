@@ -475,7 +475,7 @@ const PopoverContent = React.forwardRef<
       )}
       style={{
         position: "fixed",
-        zIndex: Z_INDEX.popover + 100, // Increase z-index to ensure it's above other elements
+        zIndex: Z_INDEX.portalDropdown, 
         top: `${finalPosition.top}px`,
         left: `${finalPosition.left}px`,
         maxHeight: '80vh',

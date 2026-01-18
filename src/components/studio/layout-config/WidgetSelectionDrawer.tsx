@@ -16,10 +16,12 @@ interface WidgetSelectionDrawerProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function WidgetSelectionDrawer({
-  open,
-  onOpenChange,
-}: WidgetSelectionDrawerProps) {
+
+export function WidgetSelectionContent({
+  onClose,
+}: {
+  onClose?: () => void
+}) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set(['all']))
 
@@ -38,7 +40,6 @@ export function WidgetSelectionDrawer({
     setSelectedCategories(prev => {
       const newSet = new Set(prev)
       if (categoryId === 'all') {
-        // If "All" is clicked, toggle it and clear others
         if (newSet.has('all')) {
           newSet.clear()
           newSet.add('all')
@@ -47,11 +48,9 @@ export function WidgetSelectionDrawer({
           newSet.add('all')
         }
       } else {
-        // Remove "all" if selecting specific category
         newSet.delete('all')
         if (newSet.has(categoryId)) {
           newSet.delete(categoryId)
-          // If no categories selected, select "all"
           if (newSet.size === 0) {
             newSet.add('all')
           }
@@ -64,16 +63,9 @@ export function WidgetSelectionDrawer({
   }
 
   return (
-    <CentralizedDrawer
-      open={open}
-      onOpenChange={onOpenChange}
-      title="Select Widget"
-      description="Drag widgets to the canvas to add them"
-      width="w-[380px]"
-    >
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex flex-col h-full bg-transparent">
         {/* Search Bar */}
-        <div className="p-4 border-b flex-shrink-0 bg-background">
+        <div className="p-4 border-b flex-shrink-0 bg-transparent">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
             <Input
@@ -87,8 +79,8 @@ export function WidgetSelectionDrawer({
         </div>
 
         {/* Widgets List with category badges */}
-        <div className="flex-1 overflow-hidden flex flex-col bg-background">
-          <div className="px-4 pt-3 pb-2 bg-background">
+        <div className="flex-1 overflow-hidden flex flex-col bg-transparent">
+          <div className="px-4 pt-3 pb-2 bg-transparent">
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => {
                 const Icon = category.icon
@@ -112,12 +104,28 @@ export function WidgetSelectionDrawer({
           <div className="flex-1 overflow-hidden">
             <WidgetsTab
               searchQuery={searchQuery}
-              onClose={() => onOpenChange(false)}
+              onClose={onClose || (() => {})}
               selectedCategories={Array.from(selectedCategories)}
             />
           </div>
         </div>
       </div>
+  )
+}
+
+export function WidgetSelectionDrawer({
+  open,
+  onOpenChange,
+}: WidgetSelectionDrawerProps) {
+  return (
+    <CentralizedDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Select Widget"
+      description="Drag widgets to the canvas to add them"
+      width="w-[380px]"
+    >
+      <WidgetSelectionContent onClose={() => onOpenChange(false)} />
     </CentralizedDrawer>
   )
 }

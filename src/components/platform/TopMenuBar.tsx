@@ -17,6 +17,7 @@ import { NotificationList } from '@/components/notifications/notification-list'
 import { formatDistanceToNow } from 'date-fns'
 import type { Notification } from '@/types/notifications'
 import { ProfileSettingsModal } from '@/components/settings/ProfileSettingsModal'
+import { useSystemSettingsSafe } from '@/contexts/system-settings-context'
 
 interface TopMenuBarProps {
   activeTab: string
@@ -82,6 +83,8 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   const [profileModalOpen, setProfileModalOpen] = useState(false)
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false)
   const { notifications, unreadCount, isLoading, markAsRead } = useNotifications()
+  const { settings } = useSystemSettingsSafe()
+  const enableThemeConfig = settings.enableThemeConfig !== false
 
   useEffect(() => {
     // Load branding config
@@ -150,8 +153,8 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
       data-component="top-menu-bar"
       style={{
         zIndex: Z_INDEX.navigation,
-        backgroundColor: 'var(--brand-top-menu-bg, hsl(var(--background)))',
-        color: 'var(--brand-top-menu-text, hsl(var(--foreground)))'
+        backgroundColor: !enableThemeConfig ? '#FFFFFF' : 'var(--brand-top-menu-bg, hsl(var(--background)))',
+        color: !enableThemeConfig ? '#111827' : 'var(--brand-top-menu-text, hsl(var(--foreground)))'
       }}
     >
       {/* Left Section: Logo, Application Name, and Selected Feature */}

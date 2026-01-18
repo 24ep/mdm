@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Fragment, useMemo, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { PlatformSidebar } from './PlatformSidebar'
 import { TopMenuBar } from './TopMenuBar'
 import { Z_INDEX } from '@/lib/z-index'
@@ -440,7 +441,7 @@ export function PlatformLayout({
         <div className="flex flex-shrink-0">
           {/* Primary Sidebar - Groups */}
           <div
-            className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-52'} flex-shrink-0`}
+            className={`transition-all duration-150 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-52'} flex-shrink-0 border-r border-border`}
             data-sidebar="primary"
             style={{
               position: 'relative',
@@ -505,20 +506,7 @@ export function PlatformLayout({
                   />
                 </div>
               )}
-              {secondarySidebarCollapsed && (
-                <div className="h-full flex items-center justify-center border-r border-border">
-                  <button
-                    onClick={handleToggleSecondaryCollapse}
-                    className="p-2 hover:bg-muted rounded"
-                    title="Expand secondary sidebar"
-                    aria-label="Expand secondary sidebar"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+
             </div>
           ) : showSpaceSettingsSidebar ? (
             <div
@@ -527,25 +515,13 @@ export function PlatformLayout({
               style={{
                 position: 'relative',
                 zIndex: Z_INDEX.sidebar,
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
+                backgroundColor: 'var(--brand-secondary-sidebar-bg)'
               }}
             >
               {!secondarySidebarCollapsed && spaceSettingsTab && onSpaceSettingsTabChange && (
                 <div className="w-full h-full flex flex-col">
-                  {/* Collapse button for space settings sidebar */}
-                  <div className="border-b border-border">
-                    <button
-                      onClick={handleToggleSecondaryCollapse}
-                      className="w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted flex items-center justify-start"
-                      title="Collapse secondary sidebar"
-                      aria-label="Collapse secondary sidebar"
-                    >
-                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      <span>Collapse</span>
-                    </button>
-                  </div>
+
                   <div className="flex-1 overflow-hidden">
                     <SpaceSettingsSidebar
                       activeTab={spaceSettingsTab || 'details'}
@@ -558,20 +534,7 @@ export function PlatformLayout({
                   </div>
                 </div>
               )}
-              {secondarySidebarCollapsed && (
-                <div className="h-full flex items-center justify-center border-r border-border">
-                  <button
-                    onClick={handleToggleSecondaryCollapse}
-                    className="p-2 hover:bg-muted rounded"
-                    title="Expand secondary sidebar"
-                    aria-label="Expand secondary sidebar"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+
             </div>
           ) : displayGroup && displayGroup !== '' && (
             <div
@@ -580,7 +543,8 @@ export function PlatformLayout({
               style={{
                 position: 'relative',
                 zIndex: Z_INDEX.sidebar,
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
+                backgroundColor: 'var(--brand-secondary-sidebar-bg)'
               }}
               onMouseEnter={() => {
                 // Keep secondary sidebar visible when hovering over it
@@ -619,20 +583,7 @@ export function PlatformLayout({
                   onAddVm={handleAddVm}
                 />
               )}
-              {secondarySidebarCollapsed && (
-                <div className="h-full flex items-center justify-center border-r border-border">
-                  <button
-                    onClick={handleToggleSecondaryCollapse}
-                    className="p-2 hover:bg-muted rounded"
-                    title="Expand secondary sidebar"
-                    aria-label="Expand secondary sidebar"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+
             </div>
           )}
         </div>

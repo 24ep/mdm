@@ -78,12 +78,15 @@ async function getHandler(request: NextRequest) {
              f.name as folder_name
       FROM public.reports r
       LEFT JOIN report_spaces rs ON rs.report_id = r.id
-      LEFT JOIN report_permissions rp ON rp.report_id = r.id AND rp.user_id::text = $1
+      LEFT JOIN report_permissions rp ON rp.report_id = r.id AND (
+        rp.user_id::text = $1 
+        -- OR rp.group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $1)
+      )
       LEFT JOIN report_categories c ON c.id = r.category_id
       LEFT JOIN report_folders f ON f.id = r.folder_id
       WHERE (
         r.created_by::text = $1 OR
-        rp.user_id::text = $1 OR
+        rp.id IS NOT NULL OR
         (rs.space_id IN (
           SELECT sm.space_id FROM space_members sm WHERE sm.user_id::text = $1
         )) OR

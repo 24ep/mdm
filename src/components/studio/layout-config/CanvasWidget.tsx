@@ -2,6 +2,7 @@
 
 import React, { RefObject, useState } from 'react'
 import { Square, Lock, MoreVertical } from 'lucide-react'
+import { StarIcon, HomeIcon, Cog6ToothIcon, UserIcon, BellIcon } from '@heroicons/react/24/outline'
 import { widgetsPalette, PlacedWidget } from './widgets'
 import { WidgetRenderer } from './WidgetRenderer'
 import { ResizeHandles } from './ResizeHandles'
@@ -360,7 +361,7 @@ export function CanvasWidget({
           </div>
         </>
       ) : (
-        <div className={`w-full h-full ${isSelected ? 'border-2 border-blue-500 ring-2 ring-blue-500/20' : ''} rounded-lg shadow-lg overflow-hidden flex flex-col relative`} style={{
+        <div className={`w-full h-full bg-card ${isSelected ? 'border-2 border-blue-500 ring-2 ring-blue-500/20' : ''} rounded-lg shadow-lg overflow-hidden flex flex-col relative`} style={{
           backgroundColor: widget.properties?.backgroundColor || undefined,
         }}>
           {/* Selected border indicator - square on top of border */}
@@ -379,11 +380,11 @@ export function CanvasWidget({
                   const color = String(widget.properties?.textIconColor || '#111827')
                   const iconName = String(widget.properties?.textIcon || 'star')
                   const map: Record<string, React.ReactNode> = {
-                    star: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 .587l3.668 7.431L24 9.748l-6 5.847L19.335 24 12 19.897 4.665 24 6 15.595 0 9.748l8.332-1.73z"/></svg>,
-                    home: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 3l10 9h-3v9h-6v-6H11v6H5v-9H2z"/></svg>,
-                    settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M19.14,12.94a7.14,7.14,0,1,1-7.14-7.14A7.14,7.14,0,0,1,19.14,12.94Z"/></svg>,
-                    user: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-5 0-9 2.5-9 5v3h18v-3C21 16.5 17 14 12 14z"/></svg>,
-                    bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }}><path d="M12 24a2.4 2.4 0 0 0 2.4-2.4H9.6A2.4 2.4 0 0 0 12 24zm6-6v-5.4a6 6 0 1 0-12 0V18L4 19.2V20.4H20V19.2z"/></svg>,
+                    star: <StarIcon style={{ width: size, height: size, color, strokeWidth: 2 }} />,
+                    home: <HomeIcon style={{ width: size, height: size, color, strokeWidth: 2 }} />,
+                    settings: <Cog6ToothIcon style={{ width: size, height: size, color, strokeWidth: 2 }} />,
+                    user: <UserIcon style={{ width: size, height: size, color, strokeWidth: 2 }} />,
+                    bell: <BellIcon style={{ width: size, height: size, color, strokeWidth: 2 }} />,
                   }
                   return <div className="mr-2 flex items-center" aria-hidden>{map[iconName] || map.star}</div>
                 })()}

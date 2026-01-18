@@ -4,7 +4,7 @@
  * Or via npm script: npm run seed:themes
  */
 
-import { db } from '../lib/db'
+import { db as prisma } from '../lib/db'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -52,18 +52,7 @@ async function seedThemes() {
         })
 
         if (existingTheme) {
-            console.log(`Theme "${themeConfig.name}" already exists, updating...`)
-            await prisma.theme.update({
-                where: { id: existingTheme.id },
-                data: {
-                    description: themeConfig.description,
-                    themeMode: themeConfig.themeMode,
-                    tags: themeConfig.tags,
-                    config: themeConfig.config,
-                    updatedAt: new Date()
-                }
-            })
-            console.log(`Updated theme: ${themeConfig.name}`)
+            console.log(`Theme "${themeConfig.name}" already exists. Skipping to prevent overwrite.`)
         } else {
             console.log(`Creating new theme: ${themeConfig.name}`)
             await prisma.theme.create({
@@ -101,4 +90,5 @@ seedThemes()
     })
     .finally(async () => {
         await prisma.$disconnect()
+        process.exit(0)
     })

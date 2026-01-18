@@ -20,6 +20,7 @@ interface PageMenuProps {
   setSelectedPageForPermissions: React.Dispatch<React.SetStateAction<SpacesEditorPage | null>>
   setPermissionsRoles: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsUserIds: React.Dispatch<React.SetStateAction<string[]>>
+  setPermissionsGroupIds: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
   setComponentSettingsOpen: React.Dispatch<React.SetStateAction<boolean>>
   setColorPickerOpen: React.Dispatch<React.SetStateAction<string | null>>
@@ -37,6 +38,7 @@ export function PageMenu({
   setSelectedPageForPermissions,
   setPermissionsRoles,
   setPermissionsUserIds,
+  setPermissionsGroupIds,
   setPermissionsDialogOpen,
   setComponentSettingsOpen,
   setColorPickerOpen,
@@ -127,6 +129,7 @@ export function PageMenu({
             setSelectedPageForPermissions(customPage)
             setPermissionsRoles(customPage.permissions?.roles || [])
             setPermissionsUserIds(customPage.permissions?.userIds || [])
+            setPermissionsGroupIds(customPage.permissions?.groupIds || [])
             setPermissionsDialogOpen(true)
           }}
           className="cursor-pointer"

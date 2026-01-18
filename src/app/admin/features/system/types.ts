@@ -39,6 +39,7 @@ export interface SystemSettings {
   maxLoginAttempts: number
   passwordMinLength: number
   requireTwoFactor: boolean
+  enableLoginAlert: boolean
 
   // UI Protection
   disableRightClick: boolean
@@ -330,6 +331,7 @@ export interface TemplateItem {
 
 export interface NotificationTemplate {
   id: string
+  key: string
   name: string
   type: 'email' | 'push' | 'sms' | 'webhook'
   subject?: string

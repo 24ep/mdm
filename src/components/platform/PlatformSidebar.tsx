@@ -1,4 +1,5 @@
 'use client'
+// force refresh
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -6,47 +7,42 @@ import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Shield,
-  Database,
-  BarChart3,
-  Settings,
-  Users,
-  FileText,
-  Cloud,
-  Table,
-  Database as DatabaseIcon,
-  Code,
-  Server,
-  Key,
-  Monitor,
-  Paperclip,
-  Bell,
-  Palette,
-  Activity,
-  Heart,
-  FileText as FileTextIcon,
-  Zap,
-  HardDrive,
-  Building,
-  Building2,
-  ChevronDown,
-  ChevronRight,
-  Bot,
-  Layout,
-  FolderKanban,
-  FlaskConical,
-  BookOpen,
-  GitBranch,
-  CheckCircle2,
-  FileCode,
-  ShieldCheck,
-  History,
-  Kanban,
-  Store,
-  Network,
-  ChevronLeft,
-  MessageCircle
-} from 'lucide-react'
+  ShieldCheckIcon,
+  CircleStackIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  UsersIcon,
+  DocumentTextIcon,
+  CloudIcon,
+  TableCellsIcon,
+  CodeBracketIcon,
+  ServerIcon,
+  KeyIcon,
+  ComputerDesktopIcon,
+  PaperClipIcon,
+  BellIcon,
+  SwatchIcon,
+  HeartIcon,
+  BoltIcon,
+  BuildingOfficeIcon,
+  BuildingOffice2Icon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
+  ChevronDownIcon,
+  CpuChipIcon,
+  WindowIcon,
+  FolderIcon,
+  BeakerIcon,
+  BookOpenIcon,
+  CommandLineIcon,
+  CheckCircleIcon,
+  DocumentIcon,
+  ClockIcon,
+  ViewColumnsIcon,
+  BuildingStorefrontIcon,
+  ShareIcon,
+  ChatBubbleLeftIcon
+} from '@heroicons/react/24/outline'
 import { cn } from '@/lib/utils'
 import { Z_INDEX } from '@/lib/z-index'
 import { APP_VERSION } from '@/lib/version'
@@ -55,13 +51,52 @@ import { InfrastructureInstance } from '@/features/infrastructure/types'
 import { useMarketplacePlugins } from '@/features/marketplace/hooks/useMarketplacePlugins'
 import { useMenuConfig } from '@/hooks/useMenuConfig'
 import { useUserPermissions } from '@/hooks/use-permission'
+import { useSystemSettingsSafe } from '@/contexts/system-settings-context'
 
 // Map of icon names to components for dynamic rendering
 const ICON_MAP: Record<string, any> = {
-  Monitor, Users, Building, Building2, Code, FileText, MessageCircle, Settings, Shield, Activity, Cloud, Key, FileTextIcon, DatabaseIcon, GitBranch, CheckCircle2, FileCode, ShieldCheck, Zap, HardDrive, BarChart3, Kanban, Network, History, Palette, FlaskConical, Bot, Store, FolderKanban, Layout, BookOpen
+  Monitor: ComputerDesktopIcon,
+  Users: UsersIcon,
+  Building: BuildingOfficeIcon,
+  Building2: BuildingOffice2Icon,
+  Code: CodeBracketIcon,
+  FileText: DocumentTextIcon,
+  MessageCircle: ChatBubbleLeftIcon,
+  Settings: Cog6ToothIcon,
+  Shield: ShieldCheckIcon,
+  Activity: ChartBarIcon,
+  Cloud: CloudIcon,
+  Key: KeyIcon,
+  FileTextIcon: DocumentTextIcon,
+  DatabaseIcon: CircleStackIcon,
+  Database: CircleStackIcon,
+  GitBranch: CommandLineIcon,
+  CheckCircle2: CheckCircleIcon,
+  FileCode: DocumentIcon,
+  ShieldCheck: ShieldCheckIcon,
+  Zap: BoltIcon,
+  HardDrive: ServerIcon,
+  BarChart3: ChartBarIcon,
+  Kanban: ViewColumnsIcon,
+  Network: ShareIcon,
+  History: ClockIcon,
+  Palette: SwatchIcon,
+  FlaskConical: BeakerIcon,
+  Bot: CpuChipIcon,
+  Store: BuildingStorefrontIcon,
+  FolderKanban: FolderIcon,
+  Layout: WindowIcon,
+  BookOpen: BookOpenIcon,
+  Table: TableCellsIcon,
+  Server: ServerIcon,
+  Paperclip: PaperClipIcon,
+  Bell: BellIcon,
+  Heart: HeartIcon,
+  ChevronDown: ChevronDownIcon,
+  ChevronRight: ChevronRightIcon
 }
 
-const getIcon = (name: string) => ICON_MAP[name] || FileText
+const getIcon = (name: string) => ICON_MAP[name] || DocumentTextIcon
 
 
 
@@ -130,6 +165,8 @@ export function PlatformSidebar({
   // Inside component function
   const { data: session } = useSession()
   const { permissions: userPermissions } = useUserPermissions()
+  const { settings } = useSystemSettingsSafe()
+  const enableThemeConfig = settings.enableThemeConfig !== false
 
   // Build groupedTabs from database menu config, with plugin injection and role filtering
   const groupedTabs = useMemo(() => {
@@ -237,11 +274,11 @@ export function PlatformSidebar({
     }
     // Fallback
     return {
-      overview: { name: 'Homepage', icon: Monitor },
-      tools: { name: 'Tools', icon: FlaskConical },
-      infrastructure: { name: 'Infrastructure', icon: Network },
-      system: { name: 'System', icon: Settings },
-      'data-management': { name: 'Data Management', icon: FolderKanban }
+      overview: { name: 'Homepage', icon: ComputerDesktopIcon },
+      tools: { name: 'Tools', icon: BeakerIcon },
+      infrastructure: { name: 'Infrastructure', icon: ShareIcon },
+      system: { name: 'System', icon: Cog6ToothIcon },
+      'data-management': { name: 'Data Management', icon: FolderIcon }
     }
   }, [menuConfig])
 
@@ -320,13 +357,17 @@ export function PlatformSidebar({
 
 
 
-  const sidebarBg = mode === 'primary'
-    ? 'var(--brand-platform-sidebar-bg, hsl(var(--background)))'
-    : 'var(--brand-secondary-sidebar-bg, hsl(var(--muted)))'
+  const sidebarBg = !enableThemeConfig 
+    ? (mode === 'primary' ? '#FFFFFF' : 'hsl(var(--muted))')
+    : (mode === 'primary'
+        ? 'var(--brand-platform-sidebar-bg, hsl(var(--background)))'
+        : 'var(--brand-secondary-sidebar-bg, hsl(var(--muted)))')
 
-  const sidebarText = mode === 'primary'
-    ? 'var(--brand-platform-sidebar-text, hsl(var(--foreground)))'
-    : 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))'
+  const sidebarText = !enableThemeConfig
+    ? (mode === 'primary' ? '#111827' : 'hsl(var(--muted-foreground))')
+    : (mode === 'primary'
+        ? 'var(--brand-platform-sidebar-text, hsl(var(--foreground)))'
+        : 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))')
 
   return (
     <div
@@ -396,7 +437,7 @@ export function PlatformSidebar({
                           zIndex: Z_INDEX.sidebar + 1
                         }}
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-5 w-5 stroke-2" />
                       </Button>
                     </div>
                   )
@@ -445,10 +486,10 @@ export function PlatformSidebar({
                           zIndex: Z_INDEX.sidebar + 1
                         }}
                       >
-                        <Icon className="h-4 w-4 mr-3" />
+                        <Icon className="h-4 w-4 mr-3 stroke-2" />
                         <span className="flex-1 text-left">{group.name}</span>
                         {!isDataManagement && !isInfrastructure && (
-                          <ChevronRight className="h-4 w-4 ml-2 text-muted-foreground" />
+                          <ChevronRightIcon className="h-4 w-4 ml-2 text-muted-foreground" />
                         )}
                       </Button>
                     </div>
@@ -466,17 +507,18 @@ export function PlatformSidebar({
                   <div className="border-b border-border">
                     <Button
                       variant="ghost"
-                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none text-muted-foreground !hover:bg-muted cursor-pointer"
+                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none !hover:bg-muted cursor-pointer"
                       onClick={onToggleCollapse}
                       style={{
                         pointerEvents: 'auto',
                         position: 'relative',
-                        zIndex: 101
+                        zIndex: 101,
+                        color: 'inherit'
                       }}
                       title="Collapse secondary sidebar"
                       aria-label="Collapse secondary sidebar"
                     >
-                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      <ChevronLeftIcon className="h-4 w-4 mr-2 stroke-2" />
                       <span>Collapse</span>
                     </Button>
                   </div>
@@ -500,17 +542,18 @@ export function PlatformSidebar({
                   <div className="border-b border-border mb-2">
                     <Button
                       variant="ghost"
-                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none text-muted-foreground !hover:bg-muted cursor-pointer"
+                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none !hover:bg-muted cursor-pointer"
                       onClick={onToggleCollapse}
                       style={{
                         pointerEvents: 'auto',
                         position: 'relative',
-                        zIndex: 101
+                        zIndex: 101,
+                        color: 'inherit'
                       }}
                       title="Collapse secondary sidebar"
                       aria-label="Collapse secondary sidebar"
                     >
-                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      <ChevronLeftIcon className="h-4 w-4 mr-2 stroke-2" />
                       <span>Collapse</span>
                     </Button>
                   </div>
@@ -519,10 +562,10 @@ export function PlatformSidebar({
                 {/* Group Header Label */}
                 {selectedGroup && groupMetadata[selectedGroup] && (
                   <div className="px-4 py-3 border-b border-border mb-2">
-                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'inherit' }}>
                       {(() => {
                         const Icon = groupMetadata[selectedGroup].icon
-                        return <Icon className="h-4 w-4" />
+                        return <Icon className="h-4 w-4 stroke-2" />
                       })()}
                       {groupMetadata[selectedGroup].name}
                     </h3>
@@ -546,7 +589,7 @@ export function PlatformSidebar({
                               key={tab.id}
                               variant="ghost"
                               className={cn(
-                                "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
+                                "platform-sidebar-menu-button w-full justify-start items-center text-sm font-medium h-9 px-4 transition-colors duration-150 cursor-pointer",
                                 activeTab === tab.id
                                   ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
                                   : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none"
@@ -603,9 +646,7 @@ export function PlatformSidebar({
                   color: 'var(--brand-platform-sidebar-text)'
                 }}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRightIcon className="h-4 w-4" />
               </Button>
               <span className="text-xs text-muted-foreground" style={{ color: 'var(--brand-platform-sidebar-text)', opacity: 0.7 }}>
                 v{APP_VERSION}
@@ -627,9 +668,7 @@ export function PlatformSidebar({
                   opacity: 0.8
                 }}
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+                <ChevronLeftIcon className="h-4 w-4" />
                 Collapse
               </Button>
               <div className="text-xs text-muted-foreground text-center" style={{ color: 'var(--brand-platform-sidebar-text)', opacity: 0.7 }}>

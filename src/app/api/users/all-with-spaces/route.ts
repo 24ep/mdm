@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build WHERE conditions
-    let whereConditions = ['u.deleted_at IS NULL']
+    let whereConditions = []
     let queryParams: any[] = []
     let paramIndex = 1
 
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM public.users u
+      FROM users u
       ${whereClause}
     `
     const { rows: countRows } = await query(countQuery, queryParams)
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
           WHERE sm.user_id = u.id AND s.deleted_at IS NULL
           ), '[]'::json
         ) as spaces
-      FROM public.users u
+      FROM users u
       LEFT JOIN spaces ds ON u.default_space_id = ds.id
       ${whereClause}
       ORDER BY u.created_at DESC

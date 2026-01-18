@@ -24,7 +24,7 @@ async function getHandler(request: NextRequest) {
   }
   
   // Test database connection and get users
-  const result = await query('SELECT id, email, name, role, is_active FROM public.users LIMIT 5')
+  const result = await query('SELECT id, email, name, role, is_active FROM users LIMIT 5')
   console.log('Database users:', result.rows);
   
   return NextResponse.json({

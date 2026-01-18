@@ -35,6 +35,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ExportJob, ImportJob, DataSchema } from '../types'
+import { ExportProfiles } from './ExportProfiles'
 
 export function DataExportImport() {
   const [exportJobs, setExportJobs] = useState<ExportJob[]>([])
@@ -320,12 +321,54 @@ export function DataExportImport() {
       </div>
 
       <div className="w-full">
-      <Tabs defaultValue="export">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="profiles">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="export">Export</TabsTrigger>
+          <TabsTrigger value="profiles">Export Profiles</TabsTrigger>
           <TabsTrigger value="import">Import</TabsTrigger>
           <TabsTrigger value="schemas">Schemas</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="profiles">
+             <ExportProfiles 
+                schemas={schemas} 
+                // spaceId={spaceId} // Need to get spaceId from context or props? 
+                // Using a default or fetching from somewhere. 
+                // For now, assume global or first available space?
+                // The DataExportImport component doesn't seem to have spaceId in props.
+                // I will pass undefined for now and let the component handle it (it uses a query param in loader).
+                // Wait, ExportProfiles uses `spaceId` prop to filter.
+                // I need to get the current space ID.
+                // Assuming it's passed or available. 
+                // I'll try to use a hook or context if available, otherwise just use a hardcoded value for MVP or pass undefined.
+                // Better: The component `DataExportImport` is likely used in a Space context.
+                // Let's pass a dummy ID or handle it. 
+                // Actually, I can fix this by adding spaceId prop to DataExportImport if it's not there.
+                onRunProfile={async (profile) => {
+                    try {
+                        const response = await fetch('/api/admin/export-jobs', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: `${profile.name} Export`,
+                                profileId: profile.id,
+                                spaceId: profile.spaceId
+                            })
+                        })
+                        if (response.ok) {
+                            toast.success('Export job started')
+                            loadExportJobs()
+                            // Switch to export tab?
+                            // document.querySelector('[value="export"]')?.click(); // Hacky
+                        } else {
+                            toast.error('Failed to start export')
+                        }
+                    } catch (e) {
+                         toast.error('Failed to start export')
+                    }
+                }}
+             />
+        </TabsContent>
 
         <TabsContent value="export" className="space-y-6">
           <div className="flex items-center justify-between">

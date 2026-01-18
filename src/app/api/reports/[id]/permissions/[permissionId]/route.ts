@@ -25,8 +25,10 @@ async function deleteHandler(
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
-    if (ownerCheck.rows[0].created_by !== session.user.id) {
-      return NextResponse.json({ error: 'Only report owner can manage permissions' }, { status: 403 })
+    // Admin or owner can manage permissions
+    const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN'
+    if (!isAdmin && ownerCheck.rows[0].created_by !== session.user.id) {
+      return NextResponse.json({ error: 'Only report owner or admin can manage permissions' }, { status: 403 })
     }
 
     const sql = `

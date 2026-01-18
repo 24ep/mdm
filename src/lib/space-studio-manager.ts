@@ -17,6 +17,7 @@ export interface SpacesEditorPage {
   permissions?: {
     roles?: string[] // e.g., ['owner', 'admin', 'member']
     userIds?: string[] // specific user IDs
+    groupIds?: string[] // specific group IDs
   }
   components?: any[] // Page components for the editor
   createdAt: string

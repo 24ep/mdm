@@ -381,7 +381,7 @@ export default function CustomersPage() {
       return (
         <button
           onClick={() => toggleColumnFilter(field)}
-          className="ml-2 p-1 hover:bg-gray-100 rounded"
+          className="ml-2 p-1 hover:bg-muted rounded"
         >
           <Filter className="h-3 w-3" />
         </button>
@@ -467,7 +467,7 @@ export default function CustomersPage() {
 
     return (
       <div className="relative">
-        <div className="absolute top-full left-0 z-10 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-2 min-w-[200px]">
+        <div className="absolute top-full left-0 z-10 bg-popover border border-border rounded-md shadow-lg p-2 min-w-[200px]">
           {value && (
             <button
               onClick={() => clearColumnFilter(field)}
@@ -1210,7 +1210,7 @@ export default function CustomersPage() {
             />
             
             {/* Drawer */}
-            <div className="fixed left-0 top-0 h-screen w-96 flex flex-col bg-white shadow-xl">
+            <div className="fixed left-0 top-0 h-screen w-96 flex flex-col bg-background shadow-xl">
               <div className="flex items-center justify-between border-b border-border p-4">
                 <h2 className="text-lg font-semibold">Filter Customers</h2>
                 <Button

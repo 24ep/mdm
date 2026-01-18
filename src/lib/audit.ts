@@ -36,7 +36,7 @@ export interface AuditLogData {
   entityId: string
   oldValue?: any
   newValue?: any
-  userId: string
+  userId?: string | null
   ipAddress?: string
   userAgent?: string
 }
@@ -109,9 +109,8 @@ export async function createAuditLog(data: AuditLogData) {
       ? data.userId
       : null
 
-    if (!userIdValue) {
-      throw new Error(`Invalid userId: must be a valid UUID, got: ${data.userId}`)
-    }
+    // Removed strict check for userId to allow null users (system actions)
+    // and fallback logic below
 
     // Always use entityIdValue (now guaranteed to be a UUID)
     // Generate UUID for id using gen_random_uuid() if available, otherwise let Prisma handle it
@@ -132,7 +131,7 @@ export async function createAuditLog(data: AuditLogData) {
         userIdValue,
         data.ipAddress || null,
         data.userAgent || null
-      ])
+      ], 30000, { suppressErrorLog: true })
     } catch (error: any) {
       // Handle Foreign Key Violation
       // Prisma P2010: Raw query failed. Code: `23503`. Message: ... violates foreign key constraint ...

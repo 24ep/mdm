@@ -31,15 +31,7 @@ async function seedThemes() {
                 })
 
                 if (existing) {
-                    console.log(`Updating theme: ${themeConfig.name}`)
-                    await prisma.theme.update({
-                        where: { id: existing.id },
-                        data: {
-                            config: themeConfig.config,
-                            isActive: true, // Ensure it's active
-                            updatedAt: new Date()
-                        }
-                    })
+                    console.log(`Theme already exists: ${themeConfig.name}. Skipping to prevent overwrite.`)
                 } else {
                     console.log(`Creating theme: ${themeConfig.name}`)
                     await prisma.theme.create({

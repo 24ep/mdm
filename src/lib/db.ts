@@ -43,7 +43,7 @@ export async function query(
   sql: string,
   params: any[] = [],
   timeout: number = 30000,
-  options: { skipTracing?: boolean } = {}
+  options: { skipTracing?: boolean; suppressErrorLog?: boolean } = {}
 ) {
   const startTime = Date.now()
   const queryPreview = sql.substring(0, 200).replace(/\s+/g, ' ').trim()
@@ -153,7 +153,7 @@ export async function query(
       error?.meta?.code === '42P01' ||
       (typeof error?.message === 'string' && error.message.includes('does not exist'))
 
-    if (!isTableMissing) {
+    if (!isTableMissing && !options.suppressErrorLog) {
       console.error('Database query error:', error)
       console.error('Query:', queryPreview)
       console.error('Params:', params)

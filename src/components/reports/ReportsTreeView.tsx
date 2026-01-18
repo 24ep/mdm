@@ -42,10 +42,13 @@ import {
   Tag,
   Star,
   StarOff,
+  UserCheck,
+  Share2,
 } from 'lucide-react'
 import { showSuccess, showError, ToastMessages } from '@/lib/toast-utils'
 import { validateRequired, validateLength } from '@/lib/validation-utils'
 import { useModal } from '@/hooks/common'
+import { ReportPermissionsDialog } from './ReportPermissionsDialog'
 import { Checkbox as UICheckbox } from '@/components/ui/checkbox'
 import type { Report, ReportCategory, ReportFolder } from '@/app/reports/page'
 
@@ -96,6 +99,7 @@ export function ReportsTreeView({
   const [parentId, setParentId] = useState<string | null>(null)
   const [deleteCategory, setDeleteCategory] = useState<ReportCategory | null>(null)
   const [deleteFolder, setDeleteFolder] = useState<ReportFolder | null>(null)
+  const [permReportId, setPermReportId] = useState<string | null>(null)
 
   const treeStructure = useMemo(() => {
     const nodeMap = new Map<string, TreeNode>()
@@ -639,6 +643,16 @@ export function ReportsTreeView({
                     )}
                   </button>
                   {getSourceIcon(report.source)}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setPermReportId(report.id)
+                    }}
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                    title="Manage Permissions"
+                  >
+                    <Share2 className="h-3 w-3 text-muted-foreground" />
+                  </button>
                   {report.link && (
                     <ExternalLink className="h-3 w-3 text-muted-foreground" />
                   )}
@@ -871,7 +885,13 @@ export function ReportsTreeView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ReportPermissionsDialog
+        reportId={permReportId || ''}
+        open={!!permReportId}
+        onOpenChange={(open) => !open && setPermReportId(null)}
+        onSuccess={onRefresh}
+      />
     </>
   )
 }
-

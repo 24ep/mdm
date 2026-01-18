@@ -27,20 +27,13 @@ import {
   Plus,
   Search,
   Filter,
-  Edit,
   Trash2,
   Key,
   Shield,
-  Mail,
-  Calendar,
   CheckCircle,
   XCircle,
-  AlertCircle,
   MoreHorizontal,
-  UserPlus,
-  UserMinus,
   Settings,
-  Globe,
   Folder,
   Download,
   Upload,
@@ -49,10 +42,21 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  FolderTree,
+  Smartphone,
+  Cloud,
+  Edit,
+  UserPlus,
+  UserMinus,
+  Globe,
+  Mail,
+  Calendar,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { User } from '../types'
+import { User, UserGroup } from '../types'
 import { cn } from '@/lib/utils'
 
 interface Space {
@@ -64,6 +68,7 @@ interface Space {
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [spaces, setSpaces] = useState<Space[]>([])
+  const [groups, setGroups] = useState<UserGroup[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -92,7 +97,8 @@ export function UserManagement() {
     isActive: true,
     defaultSpaceId: '',
     spaces: [] as Array<{ spaceId: string; role: string }>,
-    allowedLoginMethods: [] as string[]
+    allowedLoginMethods: [] as string[],
+    groupIds: [] as string[]
   })
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -102,7 +108,8 @@ export function UserManagement() {
     isActive: true,
     defaultSpaceId: '',
     spaces: [] as Array<{ spaceId: string; role: string }>,
-    allowedLoginMethods: [] as string[]
+    allowedLoginMethods: [] as string[],
+    groupIds: [] as string[]
   })
   const [creatingUser, setCreatingUser] = useState(false)
 
@@ -127,12 +134,95 @@ export function UserManagement() {
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState<{ success: any[]; failed: any[] } | null>(null)
+  
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  const handleSyncAd = async () => {
+    setIsSyncing(true)
+    try {
+      const res = await fetch('/api/admin/users/sync', { method: 'POST' })
+      if (!res.ok) throw new Error('Sync failed')
+      const data = await res.json()
+      toast.success(`Synced ${data.total} users (${data.created} created, ${data.updated} updated)`)
+      loadUsers()
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to sync AD users')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  // Sync Schedule
+  const [showSyncSettingsDialog, setShowSyncSettingsDialog] = useState(false)
+  const [syncSchedule, setSyncSchedule] = useState({ enabled: false, frequency: 'daily', time: '00:00' })
+  const [savingSyncSettings, setSavingSyncSettings] = useState(false)
+
+  const loadSyncSettings = async () => {
+      try {
+          const res = await fetch('/api/admin/settings/ad-sync-schedule')
+          if (res.ok) {
+              const data = await res.json()
+              setSyncSchedule({
+                  enabled: data.enabled ?? false,
+                  frequency: data.frequency || 'daily',
+                  time: data.time || '00:00'
+              })
+          }
+      } catch (e) {
+          console.error(e)
+      }
+  }
+
+  const saveSyncSettings = async () => {
+      setSavingSyncSettings(true)
+      try {
+          const res = await fetch('/api/admin/settings/ad-sync-schedule', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(syncSchedule)
+          })
+          if (res.ok) {
+              toast.success('Sync schedule saved')
+              setShowSyncSettingsDialog(false)
+          } else {
+              toast.error('Failed to save settings')
+          }
+      } catch(e) {
+          toast.error('Error saving settings')
+      } finally {
+          setSavingSyncSettings(false)
+      }
+  }
+
+  useEffect(() => {
+    if (showSyncSettingsDialog) {
+        loadSyncSettings()
+    }
+  }, [showSyncSettingsDialog])
+
+  const [ssoConfig, setSsoConfig] = useState<{ google: boolean; azure: boolean }>({ google: false, azure: false })
+
+  useEffect(() => {
+    fetch('/api/auth/sso-providers')
+      .then(res => res.json())
+      .then(data => setSsoConfig(data))
+      .catch(err => console.error(err))
+  }, [])
+
+  const getAvailableLoginMethods = () => {
+    const methods = ['email']
+    if (ssoConfig.azure) methods.push('azure-ad')
+    if (ssoConfig.google) methods.push('google')
+    return methods
+  }
 
   const pages = useMemo(() => Math.ceil(total / limit), [total, limit])
 
   useEffect(() => {
     loadUsers()
     loadSpaces()
+    loadGroups()
   }, [page, limit, roleFilter, activeFilter, spaceFilter, search])
 
   const loadUsers = async () => {
@@ -153,12 +243,17 @@ export function UserManagement() {
         // Transform the data to match the component's interface
         const transformedUsers = data.users?.map((user: any) => ({
           ...user,
-          isActive: user.is_active,
-          lastLoginAt: user.last_login_at ? new Date(user.last_login_at) : undefined,
-          defaultSpaceId: user.default_space_id,
-          avatar: user.avatar,
-          allowedLoginMethods: user.allowed_login_methods || [],
-          createdAt: new Date(user.created_at)
+          isActive: user.isActive, // Matches API alias
+          isTwoFactorEnabled: user.isTwoFactorEnabled,
+          lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt) : undefined,
+          defaultSpaceId: user.defaultSpaceId,
+          avatar: user.avatar || undefined,
+          allowedLoginMethods: user.allowedLoginMethods || [], // API alias
+          createdAt: new Date(user.createdAt),
+          adUserId: user.adUserId,
+          jobTitle: user.jobTitle,
+          department: user.department,
+          organization: user.organization
         })) || []
         setUsers(transformedUsers)
         setTotal(data.total || 0)
@@ -191,6 +286,18 @@ export function UserManagement() {
     }
   }
 
+  const loadGroups = async () => {
+    try {
+      const response = await fetch('/api/admin/user-groups?flat=true')
+      if (response.ok) {
+        const data = await response.json()
+        setGroups(data.groups || [])
+      }
+    } catch (error) {
+      console.error('Error loading groups:', error)
+    }
+  }
+
   const openCreateDialog = () => {
     setCreateForm({
       name: '',
@@ -200,7 +307,8 @@ export function UserManagement() {
       isActive: true,
       defaultSpaceId: '',
       spaces: [],
-      allowedLoginMethods: []
+      allowedLoginMethods: [],
+      groupIds: []
     })
     setShowCreateDialog(true)
   }
@@ -214,7 +322,8 @@ export function UserManagement() {
       isActive: user.isActive,
       defaultSpaceId: user.defaultSpaceId || '',
       spaces: user.spaces || [],
-      allowedLoginMethods: user.allowedLoginMethods || []
+      allowedLoginMethods: user.allowedLoginMethods || [],
+      groupIds: user.groups?.map(g => g.groupId) || []
     })
     setEditDialogTab('basic')
     setShowEditDialog(true)
@@ -256,7 +365,8 @@ export function UserManagement() {
           isActive: true,
           defaultSpaceId: '',
           spaces: [],
-          allowedLoginMethods: ['email']
+          allowedLoginMethods: ['email'],
+          groupIds: []
         })
         loadUsers()
       } else {
@@ -283,7 +393,8 @@ export function UserManagement() {
         body: JSON.stringify({
           ...editForm,
           defaultSpaceId: editForm.defaultSpaceId === 'none' ? null : editForm.defaultSpaceId,
-          allowedLoginMethods: editForm.allowedLoginMethods
+          allowedLoginMethods: editForm.allowedLoginMethods,
+          groupIds: editForm.groupIds
         }),
       })
 
@@ -422,6 +533,10 @@ export function UserManagement() {
                     <Shield className="h-4 w-4 mr-2" />
                     Manage Roles
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowSyncSettingsDialog(true)}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Sync Settings
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowImportDialog(true)}>
                     <Upload className="h-4 w-4 mr-2" />
                     Import Users
@@ -459,6 +574,10 @@ export function UserManagement() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button onClick={handleSyncAd} disabled={isSyncing} variant="outline" size="sm">
+                <Cloud className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync AD'}
+              </Button>
               <Button onClick={openCreateDialog} size="sm">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add User
@@ -606,7 +725,9 @@ export function UserManagement() {
                     <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">User</TableHead>
                     <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email</TableHead>
                     <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Role</TableHead>
+                    <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Department</TableHead>
                     <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</TableHead>
+                    <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">2FA</TableHead>
                     <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Spaces</TableHead>
                     <TableHead className="h-12 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Last Login</TableHead>
                     <TableHead className="h-12 w-[100px] text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</TableHead>
@@ -664,6 +785,12 @@ export function UserManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="h-16">
+                        <div className="flex flex-col">
+                           <span className="text-sm font-medium">{user.department || '-'}</span>
+                           <span className="text-xs text-muted-foreground">{user.jobTitle || ''}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="h-16">
                         <div className="flex items-center gap-2">
                           {getStatusIcon(user.isActive)}
                           <span className={cn(
@@ -672,6 +799,21 @@ export function UserManagement() {
                           )}>
                             {user.isActive ? 'Active' : 'Inactive'}
                           </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="h-16">
+                        <div className="flex items-center gap-2">
+                           {user.isTwoFactorEnabled ? (
+                               <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400 gap-1 pr-2">
+                                   <Smartphone className="h-3 w-3" />
+                                   On
+                               </Badge>
+                           ) : (
+                               <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-400 gap-1 pr-2">
+                                   <Smartphone className="h-3 w-3 opacity-50" />
+                                   Off
+                               </Badge>
+                           )}
                         </div>
                       </TableCell>
                       <TableCell className="h-16">
@@ -736,6 +878,24 @@ export function UserManagement() {
                               }}>
                                 <Key className="h-4 w-4 mr-2" />
                                 Reset Password
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem onClick={async () => {
+                                  if (!confirm(`Are you sure you want to disable 2FA for ${user.name}?`)) return
+                                  try {
+                                      const res = await fetch(`/api/admin/users/${user.id}/reset-2fa`, { method: 'POST' });
+                                      if (res.ok) {
+                                          toast.success('2FA disabled successfully');
+                                          loadUsers();
+                                      } else {
+                                          toast.error('Failed to disable 2FA');
+                                      }
+                                  } catch (e) {
+                                      toast.error('Failed to disable 2FA');
+                                  }
+                              }}>
+                                <Smartphone className="h-4 w-4 mr-2" />
+                                Reset 2FA
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -826,7 +986,7 @@ export function UserManagement() {
             <div className="w-full">
               <Tabs value={editDialogTab} onValueChange={setEditDialogTab}>
                 <TabsList className="w-full flex justify-start gap-2">
-                  <TabsTrigger value="basic" className="flex items-center gap-2">
+                    <TabsTrigger value="basic" className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4" />
                     Basic Info
                   </TabsTrigger>
@@ -837,6 +997,10 @@ export function UserManagement() {
                   <TabsTrigger value="spaces" className="flex items-center gap-2">
                     <Folder className="h-4 w-4" />
                     Space Associations
+                  </TabsTrigger>
+                  <TabsTrigger value="groups" className="flex items-center gap-2">
+                    <FolderTree className="h-4 w-4" />
+                    Groups
                   </TabsTrigger>
                 </TabsList>
 
@@ -887,7 +1051,7 @@ export function UserManagement() {
                     <Label>Allowed Login Methods</Label>
                     <p className="text-xs text-muted-foreground">Select allowed methods. Leave empty to allow all configured methods.</p>
                     <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                      {['email', 'azure-ad', 'google'].map((method) => {
+                      {getAvailableLoginMethods().map((method) => {
                         const isSelected = editForm.allowedLoginMethods?.includes(method)
                         return (
                           <div
@@ -1048,6 +1212,71 @@ export function UserManagement() {
                     </Button>
                   </div>
                 </TabsContent>
+
+                <TabsContent value="groups" className="space-y-4 mt-4">
+                  <div>
+                    <Label>Group Memberships</Label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Select groups this user should belong to
+                    </p>
+                    <div className="border rounded-md max-h-[300px] overflow-y-auto">
+                      {groups.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">
+                          <FolderTree className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No groups available</p>
+                          <p className="text-xs">Create groups in the Groups tab first</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y">
+                          {groups.map((group) => {
+                            const isSelected = editForm.groupIds.includes(group.id)
+                            return (
+                              <div
+                                key={group.id}
+                                className={cn(
+                                  "flex items-center gap-3 p-3 cursor-pointer transition-colors",
+                                  isSelected
+                                    ? "bg-primary/5"
+                                    : "hover:bg-muted/50"
+                                )}
+                                onClick={() => {
+                                  setEditForm(prev => ({
+                                    ...prev,
+                                    groupIds: isSelected
+                                      ? prev.groupIds.filter(id => id !== group.id)
+                                      : [...prev.groupIds, group.id]
+                                  }))
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  className="rounded"
+                                />
+                                <FolderTree className="h-4 w-4 text-muted-foreground" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium">{group.name}</p>
+                                  {group.description && (
+                                    <p className="text-xs text-muted-foreground truncate">{group.description}</p>
+                                  )}
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {group.memberCount || 0} members
+                                </Badge>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    {editForm.groupIds.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {editForm.groupIds.length} group(s) selected
+                      </p>
+                    )}
+                  </div>
+                </TabsContent>
               </Tabs>
             </div>
 
@@ -1142,7 +1371,7 @@ export function UserManagement() {
                 <Label>Allowed Login Methods</Label>
                 <p className="text-xs text-muted-foreground">Select allowed methods. Leave empty to allow all configured methods.</p>
                 <div className="flex flex-wrap gap-2 p-3 border rounded-md">
-                  {['email', 'azure-ad', 'google'].map((method) => {
+                  {getAvailableLoginMethods().map((method) => {
                     const isSelected = createForm.allowedLoginMethods.includes(method)
                     return (
                       <div
@@ -1572,6 +1801,48 @@ export function UserManagement() {
           </DialogContent>
         </Dialog>
 
+      <Dialog open={showSyncSettingsDialog} onOpenChange={setShowSyncSettingsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>AD Sync Settings</DialogTitle>
+            <DialogDescription>Configure automatic synchronization with Azure AD.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+             <div className="flex items-center justify-between">
+                <Label>Enable Automatic Sync</Label>
+                <Switch 
+                   checked={syncSchedule.enabled}
+                   onCheckedChange={c => setSyncSchedule({...syncSchedule, enabled: c})}
+                />
+             </div>
+             {syncSchedule.enabled && (
+                 <>
+                    <div className="space-y-2">
+                        <Label>Frequency</Label>
+                        <Select 
+                            value={syncSchedule.frequency} 
+                            onValueChange={v => setSyncSchedule({...syncSchedule, frequency: v})}
+                        >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="hourly">Hourly</SelectItem>
+                                <SelectItem value="daily">Daily</SelectItem>
+                                <SelectItem value="weekly">Weekly</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                 </>
+             )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSyncSettingsDialog(false)}>Cancel</Button>
+            <Button onClick={saveSyncSettings} disabled={savingSyncSettings}>
+                {savingSyncSettings ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
         {/* Import Users Dialog */}
         <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
           <DialogContent className="max-w-2xl">
@@ -1701,6 +1972,70 @@ export function UserManagement() {
                   </Button>
                 </>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        {/* Reset Password Dialog */}
+        <Dialog open={showResetPasswordDialog} onOpenChange={setShowResetPasswordDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                Set a new password for {resetPasswordUser?.name}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowResetPasswordDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={resettingPassword || !newPassword || newPassword !== confirmPassword || newPassword.length < 6}
+                onClick={async () => {
+                  if (!resetPasswordUser) return
+                  setResettingPassword(true)
+                  try {
+                    const res = await fetch(`/api/admin/users/${resetPasswordUser.id}/reset-password`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ password: newPassword })
+                    })
+                    
+                    if (res.ok) {
+                      toast.success('Password reset successfully')
+                      setShowResetPasswordDialog(false)
+                    } else {
+                      const err = await res.json()
+                      toast.error(err.error || 'Failed to reset password')
+                    }
+                  } catch (error) {
+                    toast.error('Failed to reset password')
+                  } finally {
+                    setResettingPassword(false)
+                  }
+                }}
+              >
+                {resettingPassword ? 'Resetting...' : 'Reset Password'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -110,6 +110,23 @@ export function Preview({
               }
             }).catch(() => {})
           }
+        } else if (customPage.icon && (customPage.icon.startsWith('ho-') || customPage.icon.startsWith('hs-'))) {
+          // Heroicons with ho- or hs- prefix
+          const [prefix, ...rest] = customPage.icon.split('-')
+          const iconName = rest.join('-')
+          const path = prefix === 'ho' ? '@heroicons/react/24/outline' : '@heroicons/react/24/solid'
+          
+          try {
+            const createDynamicImport = (path: string) => {
+              return new Function('return import("' + path + '")')()
+            }
+            createDynamicImport(path).then((icons: any) => {
+              const IconComp = icons?.[iconName]
+              if (IconComp) {
+                iconCache.set(page.id, IconComp)
+              }
+            }).catch(() => {})
+          } catch (e) {}
         } else if (customPage.icon && customPage.icon.includes('-')) {
           // React Icon (format: fa-*, md-*, etc.)
           const [prefix, ...rest] = customPage.icon.split('-')

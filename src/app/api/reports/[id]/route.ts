@@ -38,20 +38,23 @@ async function getHandler(
       LEFT JOIN report_categories c ON c.id = r.category_id
       LEFT JOIN report_folders f ON f.id = r.folder_id
       LEFT JOIN report_spaces rs ON rs.report_id = r.id
-      LEFT JOIN report_permissions rp ON rp.report_id = r.id AND rp.user_id = $1
+      LEFT JOIN report_permissions rp ON rp.report_id = r.id AND (
+        rp.user_id::text = $1 OR
+        rp.group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $1)
+      )
       LEFT JOIN report_integrations ri ON ri.source = r.source 
-        AND ri.created_by = $1 
+        AND ri.created_by::text = $1 
         AND ri.is_active = true
         AND (ri.space_id IS NULL OR ri.space_id IN (
-          SELECT sm.space_id FROM space_members sm WHERE sm.user_id = $1
+          SELECT sm.space_id::text FROM space_members sm WHERE sm.user_id::text = $1
         ))
       WHERE r.id = $2
         AND r.deleted_at IS NULL
         AND (
-          r.created_by = $1 OR
-          rp.user_id = $1 OR
+          r.created_by::text = $1 OR
+          rp.id IS NOT NULL OR
           (rs.space_id IN (
-            SELECT sm.space_id FROM space_members sm WHERE sm.user_id = $1
+            SELECT sm.space_id FROM space_members sm WHERE sm.user_id::text = $1
           )) OR
           r.is_public = true
         )
@@ -158,9 +161,12 @@ async function putHandler(
           is_active = COALESCE($10, is_active),
           updated_at = NOW()
       WHERE id = $11
-        AND (created_by = $12 OR EXISTS (
+        AND (created_by::text = $12 OR EXISTS (
           SELECT 1 FROM report_permissions
-          WHERE report_id = $11 AND user_id = $12 AND permission = 'edit'
+          WHERE report_id = $11 AND (
+            user_id::text = $12 OR
+            group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $12)
+          ) AND (permission = 'edit' OR permission = 'admin')
         ))
       RETURNING *
     `
@@ -220,9 +226,12 @@ async function deleteHandler(
       UPDATE public.reports
       SET deleted_at = NOW()
       WHERE id = $1
-        AND (created_by = $2 OR EXISTS (
+        AND (created_by::text = $2 OR EXISTS (
           SELECT 1 FROM report_permissions
-          WHERE report_id = $1 AND user_id = $2 AND permission = 'delete'
+          WHERE report_id = $1 AND (
+            user_id::text = $2 OR
+            group_id::text IN (SELECT group_id::text FROM user_group_members WHERE user_id::text = $2)
+          ) AND (permission = 'delete' OR permission = 'admin')
         ))
       RETURNING *
     `

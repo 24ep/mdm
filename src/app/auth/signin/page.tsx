@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Eye, EyeOff, Mail, Lock, AlertCircle, Layers } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Layers, Smartphone, ArrowLeft } from 'lucide-react'
 import { loadBrandingConfig } from '@/lib/branding'
 import { useSystemSettingsSafe } from '@/contexts/system-settings-context'
 
@@ -20,6 +20,8 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [ssoProviders, setSsoProviders] = useState({ google: false, azure: false })
+  const [showTwoFactorInput, setShowTwoFactorInput] = useState(false)
+  const [totpCode, setTotpCode] = useState('')
   const [loginBgStyle, setLoginBgStyle] = useState<React.CSSProperties>({})
   const [loginBgVideo, setLoginBgVideo] = useState<string | undefined>(undefined)
   const { settings } = useSystemSettingsSafe()
@@ -130,6 +132,9 @@ export default function SignInPage() {
       if (result?.error) {
         if (result.error === 'CredentialsSignin') {
           setError('Invalid email or password. Please try again.')
+        } else if (result.error === '2FA_REQUIRED') {
+            setShowTwoFactorInput(true)
+            setError('')
         } else {
           setError(result.error)
         }
@@ -142,6 +147,36 @@ export default function SignInPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handle2FASubmit = async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (!totpCode || totpCode.length !== 6) {
+          setError('Please enter a valid 6-digit code')
+          return
+      }
+
+      setIsLoading(true)
+      setError('')
+
+      try {
+        const result = await signIn('credentials', {
+            email,
+            password,
+            totpCode,
+            redirect: false
+        })
+
+        if (result?.error) {
+            setError(result.error)
+        } else {
+             router.push('/')
+        }
+      } catch (error) {
+          setError('An error occurred. Please try again.')
+      } finally {
+          setIsLoading(false)
+      }
   }
 
   const handleGoogleSignIn = async () => {
@@ -187,7 +222,7 @@ export default function SignInPage() {
       <div className="flex-1 flex flex-col justify-center p-8 md:p-12 lg:p-20 relative z-10">
         <div className="max-w-3xl space-y-6">
           <div className="flex items-center space-x-4 mb-2">
-            <div className="p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm">
+            <div className="p-3 bg-card/50 backdrop-blur-sm rounded-xl border border-border shadow-sm">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain" />
               ) : (
@@ -223,7 +258,65 @@ export default function SignInPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 px-8 md:px-12">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            {showTwoFactorInput ? (
+                <form onSubmit={handle2FASubmit} className="space-y-4">
+                     <div className="flex flex-col items-center space-y-2 mb-4">
+                         <div className="p-3 bg-primary/10 rounded-full">
+                             <Smartphone className="h-8 w-8 text-primary" />
+                         </div>
+                         <h3 className="text-xl font-semibold">Two-Factor Authentication</h3>
+                         <p className="text-sm text-muted-foreground text-center">
+                             Please enter the 6-digit code from your authenticator app
+                         </p>
+                     </div>
+
+                     <div className="space-y-2">
+                        <Label htmlFor="totpCode">Authentication Code</Label>
+                        <Input
+                            id="totpCode"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            placeholder="000 000"
+                            value={totpCode}
+                            onChange={(e) => {
+                                // Only allow numbers and max 6 chars
+                                const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6)
+                                setTotpCode(val)
+                            }}
+                            className="text-center text-lg tracking-widest"
+                            autoFocus
+                        />
+                     </div>
+
+                    {error && (
+                        <Alert variant="destructive" className="border-red-500">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? 'Verifying...' : 'Verify'}
+                    </Button>
+
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="w-full"
+                        onClick={() => {
+                            setShowTwoFactorInput(false)
+                            setTotpCode('')
+                            setError('')
+                        }}
+                    >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Login
+                    </Button>
+                </form>
+            ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="font-medium">Email</Label>
                 <div className="relative group">
@@ -234,7 +327,7 @@ export default function SignInPage() {
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-white/50 border-white/30 focus:bg-white/90 transition-all hover:bg-white/70"
+                    className="pl-10 bg-card/50 border-border/30 focus:bg-card/90 transition-all hover:bg-card/70"
                     required
                   />
                 </div>
@@ -250,7 +343,7 @@ export default function SignInPage() {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-white/50 border-white/30 focus:bg-white/90 transition-all hover:bg-white/70"
+                    className="pl-10 pr-10 bg-card/50 border-border/30 focus:bg-card/90 transition-all hover:bg-card/70"
                     required
                   />
                   <Button
@@ -283,6 +376,7 @@ export default function SignInPage() {
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
+            )}
 
             {hasAnySSO && (
               <>
@@ -301,7 +395,7 @@ export default function SignInPage() {
                   {ssoProviders.google && (
                     <Button
                       variant="outline"
-                      className="w-full bg-white/50 hover:bg-white/80 border-white/40"
+                      className="w-full bg-card/50 hover:bg-card/80 border-border/40"
                       onClick={handleGoogleSignIn}
                       disabled={isLoading}
                     >
@@ -330,7 +424,7 @@ export default function SignInPage() {
                   {ssoProviders.azure && (
                     <Button
                       variant="outline"
-                      className="w-full bg-white/50 hover:bg-white/80 border-white/40"
+                      className="w-full bg-card/50 hover:bg-card/80 border-border/40"
                       onClick={handleAzureSignIn}
                       disabled={isLoading}
                     >

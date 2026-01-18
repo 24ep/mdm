@@ -15,8 +15,11 @@ interface PermissionsDialogProps {
   spaceUsers: Array<{ id: string; name: string; email: string; space_role: string }>
   permissionsRoles: string[]
   permissionsUserIds: string[]
+  permissionsGroupIds: string[]
+  userGroups: Array<{ id: string; name: string }>
   setPermissionsRoles: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsUserIds: React.Dispatch<React.SetStateAction<string[]>>
+  setPermissionsGroupIds: React.Dispatch<React.SetStateAction<string[]>>
   setSelectedPageForPermissions: React.Dispatch<React.SetStateAction<SpacesEditorPage | null>>
   setPages: React.Dispatch<React.SetStateAction<SpacesEditorPage[]>>
 }
@@ -29,8 +32,11 @@ export function PermissionsDialog({
   spaceUsers,
   permissionsRoles,
   permissionsUserIds,
+  permissionsGroupIds,
+  userGroups,
   setPermissionsRoles,
   setPermissionsUserIds,
+  setPermissionsGroupIds,
   setSelectedPageForPermissions,
   setPages,
 }: PermissionsDialogProps) {
@@ -98,8 +104,38 @@ export function PermissionsDialog({
               )}
             </div>
           </div>
+          <div>
+            <Label className="text-sm font-semibold mb-2 block">User Groups</Label>
+            <div className="max-h-48 overflow-y-auto space-y-2 border rounded p-2">
+              {userGroups.length === 0 ? (
+                <div className="text-xs text-muted-foreground">No user groups available</div>
+              ) : (
+                userGroups.map(group => (
+                  <div key={group.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`group-${group.id}`}
+                      checked={permissionsGroupIds.includes(group.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setPermissionsGroupIds([...permissionsGroupIds, group.id])
+                        } else {
+                          setPermissionsGroupIds(permissionsGroupIds.filter(id => id !== group.id))
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`group-${group.id}`}
+                      className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                    >
+                      <div>{group.name}</div>
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
           <div className="text-xs text-muted-foreground">
-            <p>If no roles or users are selected, the page will be visible to everyone.</p>
+            <p>If no roles, users, or groups are selected, the page will be visible to everyone.</p>
           </div>
         </div>
         <DialogFooter>
@@ -117,11 +153,12 @@ export function PermissionsDialog({
               if (!selectedPageForPermissions) return
               const permissions = {
                 roles: permissionsRoles.length > 0 ? permissionsRoles : undefined,
-                userIds: permissionsUserIds.length > 0 ? permissionsUserIds : undefined
+                userIds: permissionsUserIds.length > 0 ? permissionsUserIds : undefined,
+                groupIds: permissionsGroupIds.length > 0 ? permissionsGroupIds : undefined
               }
               try {
                 await SpacesEditorManager.updatePage(spaceId, selectedPageForPermissions.id, {
-                  permissions: permissionsRoles.length > 0 || permissionsUserIds.length > 0 ? permissions : undefined
+                  permissions: permissionsRoles.length > 0 || permissionsUserIds.length > 0 || permissionsGroupIds.length > 0 ? permissions : undefined
                 })
                 setPages((prev) => prev.map((p) => 
                   p.id === selectedPageForPermissions.id 

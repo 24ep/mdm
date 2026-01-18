@@ -95,6 +95,21 @@ async function putHandler(
       }
     }
 
+    // Handle group assignments if provided
+    const { groupIds } = body
+    if (groupIds && Array.isArray(groupIds)) {
+      await query('DELETE FROM user_group_members WHERE user_id = $1::uuid', [id])
+
+      for (const groupId of groupIds) {
+        if (groupId) {
+          await query(
+            'INSERT INTO user_group_members (user_id, group_id, role) VALUES ($1::uuid, $2::uuid, $3)',
+            [id, groupId, 'MEMBER']
+          )
+        }
+      }
+    }
+
     return NextResponse.json({
       user: {
         id: rows[0].id,

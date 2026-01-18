@@ -144,9 +144,9 @@ export default function ProjectsPage() {
       case 'PLANNING': return 'bg-blue-100 text-blue-700'
       case 'ACTIVE': return 'bg-green-100 text-green-700'
       case 'ON_HOLD': return 'bg-yellow-100 text-yellow-700'
-      case 'COMPLETED': return 'bg-gray-100 text-gray-700'
+      case 'COMPLETED': return 'bg-muted text-muted-foreground'
       case 'CANCELLED': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 

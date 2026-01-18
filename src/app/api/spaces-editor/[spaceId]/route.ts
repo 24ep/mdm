@@ -34,6 +34,19 @@ async function getHandler(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
+    const userRole = accessCheck.rows[0].role
+    const isOwnerOrAdmin = ['OWNER', 'ADMIN'].includes(userRole)
+
+    // Get user groups for permission filtering
+    const userGroups = await query(
+      `SELECT ugm.group_id 
+       FROM user_group_members ugm
+       JOIN user_groups ug ON ug.id = ugm.group_id
+       WHERE ugm.user_id = $1::uuid AND ug.is_active = true`,
+      [session.user.id]
+    )
+    const userGroupIds = userGroups.rows.map(r => r.group_id)
+
     // Get spaces editor config from system_settings
     const configKey = `spaces_editor_config_${spaceId}`
     const configResult = await query(
@@ -44,6 +57,47 @@ async function getHandler(
     if (configResult.rows.length > 0) {
       try {
         const config: SpacesEditorConfig = JSON.parse(configResult.rows[0].value)
+        
+        // Filter pages based on permissions
+        if (config.pages && !isOwnerOrAdmin) {
+          const filteredPages = config.pages.filter(page => {
+            const perms = page.permissions
+            if (!perms) return true // Visible to everyone if no permissions set
+            
+            const hasRole = perms.roles?.includes(userRole)
+            const hasUser = perms.userIds?.includes(session.user.id)
+            const hasGroup = perms.groupIds?.some(gid => userGroupIds.includes(gid))
+            
+            // If any permission is set, user must match at least one
+            const somePermSet = (perms.roles?.length || 0) > 0 || (perms.userIds?.length || 0) > 0 || (perms.groupIds?.length || 0) > 0
+            if (!somePermSet) return true
+            
+            return hasRole || hasUser || hasGroup
+          })
+
+          const allowedPageIds = new Set(filteredPages.map(p => p.id))
+          config.pages = filteredPages
+
+          // Also filter sidebar items
+          if (config.sidebarConfig?.items) {
+            const filterSidebarItems = (items: any[]) => {
+              return items.filter(item => {
+                if (item.type === 'page' && item.pageId && !allowedPageIds.has(item.pageId)) {
+                  return false
+                }
+                if (item.children) {
+                  item.children = filterSidebarItems(item.children)
+                  // If it's a group and has no children left, we might want to hide it too?
+                  // For now let's keep it or if it becomes empty and it's a group, hide it.
+                  if (item.type === 'group' && item.children.length === 0) return false
+                }
+                return true
+              })
+            }
+            config.sidebarConfig.items = filterSidebarItems(config.sidebarConfig.items)
+          }
+        }
+
         return NextResponse.json({ config })
       } catch (e) {
         console.error('Error parsing config:', e)
@@ -87,7 +141,7 @@ async function postHandler(
       [spaceId, session.user.id]
     )
 
-    if (accessCheck.rows.length === 0 || !['OWNER', 'ADMIN'].includes(accessCheck.rows[0].role)) {
+    if (accessCheck.rows.length === 0 || !['OWNER', 'ADMIN'].includes(accessCheck.rows[0].role.toUpperCase())) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 

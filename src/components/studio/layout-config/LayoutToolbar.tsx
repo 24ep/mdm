@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { Monitor, Smartphone, Tablet, Save, Box, Grid3x3, Move, Eye, EyeOff, History, Database, MoreVertical, ChevronRight, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ComponentConfig } from './types'
-import { LayoutTitle } from './LayoutTitle'
+import { LayoutTitle, PageType } from './LayoutTitle'
 import { widgetsPalette } from './widgets'
 import { Z_INDEX } from '@/lib/z-index'
 
@@ -36,6 +36,8 @@ interface LayoutToolbarProps {
   onToggleDataModelPanel?: () => void
   spaceId?: string
   onExportMobile?: () => void
+  pageType?: PageType
+  onPageTypeChange?: (type: PageType) => void
 }
 
 export function LayoutToolbar({
@@ -61,6 +63,8 @@ export function LayoutToolbar({
   onToggleDataModelPanel,
   spaceId,
   onExportMobile,
+  pageType,
+  onPageTypeChange,
 }: LayoutToolbarProps) {
   const [widgetDrawerOpen, setWidgetDrawerOpen] = useState(false)
   const [configPopoverOpen, setConfigPopoverOpen] = useState(false)
@@ -77,6 +81,8 @@ export function LayoutToolbar({
               name={layoutName} 
               onChange={setLayoutName}
               onSave={onSaveLayoutName}
+              pageType={pageType}
+              onPageTypeChange={onPageTypeChange}
             />
           </div>
         )}
@@ -109,7 +115,6 @@ export function LayoutToolbar({
               id="device-desktop"
               name="device-mode"
               value="desktop"
-              defaultChecked={deviceMode === 'desktop' || !deviceMode}
               checked={deviceMode === 'desktop'}
               onChange={() => {
                 setDeviceMode('desktop')
@@ -327,6 +332,8 @@ export function LayoutToolbar({
               name={layoutName} 
               onChange={setLayoutName}
               onSave={onSaveLayoutName}
+              pageType={pageType}
+              onPageTypeChange={onPageTypeChange}
             />
           </div>
           <Button 

@@ -184,7 +184,7 @@ const SelectContent = React.forwardRef<
       )}
       style={{
         position: "fixed",
-        zIndex: Z_INDEX.dialogDropdown, // Use dialogDropdown level to appear above dialogs/modals
+        zIndex: Z_INDEX.portalDropdown + 50, // Slightly higher than generic portal content
         top: `${positionState.top}px`,
         left: `${positionState.left}px`,
         width: position === "popper" ? `${positionState.width}px` : "auto",

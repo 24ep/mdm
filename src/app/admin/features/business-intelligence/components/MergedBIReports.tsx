@@ -237,20 +237,6 @@ export function MergedBIReports() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            variant="outline"
-            onClick={() => setShowIntegrationModal(true)}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Integrations
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowTemplates(true)}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Templates
-          </Button>
           <Button onClick={() => router.push('/reports/new')}>
             <Plus className="h-4 w-4 mr-2" />
             New Report
@@ -451,7 +437,7 @@ export function MergedBIReports() {
               onClick={() => {
                 const selectedSpace = spaces.find(s => s.id === createReportSpaceId)
                 if (selectedSpace?.slug) {
-                  router.push(`/${selectedSpace.slug}/studio`)
+                  router.push(`/${selectedSpace.slug}/studio?pageType=dashboard`)
                   setShowCreateReportDialog(false)
                 }
               }}

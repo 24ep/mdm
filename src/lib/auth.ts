@@ -5,6 +5,8 @@ import AzureADProvider from "next-auth/providers/azure-ad"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { query } from "@/lib/db"
+import { authenticator } from "otplib"
+import { sendEmail } from "@/lib/email"
 
 // Simple in-memory cache
 const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
@@ -212,7 +214,8 @@ providers.push(
     credentials: {
       email: { label: "Email", type: "email" },
       password: { label: "Password", type: "password" },
-      name: { label: "Name", type: "text" }
+      name: { label: "Name", type: "text" },
+      totpCode: { label: "2FA Code", type: "text" }
     },
     async authorize(credentials) {
       if (!credentials?.email || !credentials?.password) {
@@ -220,7 +223,7 @@ providers.push(
       }
       try {
         const { rows } = await query(
-          'SELECT id, email, name, password, role, is_active, requires_password_change, lockout_until, failed_login_attempts, allowed_login_methods FROM public.users WHERE email = $1 LIMIT 1',
+          'SELECT id, email, name, password, role, is_active, requires_password_change, lockout_until, failed_login_attempts, allowed_login_methods, two_factor_secret, is_two_factor_enabled, two_factor_backup_codes FROM public.users WHERE email = $1 LIMIT 1',
           [credentials.email],
           30000,
           { skipTracing: true }
@@ -278,6 +281,36 @@ providers.push(
           }
 
           return null
+        }
+
+        // 2FA Verification
+        if (user.is_two_factor_enabled) {
+            if (!credentials.totpCode) {
+                throw new Error("2FA_REQUIRED")
+            }
+
+            const isValid = authenticator.check(credentials.totpCode, user.two_factor_secret);
+            
+            // Allow backup codes if TOTP fails (simple implementation: check if code is in backup list)
+            // Ideally we hash backup codes, but if storing plain strings (from array):
+            let isBackupCode = false;
+            if (!isValid && user.two_factor_backup_codes && Array.isArray(user.two_factor_backup_codes)) {
+                 if (user.two_factor_backup_codes.includes(credentials.totpCode)) {
+                     isBackupCode = true;
+                     // Remove used backup code
+                     const newBackupCodes = user.two_factor_backup_codes.filter((c: string) => c !== credentials.totpCode);
+                     await query(
+                        'UPDATE public.users SET two_factor_backup_codes = $1 WHERE id = $2::uuid',
+                        [newBackupCodes, user.id],
+                        5000,
+                        { skipTracing: true }
+                     )
+                 }
+            }
+
+            if (!isValid && !isBackupCode) {
+                throw new Error("Invalid 2FA code")
+            }
         }
 
         // Reset failed attempts on successful login if user had some failures
@@ -382,7 +415,52 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
+
+
     async signIn({ user, account, profile }) {
+      const sendLoginAlert = async () => {
+        try {
+           if (!user.email) return;
+           
+           const { rows } = await query("SELECT value FROM system_settings WHERE key = 'enableLoginAlert' LIMIT 1", [], 5000, { skipTracing: true })
+           const enableLoginAlert = rows?.[0]?.value === 'true' || rows?.[0]?.value === true
+
+           if (enableLoginAlert) {
+               const timestamp = new Date().toLocaleString()
+               // Don't await email sending to avoid blocking login
+               
+               // Fetch template
+               const templateRes = await query("SELECT subject, content FROM notification_templates WHERE key = 'login-alert' AND is_active = true LIMIT 1", [], 5000, { skipTracing: true })
+               const template = templateRes.rows?.[0]
+
+               const defaultHtml = `<div style="font-family: Arial, sans-serif; color: #333;">
+                      <h2>New Login Detected</h2>
+                      <p>Hello <strong>${user.name || 'User'}</strong>,</p>
+                      <p>We detected a new login to your account associated with <strong>${user.email}</strong>.</p>
+                      <p><strong>Time:</strong> ${timestamp}</p>
+                      <br/>
+                      <p>If this was you, you can safely ignore this email.</p>
+                      <p>If you did not authorize this login, please contact support immediately.</p>
+                    </div>`
+
+               let subject = 'Security Alert: New Login Detected'
+               let html = defaultHtml
+
+               if (template) {
+                   subject = template.subject || subject
+                   html = template.content
+                     .replace(/{{name}}/g, user.name || 'User')
+                     .replace(/{{email}}/g, user.email)
+                     .replace(/{{time}}/g, timestamp)
+               }
+               
+               sendEmail(user.email, subject, html).catch(err => console.error('Failed to send login alert:', err))
+           }
+        } catch (error) {
+            console.error('Error in login alert:', error)
+        }
+      }
+
       if (account?.provider === 'google' || account?.provider === 'azure-ad') {
         if (!user.email) return false
 
@@ -414,8 +492,12 @@ export const authOptions: NextAuthOptions = {
           (user as any).id = ssoUser.id;
           (user as any).role = ssoUser.role
         }
+        
+        await sendLoginAlert();
         return true
       }
+      
+      await sendLoginAlert();
       return true
     },
     async jwt({ token, user }) {

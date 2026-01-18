@@ -27,6 +27,7 @@ interface SettingsPanelContentProps {
   setSelectedPageForPermissions: React.Dispatch<React.SetStateAction<SpacesEditorPage | null>>
   setPermissionsRoles: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsUserIds: React.Dispatch<React.SetStateAction<string[]>>
+  setPermissionsGroupIds: React.Dispatch<React.SetStateAction<string[]>>
   setPermissionsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
   handlePageReorder: (fromIndex: number, toIndex: number, currentPages: UnifiedPage[], currentCustomPages: SpacesEditorPage[]) => Promise<void>
   handleComponentConfigUpdate: (type: string, updates: Partial<ComponentConfig>) => void
@@ -54,6 +55,7 @@ export function SettingsPanelContent({
   setSelectedPageForPermissions,
   setPermissionsRoles,
   setPermissionsUserIds,
+  setPermissionsGroupIds,
   setPermissionsDialogOpen,
   handlePageReorder,
   handleComponentConfigUpdate,

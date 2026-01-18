@@ -5,6 +5,7 @@
 
 // Components
 export { UserManagement } from './components/UserManagement'
+export { UserGroupManagement } from './components/UserGroupManagement'
 export { RoleManagement } from './components/RoleManagement'
 export { PermissionTester } from './components/PermissionTester'
 

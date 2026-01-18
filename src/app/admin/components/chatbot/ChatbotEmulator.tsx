@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Settings, Monitor, Tablet, Smartphone, Code, GripVertical, Square, Circle, Triangle } from 'lucide-react'
+import { ExternalLink, Settings, Monitor, Tablet, Smartphone, Code, GripVertical, Square, Circle, Triangle, Signal, Wifi, Battery } from 'lucide-react'
 import { Chatbot } from './types'
 import { EmulatorConfigDrawer } from './EmulatorConfigDrawer'
 import { Z_INDEX } from '@/lib/z-index'
@@ -356,18 +356,18 @@ export function ChatbotEmulator({
                   <>
                     <span>9:41</span>
                     <div className="flex gap-1.5 items-center">
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12.01 4.8c-3.19 0-5.98 1.46-7.82 3.74L12.01 20l7.81-11.45c-1.84-2.28-4.62-3.75-7.81-3.75z" /></svg>
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M20 18h2v-8h-2v8zm0 4h2v-2h-2v2zm-10-2v2h2v-2h-2zm0-4h2v-2h-2v2zm0-4h2V8h-2v2zm0-4h2V4h-2v2zM18 10h-2V8h2v2zm0 4h-2v-2h2v2zm0 4h-2v-2h2v2zm-8-4H8v-2h2v2zm0 4H8v-2h2v2zm0-8H8V8h2v2zm0-4H8V4h2v2zm-4 8H4v-2h2v2zm0 4H4v-2h2v2zm0-8H4V8h2v2zm0-4H4V4h2v2z" /></svg>
-                      <svg className="h-4 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.34V5.33C17 4.6 16.4 4 15.67 4z" /></svg>
+                      <Signal className="h-3 w-3" />
+                      <Wifi className="h-3 w-3" />
+                      <Battery className="h-4 w-3" />
                     </div>
                   </>
                 ) : (
                   <>
                     <span>9:41</span>
                     <div className="flex gap-1 items-center">
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L2 12h3v9h6v-6h2v6h6v-9h3L12 3z" /></svg>
-                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" /></svg>
-                      <svg className="h-4 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17 4h-3V2h-4v2H7v18h10V4zm-4 16h-2v-2h2v2z" /></svg>
+                      <Signal className="h-3 w-3" />
+                      <Wifi className="h-3 w-3" />
+                      <Battery className="h-4 w-3" />
                     </div>
                   </>
                 )}

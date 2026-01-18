@@ -54,6 +54,10 @@ export const Z_INDEX = {
   chatWidgetControl: 10002, // Chat widget control buttons
   chatWidgetOverlayText: 10003, // Chat widget overlay text
   chatWidgetPreview: 10004, // Chat widget preview selector
+
+  // Application specific layers
+  configurationPanel: 250, // Floating configuration panels (Page Studio) - above base navigation
+  portalDropdown: 4100, // Dropdowns/Popovers that portal to body - above almost everything
 } as const
 
 export type ZIndexKey = keyof typeof Z_INDEX

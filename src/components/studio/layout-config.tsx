@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { SpacesEditorManager, SpacesEditorPage } from '@/lib/space-studio-manager'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer'
@@ -11,6 +11,7 @@ import { widgetsPalette, PlacedWidget, WidgetType } from './layout-config/widget
 import { SettingsPanelContent } from './layout-config/SettingsPanelContent'
 import { LayoutTitle } from './layout-config/LayoutTitle'
 import { LayoutToolbar } from './layout-config/LayoutToolbar'
+import { PageType } from './layout-config/LayoutTitle'
 import { Preview } from './layout-config/Preview'
 import { PermissionsDialog } from './layout-config/PermissionsDialog'
 import { LayoutVersionControlDialog } from './layout-config/LayoutVersionControlDialog'
@@ -39,6 +40,8 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   const [spaceUsers, setSpaceUsers] = useState<Array<{ id: string; name: string; email: string; space_role: string }>>([])
   const [permissionsRoles, setPermissionsRoles] = useState<string[]>([])
   const [permissionsUserIds, setPermissionsUserIds] = useState<string[]>([])
+  const [permissionsGroupIds, setPermissionsGroupIds] = useState<string[]>([])
+  const [userGroups, setUserGroups] = useState<Array<{ id: string; name: string }>>([])
   const [isMobileViewport, setIsMobileViewport] = useState(false)
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false)
   const [mobileActiveTab, setMobileActiveTab] = useState<'preview' | 'settings'>('preview')
@@ -67,6 +70,10 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
   const [versionsDialogOpen, setVersionsDialogOpen] = useState(false)
   const [mobileExportDialogOpen, setMobileExportDialogOpen] = useState(false)
   const [showDataModelPanel, setShowDataModelPanel] = useState(true)
+  const [widgetPanelOpen, setWidgetPanelOpen] = useState(true) // Floating widget panel, open by default
+  const searchParams = useSearchParams()
+  const urlPageType = searchParams.get('pageType') as PageType | null
+  const [pageType, setPageType] = useState<PageType>(urlPageType || 'general')
   const canvasRef = useRef<HTMLDivElement>(null)
   
   // Resizable sidebar state
@@ -243,6 +250,13 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         if (res.ok) {
           const data = await res.json()
           if (mounted) setSpaceUsers(data.users || [])
+        }
+      } catch {}
+      try {
+        const res = await fetch('/api/user-groups')
+        if (res.ok) {
+          const data = await res.json()
+          if (mounted) setUserGroups(data.groups || [])
         }
       } catch {}
     })()
@@ -979,6 +993,8 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         onToggleDataModelPanel={() => setShowDataModelPanel(!showDataModelPanel)}
         spaceId={spaceId}
         onExportMobile={() => setMobileExportDialogOpen(true)}
+        pageType={pageType}
+        onPageTypeChange={setPageType}
           />
           
       {/* Version Control Dialog */}
@@ -1035,15 +1051,15 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         }}
       />
 
-        {/* Layout: dynamic body | resizable main panel | 20% data model (or dynamic body | resizable main panel if data model hidden) - Responsive */}
-        <div ref={resizeRef} className={`flex-1 ${isMobileViewport ? 'flex flex-col' : 'flex'} border overflow-hidden min-h-0`}>
-          {/* Body/Preview area - dynamic width based on sidebar width */}
+        {/* Layout: Preview area | Data model panel (optional) - Responsive */}
+        <div ref={resizeRef} className={`flex-1 ${isMobileViewport ? 'flex flex-col' : 'flex'} border overflow-hidden min-h-0 relative`}>
+          {/* Body/Preview area - full width (minus data model if shown) */}
           <div 
-            className={`${isMobileViewport ? 'w-full' : ''} overflow-hidden h-full flex flex-col min-h-0 border-r`}
+            className={`${isMobileViewport ? 'w-full' : ''} overflow-hidden h-full flex flex-col min-h-0 border-r relative`}
             style={!isMobileViewport ? {
               width: showDataModelPanel 
-                ? `calc(100% - ${sidebarWidth}% - 20%)` 
-                : `calc(100% - ${sidebarWidth}%)`
+                ? 'calc(100% - 20%)' 
+                : '100%'
             } : {}}
           >
         <Preview
@@ -1076,64 +1092,63 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         />
             </div>
 
-        {/* Resize Handle */}
-            {!isMobileViewport && (
-          <div
-            className="flex-shrink-0 relative z-30 group"
-            style={{ 
-              width: '4px',
-              cursor: 'col-resize',
-              userSelect: 'none',
-              touchAction: 'none'
-            }}
-            onMouseDown={handleSidebarResizeStart}
-          >
-            {/* Visible resize handle */}
-            <div
-              className="absolute inset-y-0 left-0 w-1 bg-border group-hover:bg-primary transition-colors"
-            />
-            {/* Expanded hit area for easier grabbing - invisible but clickable */}
+          {/* Floating Widget Panel - Popover on right side */}
+          {!isMobileViewport && widgetPanelOpen && (
             <div 
-              className="absolute inset-y-0 -left-4 -right-4 cursor-col-resize z-10"
-              onMouseDown={handleSidebarResizeStart}
-            />
-          </div>
-        )}
+              className="absolute w-80 bg-background border rounded-lg shadow-lg overflow-auto z-40"
+              style={{ top: '16px', right: '16px', bottom: '16px', maxHeight: 'calc(100% - 32px)' }}
+            >
+              <div className="sticky top-0 bg-background border-b px-3 py-2 flex justify-between items-center">
+                <span className="font-semibold text-sm">Widget Properties</span>
+                <button 
+                  onClick={() => setWidgetPanelOpen(false)}
+                  className="text-muted-foreground hover:text-foreground text-lg leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <SettingsPanelContent
+                spaceId={spaceId}
+                isMobileViewport={isMobileViewport}
+                allPages={allPages}
+                pages={pages}
+                selectedPageId={selectedPageId}
+                selectedWidgetId={selectedWidgetId}
+                selectedComponent={selectedComponent}
+                placedWidgets={placedWidgets}
+                componentConfigs={componentConfigs}
+                expandedComponent={expandedComponent}
+                setPages={setPages}
+                setSelectedComponent={setSelectedComponent}
+                setSelectedPageId={setSelectedPageId}
+                setPlacedWidgets={setPlacedWidgets}
+                setSelectedWidgetId={setSelectedWidgetId}
+                setExpandedComponent={setExpandedComponent}
+                setSelectedPageForPermissions={setSelectedPageForPermissions}
+                setPermissionsRoles={setPermissionsRoles}
+                setPermissionsUserIds={setPermissionsUserIds}
+                setPermissionsGroupIds={setPermissionsGroupIds}
+                setPermissionsDialogOpen={setPermissionsDialogOpen}
+                handlePageReorder={handlePageReorder}
+                handleComponentConfigUpdate={handleComponentConfigUpdate}
+                setAllPages={setAllPages}
+              />
+            </div>
+          )}
+
+          {/* Toggle button to show widget panel when closed */}
+          {!isMobileViewport && !widgetPanelOpen && (
+            <button
+              onClick={() => setWidgetPanelOpen(true)}
+              className="absolute top-4 right-4 bg-background border rounded-lg shadow-lg px-3 py-2 text-sm font-medium hover:bg-muted z-40"
+            >
+              Widget Panel
+            </button>
+          )}
+
+
         
-        {/* Main Panel - Resizable */}
-            {!isMobileViewport && (
-          <div 
-            className="border-r overflow-auto min-h-0 flex-shrink-0"
-            style={{ width: `${sidebarWidth}%` }}
-          >
-            <SettingsPanelContent
-              spaceId={spaceId}
-              isMobileViewport={isMobileViewport}
-              allPages={allPages}
-              pages={pages}
-              selectedPageId={selectedPageId}
-              selectedWidgetId={selectedWidgetId}
-              selectedComponent={selectedComponent}
-              placedWidgets={placedWidgets}
-              componentConfigs={componentConfigs}
-              expandedComponent={expandedComponent}
-              setPages={setPages}
-              setSelectedComponent={setSelectedComponent}
-              setSelectedPageId={setSelectedPageId}
-              setPlacedWidgets={setPlacedWidgets}
-              setSelectedWidgetId={setSelectedWidgetId}
-              setExpandedComponent={setExpandedComponent}
-              setSelectedPageForPermissions={setSelectedPageForPermissions}
-              setPermissionsRoles={setPermissionsRoles}
-              setPermissionsUserIds={setPermissionsUserIds}
-              setPermissionsDialogOpen={setPermissionsDialogOpen}
-              handlePageReorder={handlePageReorder}
-              handleComponentConfigUpdate={handleComponentConfigUpdate}
-              // Sidebar visibility props removed - pages now use secondary platform sidebar
-              setAllPages={setAllPages}
-            />
-          </div>
-        )}
+
 
         {/* Data Model Panel - 20% */}
         {!isMobileViewport && showDataModelPanel && (
@@ -1189,6 +1204,7 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
                 setSelectedPageForPermissions={setSelectedPageForPermissions}
                 setPermissionsRoles={setPermissionsRoles}
                 setPermissionsUserIds={setPermissionsUserIds}
+                setPermissionsGroupIds={setPermissionsGroupIds}
                 setPermissionsDialogOpen={setPermissionsDialogOpen}
                 handlePageReorder={handlePageReorder}
                 handleComponentConfigUpdate={handleComponentConfigUpdate}
@@ -1207,8 +1223,11 @@ export default function LayoutConfig({ spaceId, layoutName: initialLayoutName }:
         spaceUsers={spaceUsers}
         permissionsRoles={permissionsRoles}
         permissionsUserIds={permissionsUserIds}
+        permissionsGroupIds={permissionsGroupIds}
+        userGroups={userGroups}
         setPermissionsRoles={setPermissionsRoles}
         setPermissionsUserIds={setPermissionsUserIds}
+        setPermissionsGroupIds={setPermissionsGroupIds}
         setSelectedPageForPermissions={setSelectedPageForPermissions}
         setPages={setPages}
       />

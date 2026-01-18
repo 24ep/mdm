@@ -133,6 +133,14 @@
     --z-chat-widget-control: 10002;
     --z-chat-widget-overlay-text: 10003;
     --z-chat-widget-preview: 10004;
+    
+    /* Platform Sidebar overrides */
+    --brand-platform-sidebar-bg: hsl(0 0% 100%);
+    
+    /* Top Bar overrides */
+    --brand-top-menu-bg: hsl(0 0% 100%);
+    --brand-top-menu-text: hsl(222.2 84% 4.9%); /* Dark text */
+    --brand-secondary-sidebar-bg: hsl(0 0% 100%);
   }
 
   .dark {
@@ -172,6 +180,14 @@
     --ring: 224.3 76.3% 48%;
 
     /* Z-index values remain the same in dark mode */
+    
+    /* Platform Sidebar overrides for dark mode */
+    --brand-platform-sidebar-bg: hsl(222.2 84% 4.9%);
+
+    /* Top Bar overrides for dark mode */
+    --brand-top-menu-bg: hsl(222.2 84% 4.9%);
+    --brand-top-menu-text: hsl(210 40% 98%); /* Light text */
+    --brand-secondary-sidebar-bg: hsl(222.2 84% 4.9%);
   }
 }
 

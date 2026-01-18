@@ -167,30 +167,48 @@ async function getHandler(request: NextRequest) {
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
 
-  // Get users with space associations
+  // Get users with space associations and group memberships
   // Add limit and offset as the last parameters
   const limitParamIndex = paramIndex
   const offsetParamIndex = paramIndex + 1
   const usersQueryParams = [...queryParams, limit, offset]
 
   const users = await query(`
-      SELECT 
-        u.id, u.name, u.email, u.role, u.created_at,
-        u.is_active,
-        null as last_login_at,
+      SELECT
+        u.id,
+        u.email,
+        u.name,
+        u.role,
+        u.is_active as "isActive",
+        u.is_two_factor_enabled as "isTwoFactorEnabled",
+        u.created_at as "createdAt",
+        u.last_login_at as "lastLoginAt",
+        u.default_space_id as "defaultSpaceId",
         COALESCE(
           json_agg(
-            json_build_object(
+            DISTINCT jsonb_build_object(
               'spaceId', sm.space_id,
               'spaceName', s.name,
               'role', sm.role
             )
           ) FILTER (WHERE sm.space_id IS NOT NULL),
           '[]'::json
-        ) as spaces
+        ) as spaces,
+        COALESCE(
+          json_agg(
+            DISTINCT jsonb_build_object(
+              'groupId', ugm.group_id,
+              'groupName', ug.name,
+              'role', ugm.role
+            )
+          ) FILTER (WHERE ugm.group_id IS NOT NULL),
+          '[]'::json
+        ) as groups
       FROM users u
       LEFT JOIN space_members sm ON u.id = sm.user_id
       LEFT JOIN spaces s ON sm.space_id = s.id
+      LEFT JOIN user_group_members ugm ON u.id = ugm.user_id
+      LEFT JOIN user_groups ug ON ugm.group_id = ug.id
       ${whereClause}
       GROUP BY u.id, u.name, u.email, u.role, u.created_at, u.is_active
       ORDER BY u.created_at DESC

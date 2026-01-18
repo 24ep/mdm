@@ -188,3 +188,26 @@ export interface Folder {
   updated_at?: string
 }
 
+
+export interface ExportProfile {
+  id: string
+  name: string
+  description?: string
+  type: 'STUDIO' | 'QUERY'
+  config: {
+    source?: string
+    tableName?: string
+    database?: string
+    columns?: string[]
+    limit?: number
+    filters?: Array<{
+      column: string
+      operator: string
+      value: any
+    }>
+    query?: string
+  }
+  createdAt: Date
+  updatedAt: Date
+  spaceId?: string
+}

@@ -180,13 +180,28 @@ async function putHandler(request: NextRequest) {
 
   // Create audit log (non-blocking - don't fail the request if audit log fails)
   try {
+    // Verify user exists to ensure FK constraint (userId comes from session which might be stale)
+    let auditUserId: string | null = session.user.id
+    if (auditUserId) {
+      try {
+        const userCheck = await query('SELECT id FROM users WHERE id = $1::uuid', [auditUserId], 5000, { skipTracing: true })
+        if (!userCheck.rows || userCheck.rows.length === 0) {
+          logger.warn(`User ${auditUserId} not found in database during branding update. Using null for audit log.`)
+          auditUserId = null
+        }
+      } catch (e) {
+        // If check fails (e.g. invalid UUID syntax), default to null
+        auditUserId = null
+      }
+    }
+
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'BrandingConfig',
       entityId: 'system',
       oldValue: currentBranding,
       newValue: branding,
-      userId: session.user.id,
+      userId: auditUserId,
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown'
     })

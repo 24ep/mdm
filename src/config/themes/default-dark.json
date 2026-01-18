@@ -22,12 +22,12 @@
         "uiBackgroundColor": "rgba(28, 28, 30, 0.85)",
         "uiBorderColor": "rgba(255, 255, 255, 0.08)",
         "bodyBackgroundColor": "#000000",
-        "topMenuBackgroundColor": "rgba(28, 28, 30, 0.75)",
-        "platformSidebarBackgroundColor": "rgba(28, 28, 30, 0.75)",
-        "secondarySidebarBackgroundColor": "rgba(28, 28, 30, 0.75)",
-        "topMenuTextColor": "#F5F5F7",
-        "platformSidebarTextColor": "#F5F5F7",
-        "secondarySidebarTextColor": "#F5F5F7",
+        "topMenuBackgroundColor": "#ffffff",
+        "platformSidebarBackgroundColor": "#ffffff",
+        "secondarySidebarBackgroundColor": "#ffffff",
+        "topMenuTextColor": "#1d1d1f",
+        "platformSidebarTextColor": "#1d1d1f",
+        "secondarySidebarTextColor": "#1d1d1f",
         "bodyTextColor": "#F5F5F7",
         "loginBackground": {
             "type": "gradient",
@@ -75,8 +75,8 @@
             "top-menu-bar": {
                 "backdropFilter": "blur(30px) saturate(200%)",
                 "borderWidth": "0px 0px 0.5px 0px",
-                "borderColor": "rgba(255,255,255,0.06)",
-                "boxShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.2)",
+                "borderColor": "rgba(0,0,0,0.1)",
+                "boxShadow": "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
             },
             "platform-sidebar-primary": {
@@ -95,7 +95,7 @@
                 "borderWidth": "0px",
                 "borderColor": "transparent",
                 "backgroundColor": "transparent",
-                "textColor": "#F5F5F7",
+                "textColor": "#1d1d1f",
                 "borderRadius": "8px",
                 "padding": "0.5rem",
                 "fontSize": "0.875rem",
@@ -107,8 +107,8 @@
             "platform-sidebar-menu-hover": {
                 "borderWidth": "0px",
                 "borderColor": "transparent",
-                "backgroundColor": "rgba(255,255,255,0.08)",
-                "textColor": "#F5F5F7",
+                "backgroundColor": "rgba(0,0,0,0.05)",
+                "textColor": "#1d1d1f",
                 "borderRadius": "8px",
                 "padding": "0.5rem",
                 "fontSize": "0.875rem",
@@ -120,14 +120,14 @@
             "platform-sidebar-menu-active": {
                 "borderWidth": "0px",
                 "borderColor": "transparent",
-                "backgroundColor": "rgba(10,132,255,0.18)",
+                "backgroundColor": "rgba(10,132,255,0.1)",
                 "textColor": "#0A84FF",
                 "borderRadius": "8px",
                 "padding": "0.5rem",
                 "fontSize": "0.875rem",
                 "fontWeight": "600",
                 "backdropFilter": "",
-                "boxShadow": "0 1px 3px 0 rgba(10, 132, 255, 0.25)",
+                "boxShadow": "none",
                 "transition": "all 200ms cubic-bezier(0.4, 0, 0.2, 1)"
             },
             "vertical-tab-menu-normal": {
