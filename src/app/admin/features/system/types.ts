@@ -47,6 +47,11 @@ export interface SystemSettings {
 
   // Features
   enableThemeConfig: boolean
+  enableUserRegistration: boolean
+  enableGuestAccess: boolean
+  enableNotifications: boolean
+  enableAnalytics: boolean
+  requireAdminApproval: boolean
 
   // Storage
   maxFileSize: number

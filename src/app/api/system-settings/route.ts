@@ -17,31 +17,50 @@ const defaultSettings = {
 // GET /api/system-settings - Get current system settings
 export async function GET() {
     try {
-        // Try to get settings from database
-        const settingsRecord = await prisma.systemSetting.findUnique({
-            where: { key: 'global' }
-        })
+        // Fetch ALL settings from the database
+        const allSettings = await prisma.systemSetting.findMany()
 
+        // Find the 'global' record
+        const settingsRecord = allSettings.find(s => s.key === 'global')
+
+        // Parse global settings
+        let globalSettings = {}
         if (settingsRecord) {
             try {
-                const parsedValue = JSON.parse(settingsRecord.value)
-                return NextResponse.json({
-                    success: true,
-                    settings: { ...defaultSettings, ...parsedValue }
-                })
-            } catch {
-                // If parsing fails, return default settings
-                return NextResponse.json({
-                    success: true,
-                    settings: defaultSettings
-                })
+                globalSettings = JSON.parse(settingsRecord.value)
+            } catch (e) {
+                console.error('Failed to parse global settings blob:', e)
             }
         }
 
-        // Return default settings if none exist
+        // Create a flat map of all individual settings
+        // Individual keys in the table override values in the 'global' blob
+        const individualSettings = allSettings.reduce((acc: Record<string, any>, s) => {
+            if (s.key !== 'global') {
+                // Try to parse as JSON if it looks like an object/array, otherwise use as string/number/boolean
+                if (s.value === 'true') acc[s.key] = true
+                else if (s.value === 'false') acc[s.key] = false
+                else if (!isNaN(Number(s.value)) && s.value.trim() !== '') acc[s.key] = Number(s.value)
+                else {
+                    try {
+                        acc[s.key] = JSON.parse(s.value)
+                    } catch {
+                        acc[s.key] = s.value
+                    }
+                }
+            }
+            return acc
+        }, {})
+
+        const mergedSettings = {
+            ...defaultSettings,
+            ...globalSettings,
+            ...individualSettings
+        }
+
         return NextResponse.json({
             success: true,
-            settings: defaultSettings
+            settings: mergedSettings
         })
     } catch (error) {
         console.error('Failed to load system settings:', error)

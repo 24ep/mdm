@@ -24,7 +24,11 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Palette
+  Palette,
+  UserPlus,
+  Users,
+  UserCheck,
+  BarChart3
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { SSOConfiguration } from '../../security'
@@ -78,6 +82,11 @@ export function SystemSettings() {
 
     // Features
     enableThemeConfig: true,
+    enableUserRegistration: true,
+    enableGuestAccess: false,
+    enableNotifications: true,
+    enableAnalytics: false,
+    requireAdminApproval: false,
 
     // Storage
     maxFileSize: 10485760, // 10MB
@@ -114,6 +123,11 @@ export function SystemSettings() {
           disableRightClick: data.disableRightClick !== undefined ? data.disableRightClick : prev.disableRightClick,
           secureLoginPage: data.secureLoginPage !== undefined ? data.secureLoginPage : prev.secureLoginPage,
           enableThemeConfig: data.enableThemeConfig !== undefined ? data.enableThemeConfig === 'true' || data.enableThemeConfig === true : prev.enableThemeConfig,
+          enableUserRegistration: data.enableUserRegistration !== undefined ? data.enableUserRegistration === 'true' || data.enableUserRegistration === true : prev.enableUserRegistration,
+          enableGuestAccess: data.enableGuestAccess !== undefined ? data.enableGuestAccess === 'true' || data.enableGuestAccess === true : prev.enableGuestAccess,
+          enableNotifications: data.enableNotifications !== undefined ? data.enableNotifications === 'true' || data.enableNotifications === true : prev.enableNotifications,
+          enableAnalytics: data.enableAnalytics !== undefined ? data.enableAnalytics === 'true' || data.enableAnalytics === true : prev.enableAnalytics,
+          requireAdminApproval: data.requireAdminApproval !== undefined ? data.requireAdminApproval === 'true' || data.requireAdminApproval === true : prev.requireAdminApproval,
           enableLoginAlert: data.enableLoginAlert !== undefined ? data.enableLoginAlert === 'true' || data.enableLoginAlert === true : prev.enableLoginAlert,
         }))
       }
@@ -145,6 +159,11 @@ export function SystemSettings() {
             orgEmail: settings.orgEmail,
             orgWebsite: settings.orgWebsite,
             enableThemeConfig: settings.enableThemeConfig,
+            enableUserRegistration: settings.enableUserRegistration,
+            enableGuestAccess: settings.enableGuestAccess,
+            enableNotifications: settings.enableNotifications,
+            enableAnalytics: settings.enableAnalytics,
+            requireAdminApproval: settings.requireAdminApproval,
             disableRightClick: settings.disableRightClick,
             requireTwoFactor: settings.requireTwoFactor,
             enableLoginAlert: settings.enableLoginAlert,
@@ -496,7 +515,7 @@ export function SystemSettings() {
                   Appearance & Branding
                 </CardTitle>
                 <CardDescription>
-                   Customize your application's look and feel
+                  Customize your application's look and feel
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -522,106 +541,106 @@ export function SystemSettings() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <Label htmlFor="logoUpload">Application Logo</Label>
-                      <div className="flex flex-col gap-3 mt-2">
-                        <div className="h-32 w-full flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
-                          {settings.logoUrl ? (
-                            <>
-                              <img
-                                src={settings.logoUrl}
-                                alt="App Logo"
-                                className="max-h-full max-w-full object-contain p-2"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => document.getElementById('logoUpload')?.click()}
-                                >
-                                  Change Logo
-                                </Button>
-                              </div>
-                            </>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              className="h-full w-full flex flex-col gap-2 text-muted-foreground hover:bg-transparent"
-                              onClick={() => document.getElementById('logoUpload')?.click()}
-                            >
-                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                                <Globe className="h-5 w-5 opacity-40" />
-                              </div>
-                              <span className="text-xs">Upload Logo</span>
-                            </Button>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Recommended size: 200x50px. Max 2MB.
-                        </div>
-                        <Input
-                          id="logoUpload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleLogoUpload}
-                        />
+                  <div>
+                    <Label htmlFor="logoUpload">Application Logo</Label>
+                    <div className="flex flex-col gap-3 mt-2">
+                      <div className="h-32 w-full flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
+                        {settings.logoUrl ? (
+                          <>
+                            <img
+                              src={settings.logoUrl}
+                              alt="App Logo"
+                              className="max-h-full max-w-full object-contain p-2"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => document.getElementById('logoUpload')?.click()}
+                              >
+                                Change Logo
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            className="h-full w-full flex flex-col gap-2 text-muted-foreground hover:bg-transparent"
+                            onClick={() => document.getElementById('logoUpload')?.click()}
+                          >
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                              <Globe className="h-5 w-5 opacity-40" />
+                            </div>
+                            <span className="text-xs">Upload Logo</span>
+                          </Button>
+                        )}
                       </div>
+                      <div className="text-xs text-muted-foreground">
+                        Recommended size: 200x50px. Max 2MB.
+                      </div>
+                      <Input
+                        id="logoUpload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoUpload}
+                      />
                     </div>
+                  </div>
 
-                    <div>
-                      <Label htmlFor="faviconUpload">Favicon</Label>
-                      <div className="flex flex-col gap-3 mt-2">
-                        <div className="h-32 w-32 flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
-                          {settings.faviconUrl ? (
-                            <>
-                              <img
-                                src={settings.faviconUrl}
-                                alt="Favicon"
-                                className="h-16 w-16 object-contain"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 rounded-full"
-                                  onClick={() => document.getElementById('faviconUpload')?.click()}
-                                >
-                                  <RefreshCw className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              className="h-full w-full flex flex-col gap-2 text-muted-foreground hover:bg-transparent"
-                              onClick={() => document.getElementById('faviconUpload')?.click()}
-                            >
-                               <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                                <Globe className="h-5 w-5 opacity-40" />
-                              </div>
-                              <span className="text-[10px]">Upload</span>
-                            </Button>
-                          )}
-                        </div>
-                         <div className="text-xs text-muted-foreground">
-                          Recommended size: 32x32px. Max 1MB.
-                        </div>
-                        <Input
-                          id="faviconUpload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFaviconUpload}
-                        />
+                  <div>
+                    <Label htmlFor="faviconUpload">Favicon</Label>
+                    <div className="flex flex-col gap-3 mt-2">
+                      <div className="h-32 w-32 flex items-center justify-center border-2 border-dashed rounded-lg bg-muted/20 overflow-hidden relative group">
+                        {settings.faviconUrl ? (
+                          <>
+                            <img
+                              src={settings.faviconUrl}
+                              alt="Favicon"
+                              className="h-16 w-16 object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="h-8 w-8 p-0 rounded-full"
+                                onClick={() => document.getElementById('faviconUpload')?.click()}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            className="h-full w-full flex flex-col gap-2 text-muted-foreground hover:bg-transparent"
+                            onClick={() => document.getElementById('faviconUpload')?.click()}
+                          >
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                              <Globe className="h-5 w-5 opacity-40" />
+                            </div>
+                            <span className="text-[10px]">Upload</span>
+                          </Button>
+                        )}
                       </div>
+                      <div className="text-xs text-muted-foreground">
+                        Recommended size: 32x32px. Max 1MB.
+                      </div>
+                      <Input
+                        id="faviconUpload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFaviconUpload}
+                      />
                     </div>
+                  </div>
                 </div>
 
                 <div>
@@ -719,101 +738,101 @@ export function SystemSettings() {
           </TabsContent>
 
           <TabsContent value="email" className="space-y-6">
-             <Tabs defaultValue="config" className="w-full">
-               <div className="flex items-center justify-between mb-4">
-                  <TabsList>
-                    <TabsTrigger value="config">Configuration</TabsTrigger>
-                    <TabsTrigger value="templates">Templates</TabsTrigger>
-                  </TabsList>
-               </div>
-               
-               <TabsContent value="config">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Mail className="h-5 w-5" />
-                        Email Configuration
-                      </CardTitle>
-                      <CardDescription>
-                        SMTP settings for email notifications
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* SMTP settings content */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="smtpHost">SMTP Host</Label>
-                          <Input
-                            id="smtpHost"
-                            value={settings.smtpHost}
-                            onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
-                            placeholder="smtp.gmail.com"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="smtpPort">Port</Label>
-                          <Input
-                            id="smtpPort"
-                            type="number"
-                            value={settings.smtpPort}
-                            onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}
-                            placeholder="587"
-                          />
-                        </div>
-                      </div>
+            <Tabs defaultValue="config" className="w-full">
+              <div className="flex items-center justify-between mb-4">
+                <TabsList>
+                  <TabsTrigger value="config">Configuration</TabsTrigger>
+                  <TabsTrigger value="templates">Templates</TabsTrigger>
+                </TabsList>
+              </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="smtpUser">Username</Label>
-                          <Input
-                            id="smtpUser"
-                            value={settings.smtpUser}
-                            onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
-                            placeholder="your-email@gmail.com"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="smtpPassword">Password</Label>
-                          <Input
-                            id="smtpPassword"
-                            type="password"
-                            value={settings.smtpPassword}
-                            onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
-                            placeholder="App password"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="smtpSecure"
-                          checked={settings.smtpSecure}
-                          onCheckedChange={(checked) => setSettings({ ...settings, smtpSecure: checked })}
+              <TabsContent value="config">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mail className="h-5 w-5" />
+                      Email Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      SMTP settings for email notifications
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* SMTP settings content */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="smtpHost">SMTP Host</Label>
+                        <Input
+                          id="smtpHost"
+                          value={settings.smtpHost}
+                          onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                          placeholder="smtp.gmail.com"
                         />
-                        <Label htmlFor="smtpSecure">Use SSL/TLS</Label>
                       </div>
+                      <div>
+                        <Label htmlFor="smtpPort">Port</Label>
+                        <Input
+                          id="smtpPort"
+                          type="number"
+                          value={settings.smtpPort}
+                          onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}
+                          placeholder="587"
+                        />
+                      </div>
+                    </div>
 
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => testConnection('email')}
-                          disabled={testResults.email === 'pending'}
-                        >
-                          {getTestIcon('email')}
-                          <span className="ml-2">Test Email</span>
-                        </Button>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="smtpUser">Username</Label>
+                        <Input
+                          id="smtpUser"
+                          value={settings.smtpUser}
+                          onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                          placeholder="your-email@gmail.com"
+                        />
                       </div>
-                    </CardContent>
-                  </Card>
-               </TabsContent>
-               <TabsContent value="templates">
-                  <Card>
-                     <CardContent className="p-6">
-                        <EmailTemplates />
-                     </CardContent>
-                  </Card>
-               </TabsContent>
-             </Tabs>
+                      <div>
+                        <Label htmlFor="smtpPassword">Password</Label>
+                        <Input
+                          id="smtpPassword"
+                          type="password"
+                          value={settings.smtpPassword}
+                          onChange={(e) => setSettings({ ...settings, smtpPassword: e.target.value })}
+                          placeholder="App password"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="smtpSecure"
+                        checked={settings.smtpSecure}
+                        onCheckedChange={(checked) => setSettings({ ...settings, smtpSecure: checked })}
+                      />
+                      <Label htmlFor="smtpSecure">Use SSL/TLS</Label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => testConnection('email')}
+                        disabled={testResults.email === 'pending'}
+                      >
+                        {getTestIcon('email')}
+                        <span className="ml-2">Test Email</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="templates">
+                <Card>
+                  <CardContent className="p-6">
+                    <EmailTemplates />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
@@ -947,6 +966,93 @@ export function SystemSettings() {
                       id="enableThemeConfig"
                       checked={settings.enableThemeConfig}
                       onCheckedChange={(checked) => setSettings({ ...settings, enableThemeConfig: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="enableUserRegistration" className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        Allow User Registration
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Allow new users to create accounts on the platform
+                      </p>
+                    </div>
+                    <Switch
+                      id="enableUserRegistration"
+                      checked={settings.enableUserRegistration}
+                      onCheckedChange={(checked) => setSettings({ ...settings, enableUserRegistration: checked })}
+                    />
+                  </div>
+
+                  {settings.enableUserRegistration && (
+                    <div className="flex items-center justify-between ml-6 pb-2 border-l-2 pl-4">
+                      <div>
+                        <Label htmlFor="requireAdminApproval" className="flex items-center gap-2">
+                          <UserCheck className="h-4 w-4" />
+                          Require Admin Approval
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          New accounts must be approved by an administrator
+                        </p>
+                      </div>
+                      <Switch
+                        id="requireAdminApproval"
+                        checked={settings.requireAdminApproval}
+                        onCheckedChange={(checked) => setSettings({ ...settings, requireAdminApproval: checked })}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="enableGuestAccess" className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Allow Guest Access
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Allow unauthenticated users to access public modules
+                      </p>
+                    </div>
+                    <Switch
+                      id="enableGuestAccess"
+                      checked={settings.enableGuestAccess}
+                      onCheckedChange={(checked) => setSettings({ ...settings, enableGuestAccess: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="enableNotifications" className="flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Enable Notifications
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Enable system-wide notification delivery
+                      </p>
+                    </div>
+                    <Switch
+                      id="enableNotifications"
+                      checked={settings.enableNotifications}
+                      onCheckedChange={(checked) => setSettings({ ...settings, enableNotifications: checked })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="enableAnalytics" className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Enable Analytics
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Collect and display system usage analytics
+                      </p>
+                    </div>
+                    <Switch
+                      id="enableAnalytics"
+                      checked={settings.enableAnalytics}
+                      onCheckedChange={(checked) => setSettings({ ...settings, enableAnalytics: checked })}
                     />
                   </div>
                 </div>
