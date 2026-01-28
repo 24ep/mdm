@@ -42,8 +42,7 @@ export interface SystemSettings {
   enableLoginAlert: boolean
 
   // UI Protection
-  disableRightClick: boolean
-  secureLoginPage: boolean
+  uiProtectionEnabled: boolean
 
   // Features
   enableThemeConfig: boolean
@@ -52,6 +51,9 @@ export interface SystemSettings {
   enableNotifications: boolean
   enableAnalytics: boolean
   requireAdminApproval: boolean
+  requireEmailVerification: boolean
+  enableAuditTrail: boolean
+  deletePolicyDays: number
 
   // Storage
   maxFileSize: number

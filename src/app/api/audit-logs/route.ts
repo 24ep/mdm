@@ -38,7 +38,7 @@ async function getHandler(request: NextRequest) {
   }
 
   if (userId) {
-    whereConditions.push(`user_id = $${paramIndex}::uuid`)
+    whereConditions.push(`user_id::text = $${paramIndex}`)
     queryParams.push(userId)
     paramIndex++
   }

@@ -16,7 +16,25 @@ async function getHandler(request: NextRequest) {
 
   const { rows } = await query('SELECT key, value FROM system_settings ORDER BY key ASC')
   const settingsObject = (rows || []).reduce((acc: Record<string, any>, setting: any) => {
-    acc[setting.key] = setting.value
+    const value = setting.value
+    // Parse boolean strings
+    if (value === 'true') acc[setting.key] = true
+    else if (value === 'false') acc[setting.key] = false
+    // Parse numeric strings (only if it's purely a number and not empty)
+    else if (!isNaN(Number(value)) && value.trim() !== '' && !value.startsWith('0')) {
+      acc[setting.key] = Number(value)
+    }
+    // Try to parse JSON for objects/arrays
+    else if (value.startsWith('{') || value.startsWith('[')) {
+      try {
+        acc[setting.key] = JSON.parse(value)
+      } catch {
+        acc[setting.key] = value
+      }
+    }
+    else {
+      acc[setting.key] = value
+    }
     return acc
   }, {})
 

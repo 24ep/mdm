@@ -3,13 +3,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 
 export interface SystemSettings {
-    appName: string
+    siteName: string
     deletePolicyDays: number
     enableAuditTrail: boolean
     enableThemeConfig: boolean
     requireEmailVerification: boolean
     requireAdminApproval: boolean
-    disableRightClick: boolean
+    uiProtectionEnabled: boolean
 }
 
 interface SystemSettingsContextType {
@@ -21,13 +21,13 @@ interface SystemSettingsContextType {
 }
 
 const defaultSettings: SystemSettings = {
-    appName: 'Unified Data Platform',
+    siteName: 'Unified Data Platform',
     deletePolicyDays: 30,
     enableAuditTrail: true,
     enableThemeConfig: true,
     requireEmailVerification: true,
     requireAdminApproval: false,
-    disableRightClick: false
+    uiProtectionEnabled: false
 }
 
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined)
@@ -92,7 +92,7 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
     // Prevent right-click if setting is enabled
     useEffect(() => {
         const handleContextMenu = (e: MouseEvent) => {
-            if (settings.disableRightClick) {
+            if (settings.uiProtectionEnabled) {
                 e.preventDefault()
                 return false
             }
@@ -102,7 +102,7 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
         return () => {
             window.removeEventListener('contextmenu', handleContextMenu)
         }
-    }, [settings.disableRightClick])
+    }, [settings.uiProtectionEnabled])
 
     return (
         <SystemSettingsContext.Provider

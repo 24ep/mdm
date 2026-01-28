@@ -33,10 +33,10 @@ async function getHandler(
         dm.name as data_model_name,
         dm.display_name as data_model_display_name,
         u.name as created_by_name
-       FROM public.workflows w
-       LEFT JOIN public.data_models dm ON w.data_model_id = dm.id
-       LEFT JOIN public.users u ON w.created_by = u.id
-       WHERE w.id = $1::uuid`,
+       FROM workflows w
+       LEFT JOIN data_models dm ON w.data_model_id = dm.id
+       LEFT JOIN users u ON w.created_by = u.id
+       WHERE w.id::text = $1`,
       [workflowId]
     )
 
@@ -53,9 +53,9 @@ async function getHandler(
         dma.name as attribute_name,
         dma.display_name as attribute_display_name,
         dma.type as attribute_type
-       FROM public.workflow_conditions wc
-       JOIN public.data_model_attributes dma ON wc.attribute_id = dma.id
-       WHERE wc.workflow_id = $1::uuid
+       FROM workflow_conditions wc
+       JOIN data_model_attributes dma ON wc.attribute_id = dma.id
+       WHERE wc.workflow_id::text = $1
        ORDER BY wc.condition_order`,
       [workflowId]
     )
@@ -69,18 +69,18 @@ async function getHandler(
         dma.type as target_attribute_type,
         source_dma.name as source_attribute_name,
         source_dma.display_name as source_attribute_display_name
-       FROM public.workflow_actions wa
-       JOIN public.data_model_attributes dma ON wa.target_attribute_id = dma.id
-       LEFT JOIN public.data_model_attributes source_dma ON wa.source_attribute_id = source_dma.id
-       WHERE wa.workflow_id = $1::uuid
+       FROM workflow_actions wa
+       JOIN data_model_attributes dma ON wa.target_attribute_id = dma.id
+       LEFT JOIN data_model_attributes source_dma ON wa.source_attribute_id = source_dma.id
+       WHERE wa.workflow_id::text = $1
        ORDER BY wa.action_order`,
       [workflowId]
     )
 
     // Get schedule
     const { rows: scheduleRows } = await query(
-      `SELECT * FROM public.workflow_schedules 
-       WHERE workflow_id = $1::uuid AND is_active = true`,
+      `SELECT * FROM workflow_schedules 
+       WHERE workflow_id::text = $1 AND is_active = true`,
       [workflowId]
     )
 
@@ -89,8 +89,8 @@ async function getHandler(
       `SELECT 
         id, execution_type, status, started_at, completed_at,
         records_processed, records_updated, error_message
-       FROM public.workflow_executions 
-       WHERE workflow_id = $1::uuid
+       FROM workflow_executions 
+       WHERE workflow_id::text = $1
        ORDER BY started_at DESC
        LIMIT 10`,
       [workflowId]
@@ -161,9 +161,9 @@ async function putHandler(
 
     // Update workflow
     const { rows: workflowRows } = await query(
-      `UPDATE public.workflows 
+      `UPDATE workflows 
        SET name = $1, description = $2, trigger_type = $3, status = $4, updated_at = NOW()
-       WHERE id = $5
+       WHERE id::text = $5
        RETURNING *`,
       [name, description, trigger_type, status, workflowId]
     )
@@ -176,15 +176,15 @@ async function putHandler(
     const workflow = workflowRows[0]
 
     // Delete existing conditions and actions
-    await query('DELETE FROM public.workflow_conditions WHERE workflow_id = $1::uuid', [workflowId])
-    await query('DELETE FROM public.workflow_actions WHERE workflow_id = $1::uuid', [workflowId])
-    await query('DELETE FROM public.workflow_schedules WHERE workflow_id = $1::uuid', [workflowId])
+    await query('DELETE FROM workflow_conditions WHERE workflow_id::text = $1', [workflowId])
+    await query('DELETE FROM workflow_actions WHERE workflow_id::text = $1', [workflowId])
+    await query('DELETE FROM workflow_schedules WHERE workflow_id::text = $1', [workflowId])
 
     // Create new conditions
     if (conditions.length > 0) {
       for (const condition of conditions) {
         await query(
-          `INSERT INTO public.workflow_conditions 
+          `INSERT INTO workflow_conditions 
            (workflow_id, attribute_id, operator, value, logical_operator, condition_order)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
@@ -203,7 +203,7 @@ async function putHandler(
     if (actions.length > 0) {
       for (const action of actions) {
         await query(
-          `INSERT INTO public.workflow_actions 
+          `INSERT INTO workflow_actions 
            (workflow_id, target_attribute_id, action_type, new_value, calculation_formula, 
             source_attribute_id, action_order)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -225,7 +225,7 @@ async function putHandler(
       if (trigger_type === 'SCHEDULED') {
         // Scheduled workflow with time-based schedule
         await query(
-          `INSERT INTO public.workflow_schedules 
+          `INSERT INTO workflow_schedules 
            (workflow_id, schedule_type, schedule_config, start_date, end_date, timezone)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
@@ -240,7 +240,7 @@ async function putHandler(
       } else if (trigger_type === 'EVENT_BASED' && schedule.schedule_config?.trigger_on_sync) {
         // Event-based workflow triggered by data syncs
         await query(
-          `INSERT INTO public.workflow_schedules 
+          `INSERT INTO workflow_schedules 
            (workflow_id, schedule_type, schedule_config, trigger_on_sync, trigger_on_sync_schedule_id)
            VALUES ($1, $2, $3, $4, $5)`,
           [
@@ -287,9 +287,9 @@ async function deleteHandler(
 
     // Soft delete workflow
     const { rows } = await query(
-      `UPDATE public.workflows 
+      `UPDATE workflows 
        SET is_active = false, deleted_at = NOW()
-       WHERE id = $1
+       WHERE id::text = $1
        RETURNING *`,
       [workflowId]
     )

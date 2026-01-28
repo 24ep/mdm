@@ -8,29 +8,20 @@ datasource db {
 }
 
 model User {
-  id                     String    @id @default(uuid()) @db.Uuid
-  email                  String    @unique
-  name                   String
-  password               String
-  role                   String    @default("USER")
-  avatar                 String?
-  createdAt              DateTime  @default(now()) @map("created_at")
-  updatedAt              DateTime  @updatedAt @map("updated_at")
-  isActive               Boolean   @default(true) @map("is_active")
-  passwordChangedAt      DateTime? @map("password_changed_at")
-  requiresPasswordChange Boolean   @default(false) @map("requires_password_change")
-  failedLoginAttempts    Int       @default(0) @map("failed_login_attempts")
-  lockoutUntil           DateTime? @map("lockout_until")
-  allowedLoginMethods    String[]  @default([]) @map("allowed_login_methods")
-  twoFactorSecret        String?   @map("two_factor_secret")
-  isTwoFactorEnabled     Boolean   @default(false) @map("is_two_factor_enabled")
-  twoFactorBackupCodes   String[]  @default([]) @map("two_factor_backup_codes")
-
-  // AD Sync Fields
-  adUserId                                                String?                       @unique @map("ad_user_id")
-  jobTitle                                                String?                       @map("job_title")
-  department                                              String?
-  organization                                            String?
+  id                                                      String                        @id @default(uuid()) @db.Uuid
+  email                                                   String                        @unique
+  name                                                    String
+  password                                                String
+  role                                                    String                        @default("USER")
+  avatar                                                  String?
+  createdAt                                               DateTime                      @default(now()) @map("created_at")
+  updatedAt                                               DateTime                      @updatedAt @map("updated_at")
+  isActive                                                Boolean                       @default(true) @map("is_active")
+  passwordChangedAt                                       DateTime?                     @map("password_changed_at")
+  requiresPasswordChange                                  Boolean                       @default(false) @map("requires_password_change")
+  failedLoginAttempts                                     Int                           @default(0) @map("failed_login_attempts")
+  lockoutUntil                                            DateTime?                     @map("lockout_until")
+  allowedLoginMethods                                     String[]                      @default([]) @map("allowed_login_methods")
   apiCollections                                          ApiCollection[]               @relation("UserApiCollections")
   apiEnvironments                                         ApiEnvironment[]              @relation("UserApiEnvironments")
   apiRequestHistory                                       ApiRequestHistory[]           @relation("UserApiRequestHistory")
@@ -46,7 +37,6 @@ model User {
   createdDataRecords                                      DataRecord[]                  @relation("DataRecordCreator")
   createdEavEntities                                      EavEntity[]                   @relation("EavEntityCreator")
   exportJobs                                              ExportJob[]                   @relation("ExportJobCreator")
-  exportProfiles                                          ExportProfile[]               @relation("ExportProfileCreator")
   importJobs                                              ImportJob[]                   @relation("ImportJobCreator")
   importProfiles                                          ImportProfile[]               @relation("ImportProfileCreator")
   infrastructureInstances                                 InfrastructureInstance[]      @relation("UserInfrastructureInstances")
@@ -95,42 +85,8 @@ model User {
   createdTickets                                          Ticket[]                      @relation("TicketCreator")
   websitePWAVersions                                      WebsitePWAVersion[]           @relation("WebsitePWAVersionCreator")
   createdWebsitePWAs                                      WebsitePWA[]                  @relation("WebsitePWACreator")
-  groupMemberships                                        UserGroupMember[]             @relation("UserGroupMembers")
 
   @@map("users")
-}
-
-model UserGroup {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  parentId    String?  @map("parent_id") @db.Uuid
-  isActive    Boolean  @default(true) @map("is_active")
-  sortOrder   Int      @default(0) @map("sort_order")
-  metadata    Json?    @default("{}")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  parent            UserGroup?         @relation("GroupHierarchy", fields: [parentId], references: [id])
-  children          UserGroup[]        @relation("GroupHierarchy")
-  members           UserGroupMember[]  @relation("GroupMembers")
-  reportPermissions ReportPermission[] @relation("GroupReportPermissions")
-
-  @@map("user_groups")
-}
-
-model UserGroupMember {
-  id        String   @id @default(uuid()) @db.Uuid
-  groupId   String   @map("group_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  role      String   @default("MEMBER")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  group UserGroup @relation("GroupMembers", fields: [groupId], references: [id], onDelete: Cascade)
-  user  User      @relation("UserGroupMembers", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([groupId, userId])
-  @@map("user_group_members")
 }
 
 model Space {
@@ -157,7 +113,6 @@ model Space {
   chatbots                Chatbot[]                @relation("SpaceChatbots")
   dataModels              DataModelSpace[]         @relation("SpaceDataModels")
   exportJobs              ExportJob[]              @relation("SpaceExportJobs")
-  exportProfiles          ExportProfile[]          @relation("SpaceExportProfiles")
   externalConnections     ExternalConnection[]     @relation("SpaceExternalConnections")
   importJobs              ImportJob[]              @relation("SpaceImportJobs")
   importProfiles          ImportProfile[]          @relation("SpaceImportProfiles")
@@ -1134,24 +1089,6 @@ model IntakeSubmission {
   @@map("intake_submissions")
 }
 
-model ExportProfile {
-  id          String      @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  type        String      @default("STUDIO") // STUDIO, QUERY
-  config      Json        @default("{}")
-  createdBy   String      @map("created_by") @db.Uuid
-  spaceId     String?     @map("space_id") @db.Uuid
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  deletedAt   DateTime?   @map("deleted_at")
-  jobs        ExportJob[] @relation("ExportProfileJobs")
-  creator     User        @relation("ExportProfileCreator", fields: [createdBy], references: [id])
-  space       Space?      @relation("SpaceExportProfiles", fields: [spaceId], references: [id])
-
-  @@map("export_profiles")
-}
-
 model ImportProfile {
   id          String      @id @default(uuid()) @db.Uuid
   name        String
@@ -1199,29 +1136,27 @@ model ImportJob {
 }
 
 model ExportJob {
-  id            String         @id @default(uuid()) @db.Uuid
-  profileId     String?        @map("profile_id") @db.Uuid
-  dataModelId   String         @map("data_model_id") @db.Uuid
-  format        String         @default("xlsx")
-  status        String         @default("PENDING")
-  progress      Int            @default(0)
-  totalRows     Int?           @map("total_rows")
-  processedRows Int            @default(0) @map("processed_rows")
-  errorMessage  String?        @map("error_message")
-  fileUrl       String?        @map("file_url")
-  fileName      String?        @map("file_name")
-  fileSize      Int?           @map("file_size")
-  filters       Json           @default("{}")
-  columns       Json           @default("[]")
-  createdBy     String         @map("created_by") @db.Uuid
-  spaceId       String?        @map("space_id") @db.Uuid
-  startedAt     DateTime?      @map("started_at")
-  completedAt   DateTime?      @map("completed_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  creator       User           @relation("ExportJobCreator", fields: [createdBy], references: [id])
-  space         Space?         @relation("SpaceExportJobs", fields: [spaceId], references: [id])
-  profile       ExportProfile? @relation("ExportProfileJobs", fields: [profileId], references: [id])
+  id            String    @id @default(uuid()) @db.Uuid
+  dataModelId   String    @map("data_model_id") @db.Uuid
+  format        String    @default("xlsx")
+  status        String    @default("PENDING")
+  progress      Int       @default(0)
+  totalRows     Int?      @map("total_rows")
+  processedRows Int       @default(0) @map("processed_rows")
+  errorMessage  String?   @map("error_message")
+  fileUrl       String?   @map("file_url")
+  fileName      String?   @map("file_name")
+  fileSize      Int?      @map("file_size")
+  filters       Json      @default("{}")
+  columns       Json      @default("[]")
+  createdBy     String    @map("created_by") @db.Uuid
+  spaceId       String?   @map("space_id") @db.Uuid
+  startedAt     DateTime? @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  creator       User      @relation("ExportJobCreator", fields: [createdBy], references: [id])
+  space         Space?    @relation("SpaceExportJobs", fields: [spaceId], references: [id])
 
   @@map("export_jobs")
 }
@@ -2342,25 +2277,22 @@ model ReportFolder {
 }
 
 model ReportPermission {
-  id                                         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  reportId                                   String     @map("report_id") @db.Uuid
-  userId                                     String?    @map("user_id") @db.Uuid
-  role_id                                    String?    @db.Uuid
-  groupId                                    String?    @map("group_id") @db.Uuid
-  permission                                 String     @db.VarChar(50)
-  createdAt                                  DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
-  created_by                                 String?    @db.Uuid
-  users_report_permissions_created_byTousers User?      @relation("report_permissions_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction)
-  report                                     Report     @relation("ReportPermissions", fields: [reportId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  roles                                      Role?      @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  group                                      UserGroup? @relation("GroupReportPermissions", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users_report_permissions_user_idTousers    User?      @relation("report_permissions_user_idTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId                                   String    @map("report_id") @db.Uuid
+  userId                                     String?   @map("user_id") @db.Uuid
+  role_id                                    String?   @db.Uuid
+  permission                                 String    @db.VarChar(50)
+  createdAt                                  DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  created_by                                 String?   @db.Uuid
+  users_report_permissions_created_byTousers User?     @relation("report_permissions_created_byTousers", fields: [created_by], references: [id], onUpdate: NoAction)
+  report                                     Report    @relation("ReportPermissions", fields: [reportId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roles                                      Role?     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_report_permissions_user_idTousers    User?     @relation("report_permissions_user_idTousers", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@unique([reportId, userId, role_id, groupId, permission])
+  @@unique([reportId, userId, role_id, permission])
   @@index([reportId], map: "idx_report_permissions_report_id")
   @@index([role_id], map: "idx_report_permissions_role_id")
   @@index([userId], map: "idx_report_permissions_user_id")
-  @@index([groupId], map: "idx_report_permissions_group_id")
   @@map("report_permissions")
 }
 
@@ -2477,17 +2409,21 @@ model report_versions {
   @@index([report_id], map: "idx_report_versions_report_id")
 }
 
-model NotificationTemplate {
-  id        String   @id @default(uuid()) @db.Uuid
-  key       String   @unique
-  name      String
-  type      String
-  subject   String?
-  content   String   @db.Text
-  variables String[] @default([])
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+model query_performance {
+  id             String   @id
+  query          String
+  query_hash     String
+  execution_time Int
+  row_count      Int
+  timestamp      DateTime @default(now()) @db.Timestamp(6)
+  user_id        String?
+  user_name      String?
+  space_id       String?
+  status         String
+  error_message  String?
+  is_slow        Boolean  @default(false)
 
-  @@map("notification_templates")
+  @@index([execution_time(sort: Desc)], map: "idx_query_performance_execution_time")
+  @@index([query_hash], map: "idx_query_performance_query_hash")
+  @@index([timestamp(sort: Desc)], map: "idx_query_performance_timestamp")
 }

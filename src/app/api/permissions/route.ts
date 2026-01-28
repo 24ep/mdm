@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const resource = searchParams.get('resource') // Filter by resource type (system, space, model, etc.)
     
-    let queryStr = 'SELECT id, name, description, resource, action FROM public.permissions'
+    let queryStr = 'SELECT id, name, description, resource, action FROM permissions'
     const params: any[] = []
     
     if (resource) {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const { name, description, resource, action } = await request.json()
     if (!name || !resource || !action) return NextResponse.json({ error: 'name, resource, action required' }, { status: 400 })
     const { rows } = await query(
-      'INSERT INTO public.permissions (name, description, resource, action) VALUES ($1, $2, $3, $4) RETURNING id, name, description, resource, action',
+      'INSERT INTO permissions (name, description, resource, action) VALUES ($1, $2, $3, $4) RETURNING id, name, description, resource, action',
       [name, description || null, resource, action]
     )
     return NextResponse.json({ permission: rows[0] })

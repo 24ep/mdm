@@ -69,8 +69,6 @@ export async function GET(request: NextRequest) {
         NULL as avatar,
         u.created_at,
         u.updated_at,
-        u.default_space_id,
-        ds.name as default_space_name,
         COALESCE(
           (SELECT json_agg(
             json_build_object(
@@ -89,7 +87,6 @@ export async function GET(request: NextRequest) {
           ), '[]'::json
         ) as spaces
       FROM users u
-      LEFT JOIN spaces ds ON u.default_space_id = ds.id
       ${whereClause}
       ORDER BY u.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}

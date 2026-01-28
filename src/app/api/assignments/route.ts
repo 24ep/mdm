@@ -33,8 +33,8 @@ async function getHandler(request: NextRequest) {
     if (status) { params.push(status); filters.push(`status = $${params.length}`) }
     if (assignedTo) { params.push(assignedTo); filters.push(`assigned_to = $${params.length}`) }
     const where = filters.length ? 'WHERE ' + filters.join(' AND ') : ''
-    const listSql = `SELECT * FROM public.assignments ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
-    const countSql = `SELECT COUNT(*)::int AS total FROM public.assignments ${where}`
+    const listSql = `SELECT * FROM assignments ${where} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
+    const countSql = `SELECT COUNT(*)::int AS total FROM assignments ${where}`
     const [{ rows: assignments }, { rows: totals }] = await Promise.all([
       query(listSql, [...params, limit, offset]),
       query(countSql, params),
@@ -82,7 +82,7 @@ async function postHandler(request: NextRequest) {
     logger.apiRequest('POST', '/api/assignments', { userId: session.user.id, title, status, priority })
 
     const { rows: insertRows } = await query(
-      `INSERT INTO public.assignments (title, description, status, priority, due_date, start_date, assigned_to, created_by)
+      `INSERT INTO assignments (title, description, status, priority, due_date, start_date, assigned_to, created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [title, description ?? null, status || 'TODO', priority || 'MEDIUM', dueDate || null, startDate || null, assignedTo || null, session.user.id]
     )
@@ -91,13 +91,13 @@ async function postHandler(request: NextRequest) {
     if (customerIds && customerIds.length > 0) {
       const values = customerIds.map((_: any, i: number) => `($1, $${i + 2})`).join(', ')
       await query(
-        `INSERT INTO public.customer_assignments (assignment_id, customer_id) VALUES ${values}`,
+        `INSERT INTO customer_assignments (assignment_id, customer_id) VALUES ${values}`,
         [assignment.id, ...customerIds]
       )
     }
 
     await query(
-      'INSERT INTO public.activities (action, entity_type, entity_id, new_value, user_id) VALUES ($1,$2,$3,$4,$5)',
+      'INSERT INTO activities (action, entity_type, entity_id, new_value, user_id) VALUES ($1,$2,$3,$4,$5)',
       ['CREATE', 'Assignment', assignment.id, assignment, session.user.id]
     )
 

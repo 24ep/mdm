@@ -25,14 +25,14 @@ export default function SignInPage() {
   const [loginBgStyle, setLoginBgStyle] = useState<React.CSSProperties>({})
   const [loginBgVideo, setLoginBgVideo] = useState<string | undefined>(undefined)
   const { settings } = useSystemSettingsSafe()
-  const [appName, setAppName] = useState(settings?.appName || 'Unified Data Platform')
+  const [appName, setAppName] = useState(settings?.siteName || 'Unified Data Platform')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const router = useRouter()
 
   // Update appName when settings load
   useEffect(() => {
-    if (settings?.appName) {
-      setAppName(settings.appName)
+    if (settings?.siteName) {
+      setAppName(settings.siteName)
     }
   }, [settings])
 
@@ -47,35 +47,12 @@ export default function SignInPage() {
         setLogoUrl(branding.applicationLogo)
       }
 
-      // Check for security settings
+      // Fetch security settings for other UI needs if any
       fetch('/api/settings')
         .then(res => res.json())
         .then(settings => {
-          if (settings.secureLoginPage !== false) { // Default to true if not set
-            const handleContextMenu = (e: MouseEvent) => e.preventDefault()
-            const handleKeyDown = (e: KeyboardEvent) => {
-              // Block F12
-              if (e.key === 'F12') {
-                e.preventDefault()
-              }
-              // Block Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (DevTools)
-              if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) {
-                e.preventDefault()
-              }
-              // Block Ctrl+U (View Source)
-              if (e.ctrlKey && e.key === 'u') {
-                e.preventDefault()
-              }
-            }
-
-            document.addEventListener('contextmenu', handleContextMenu)
-            document.addEventListener('keydown', handleKeyDown)
-
-            return () => {
-              document.removeEventListener('contextmenu', handleContextMenu)
-              document.removeEventListener('keydown', handleKeyDown)
-            }
-          }
+          // Setting parsing is handled by SecurityProvider globally, 
+          // but we can still use settings here if needed for specific login UI
         })
         .catch(console.error)
 

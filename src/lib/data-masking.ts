@@ -50,7 +50,7 @@ class DataMasking {
       // Try to create masking_rules table using gen_random_uuid() (PostgreSQL 13+)
       // Falls back gracefully if uuid-ossp extension is not available
       await query(`
-        CREATE TABLE IF NOT EXISTS public.masking_rules (
+        CREATE TABLE IF NOT EXISTS masking_rules (
           id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
           name TEXT NOT NULL,
           description TEXT,
@@ -60,14 +60,14 @@ class DataMasking {
           strategy TEXT NOT NULL,
           options JSONB,
           enabled BOOLEAN NOT NULL DEFAULT true,
-          space_id UUID REFERENCES public.spaces(id) ON DELETE CASCADE,
+          space_id UUID REFERENCES spaces(id) ON DELETE CASCADE,
           created_at TIMESTAMPTZ DEFAULT NOW(),
           updated_at TIMESTAMPTZ DEFAULT NOW()
         );
 
-        CREATE INDEX IF NOT EXISTS idx_masking_rules_enabled ON public.masking_rules(enabled);
-        CREATE INDEX IF NOT EXISTS idx_masking_rules_space_id ON public.masking_rules(space_id);
-        CREATE INDEX IF NOT EXISTS idx_masking_rules_table_column ON public.masking_rules(table_name, column_name);
+        CREATE INDEX IF NOT EXISTS idx_masking_rules_enabled ON masking_rules(enabled);
+        CREATE INDEX IF NOT EXISTS idx_masking_rules_space_id ON masking_rules(space_id);
+        CREATE INDEX IF NOT EXISTS idx_masking_rules_table_column ON masking_rules(table_name, column_name);
       `)
 
       // Load rules from database
@@ -92,7 +92,7 @@ class DataMasking {
     try {
       const { query } = await import('./db')
       const result = await query(`
-        SELECT * FROM public.masking_rules WHERE enabled = true
+        SELECT * FROM masking_rules WHERE enabled = true
       `)
 
       this.rules = result.rows.map(row => ({
@@ -272,7 +272,7 @@ class DataMasking {
     try {
       const { query } = await import('./db')
       const result = await query(`
-        INSERT INTO public.masking_rules (
+        INSERT INTO masking_rules (
           name, description, table_name, column_name, pattern,
           strategy, options, enabled, space_id
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -315,7 +315,7 @@ class DataMasking {
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
       const result = await query(`
-        SELECT * FROM public.masking_rules ${whereClause} ORDER BY created_at DESC
+        SELECT * FROM masking_rules ${whereClause} ORDER BY created_at DESC
       `, params)
 
       return result.rows.map(row => ({
@@ -382,7 +382,7 @@ class DataMasking {
       params.push(ruleId)
 
       await query(`
-        UPDATE public.masking_rules
+        UPDATE masking_rules
         SET ${updatesList.join(', ')}
         WHERE id = $${paramIndex}
       `, params)
@@ -400,7 +400,7 @@ class DataMasking {
 
     try {
       const { query } = await import('./db')
-      await query('DELETE FROM public.masking_rules WHERE id = $1', [ruleId])
+      await query('DELETE FROM masking_rules WHERE id = $1', [ruleId])
       await this.loadRules() // Reload rules
       return true
     } catch (error) {

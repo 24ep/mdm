@@ -26,7 +26,7 @@ async function getHandler(
     const { id } = paramValidation.data
     logger.apiRequest('GET', `/api/assignments/${id}`, { userId: session.user.id })
     
-    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 AND deleted_at IS NULL LIMIT 1', [id])
+    const { rows } = await query('SELECT * FROM assignments WHERE id::text = $1 AND deleted_at IS NULL LIMIT 1', [id])
     if (!rows.length) {
       logger.warn('Assignment not found', { assignmentId: id })
       return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
@@ -87,7 +87,7 @@ async function putHandler(
     } = bodyValidation.data
     logger.apiRequest('PUT', `/api/assignments/${id}`, { userId: session.user.id })
 
-    const currentRes = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [id])
+    const currentRes = await query('SELECT * FROM assignments WHERE id::text = $1 LIMIT 1', [id])
     const currentAssignment = currentRes.rows[0]
 
     if (!currentAssignment) {
@@ -119,24 +119,24 @@ async function putHandler(
     if (!setParts.length) return NextResponse.json(currentAssignment)
     values.push(id)
     const { rows: updatedRows } = await query(
-      `UPDATE public.assignments SET ${setParts.join(', ')} WHERE id = $${values.length} RETURNING *`,
+      `UPDATE assignments SET ${setParts.join(', ')} WHERE id::text = $${values.length} RETURNING *`,
       values
     )
     const updatedAssignment = updatedRows[0]
 
     if (customerIds !== undefined) {
-      await query('DELETE FROM public.customer_assignments WHERE assignment_id = $1', [id])
+      await query('DELETE FROM customer_assignments WHERE assignment_id::text = $1', [id])
       if (customerIds.length > 0) {
         const valuesList = customerIds.map((_: any, i: number) => `($1, $${i + 2})`).join(', ')
         await query(
-          `INSERT INTO public.customer_assignments (assignment_id, customer_id) VALUES ${valuesList}`,
+          `INSERT INTO customer_assignments (assignment_id, customer_id) VALUES ${valuesList}`,
           [id, ...customerIds]
         )
       }
     }
 
     await query(
-      'INSERT INTO public.activities (action, entity_type, entity_id, old_value, new_value, user_id) VALUES ($1,$2,$3,$4,$5,$6)',
+      'INSERT INTO activities (action, entity_type, entity_id, old_value, new_value, user_id) VALUES ($1,$2,$3,$4,$5,$6)',
       ['UPDATE', 'Assignment', id, currentAssignment, updatedAssignment, session.user.id]
     )
 
@@ -168,7 +168,7 @@ async function deleteHandler(
     const { id } = paramValidation.data
     logger.apiRequest('DELETE', `/api/assignments/${id}`, { userId: session.user.id })
     
-    const { rows } = await query('SELECT * FROM public.assignments WHERE id = $1 LIMIT 1', [id])
+    const { rows } = await query('SELECT * FROM assignments WHERE id::text = $1 LIMIT 1', [id])
     const assignment = rows[0]
 
     if (!assignment) {
@@ -176,10 +176,10 @@ async function deleteHandler(
       return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
     }
 
-    await query('UPDATE public.assignments SET deleted_at = NOW() WHERE id = $1', [id])
+    await query('UPDATE assignments SET deleted_at = NOW() WHERE id::text = $1', [id])
 
     await query(
-      'INSERT INTO public.activities (action, entity_type, entity_id, old_value, user_id) VALUES ($1,$2,$3,$4,$5)',
+      'INSERT INTO activities (action, entity_type, entity_id, old_value, user_id) VALUES ($1,$2,$3,$4,$5)',
       ['DELETE', 'Assignment', id, assignment, session.user.id]
     )
 

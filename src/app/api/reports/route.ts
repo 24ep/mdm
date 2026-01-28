@@ -76,7 +76,7 @@ async function getHandler(request: NextRequest) {
       SELECT DISTINCT r.*,
              c.name as category_name,
              f.name as folder_name
-      FROM public.reports r
+      FROM reports r
       LEFT JOIN report_spaces rs ON rs.report_id = r.id
       LEFT JOIN report_permissions rp ON rp.report_id = r.id AND (
         rp.user_id::text = $1 
@@ -170,7 +170,7 @@ async function postHandler(request: NextRequest) {
   logger.apiRequest('POST', '/api/reports', { userId: session.user.id, name, source })
 
   const insertSql = `
-      INSERT INTO public.reports (
+      INSERT INTO reports (
         name, description, source, category_id, folder_id,
         owner, link, workspace, embed_url, metadata,
         created_by, is_active, is_public

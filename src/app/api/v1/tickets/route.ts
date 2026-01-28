@@ -58,7 +58,7 @@ async function getHandler(request: NextRequest) {
     whereConditions.push(`EXISTS (
         SELECT 1 FROM ticket_spaces ts 
         WHERE ts.ticket_id = t.id 
-        AND ts.space_id = $${paramIndex}::uuid
+        AND ts.space_id::text = $${paramIndex}
       )`)
     queryParams.push(spaceId)
     paramIndex++
@@ -66,8 +66,8 @@ async function getHandler(request: NextRequest) {
     // Get all spaces user has access to
     const userSpaces = await query(
       `SELECT id FROM spaces 
-         WHERE (created_by = $1::uuid OR id IN (
-           SELECT space_id FROM space_members WHERE user_id = $1::uuid
+         WHERE (created_by::text = $1 OR id IN (
+           SELECT space_id FROM space_members WHERE user_id::text = $1
          )) AND deleted_at IS NULL`,
       [session.user.id]
     )
@@ -77,7 +77,7 @@ async function getHandler(request: NextRequest) {
       whereConditions.push(`EXISTS (
           SELECT 1 FROM ticket_spaces ts 
           WHERE ts.ticket_id = t.id 
-          AND ts.space_id = ANY($${paramIndex}::uuid[])
+          AND ts.space_id::text = ANY($${paramIndex})
         )`)
       queryParams.push(spaceIds)
       paramIndex++
@@ -96,7 +96,7 @@ async function getHandler(request: NextRequest) {
         whereConditions.push(`EXISTS (
             SELECT 1 FROM ticket_assignees ta 
             WHERE ta.ticket_id = t.id 
-            AND ta.user_id = $${paramIndex}::uuid
+            AND ta.user_id::text = $${paramIndex}
           )`)
         queryParams.push(filters.assigneeId)
         paramIndex++
@@ -161,7 +161,7 @@ async function getHandler(request: NextRequest) {
       LEFT JOIN ticket_spaces ts2 ON ts2.ticket_id = t.id
       LEFT JOIN spaces s ON s.id = ts2.space_id
       WHERE ${whereClause}
-      GROUP BY t.id
+      GROUP BY t.id, t.title, t.description, t.status, t.priority, t.due_date, t.start_date, t.estimate, t.created_at, t.updated_at
       ${buildOrderByClause(sortBy, sortOrder || 'desc', { field: 'created_at', order: 'desc' }, 't')}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `

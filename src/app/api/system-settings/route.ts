@@ -5,13 +5,13 @@ import { prisma } from '@/lib/db'
 
 // Default system settings
 const defaultSettings = {
-    appName: 'Unified Data Platform',
+    siteName: 'Unified Data Platform',
     deletePolicyDays: 30,
     enableAuditTrail: true,
     enableThemeConfig: true,
     requireEmailVerification: true,
     requireAdminApproval: false,
-    disableRightClick: false
+    uiProtectionEnabled: false
 }
 
 // GET /api/system-settings - Get current system settings
@@ -48,6 +48,8 @@ export async function GET() {
                         acc[s.key] = s.value
                     }
                 }
+                // Legacy support mapping
+                if (s.key === 'appName') acc['siteName'] = acc[s.key]
             }
             return acc
         }, {})

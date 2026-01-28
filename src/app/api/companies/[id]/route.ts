@@ -36,7 +36,7 @@ async function getHandler(
                 ), '[]'::json
               ) AS customers
        FROM companies c
-       WHERE c.id = $1 AND c.deleted_at IS NULL
+       WHERE c.id::text = $1 AND c.deleted_at IS NULL
        LIMIT 1`,
       [id]
     )
@@ -88,7 +88,7 @@ async function putHandler(
     const { name, description, is_active } = bodyValidation.data
     logger.apiRequest('PUT', `/api/companies/${id}`, { userId: session.user.id })
 
-    const current = await query('SELECT * FROM companies WHERE id = $1 LIMIT 1', [id])
+    const current = await query('SELECT * FROM companies WHERE id::text = $1 LIMIT 1', [id])
     const currentCompany = current.rows[0]
     if (!currentCompany) {
       logger.warn('Company not found for update', { companyId: id })
@@ -97,7 +97,7 @@ async function putHandler(
 
     if (name && name !== currentCompany.name) {
       const existing = await query(
-        'SELECT id FROM companies WHERE name = $1 AND deleted_at IS NULL AND id <> $2 LIMIT 1',
+        'SELECT id FROM companies WHERE name = $1 AND deleted_at IS NULL AND id::text <> $2 LIMIT 1',
         [name, id]
       )
       if (existing.rows[0]) {
@@ -110,7 +110,7 @@ async function putHandler(
     }
 
     const updated = await query(
-      'UPDATE companies SET name = $1, description = $2, is_active = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+      'UPDATE companies SET name = $1, description = $2, is_active = $3, updated_at = NOW() WHERE id::text = $4 RETURNING *',
       [name ?? currentCompany.name, description ?? currentCompany.description, typeof is_active === 'boolean' ? is_active : currentCompany.is_active, id]
     )
 
@@ -150,7 +150,7 @@ async function deleteHandler(
     logger.apiRequest('DELETE', `/api/companies/${id}`, { userId: session.user.id })
 
     const cnt = await query(
-      'SELECT COUNT(*)::int AS total FROM customers WHERE company_id = $1 AND deleted_at IS NULL',
+      'SELECT COUNT(*)::int AS total FROM customers WHERE company_id::text = $1 AND deleted_at IS NULL',
       [id]
     )
     if ((cnt.rows[0]?.total || 0) > 0) {
@@ -162,7 +162,7 @@ async function deleteHandler(
     }
 
     await query(
-      'UPDATE companies SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1',
+      'UPDATE companies SET deleted_at = NOW(), updated_at = NOW() WHERE id::text = $1',
       [id]
     )
 

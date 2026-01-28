@@ -27,8 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     logger.apiRequest('GET', `/api/users/${id}`)
     const { rows } = await query(`
       SELECT 
-        u.id, u.email, u.name, u.role, u.is_active, u.created_at, u.updated_at, u.default_space_id,
-        s.name as default_space_name,
+        u.id, u.email, u.name, u.role, u.is_active, u.created_at, u.updated_at,
         COALESCE(
           (SELECT json_agg(
             json_build_object(
@@ -38,12 +37,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             )
           ) FROM space_members sm
           JOIN spaces sp ON sm.space_id = sp.id
-          WHERE sm.user_id = u.id AND sp.deleted_at IS NULL
+          WHERE sm.user_id::text = u.id::text AND sp.deleted_at IS NULL
           ), '[]'::json
         ) as spaces
-      FROM public.users u
-      LEFT JOIN spaces s ON u.default_space_id = s.id
-      WHERE u.id = $1::uuid
+      FROM users u
+      WHERE u.id::text = $1
       LIMIT 1
     `, [id])
     if (!rows.length) {
@@ -85,7 +83,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       role: z.enum(['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'USER']).optional(),
       is_active: z.boolean().optional(),
       password: z.string().min(8).optional(),
-      default_space_id: z.string().uuid().optional().nullable(),
       spaces: z.array(z.object({
         id: z.string().uuid(),
         role: z.string(),
@@ -97,7 +94,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return addSecurityHeaders(bodyValidation.response)
     }
 
-    const { email, name, role, is_active, password, default_space_id, spaces } = bodyValidation.data
+    const { email, name, role, is_active, password, spaces } = bodyValidation.data
 
     const sets: string[] = []
     const values: any[] = []
@@ -114,21 +111,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       values.push(hashed)
       sets.push(`password = $${values.length}`)
     }
-    if (default_space_id !== undefined) {
-      values.push(default_space_id);
-      sets.push(`default_space_id = $${values.length}::uuid`)
-    }
+
 
     if (!sets.length) {
       return addSecurityHeaders(NextResponse.json({ error: 'No fields to update' }, { status: 400 }))
     }
 
     // Get current data for audit log
-    const currentDataResult = await query('SELECT * FROM users WHERE id = $1::uuid', [id])
+    const currentDataResult = await query('SELECT * FROM users WHERE id::text = $1', [id])
     const currentData = currentDataResult.rows[0]
 
     values.push(id)
-    const sql = `UPDATE public.users SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${values.length}::uuid RETURNING id, email, name, role, is_active, created_at, updated_at`
+    const sql = `UPDATE users SET ${sets.join(', ')}, updated_at = NOW() WHERE id::text = $${values.length} RETURNING id, email, name, role, is_active, created_at, updated_at`
 
     const { rows } = await query(sql, values)
     if (!rows.length) {
@@ -139,7 +133,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Handle space memberships if provided
     if (spaces && Array.isArray(spaces)) {
       // Remove existing space memberships
-      await query('DELETE FROM space_members WHERE user_id = $1::uuid', [id])
+      await query('DELETE FROM space_members WHERE user_id::text = $1', [id])
 
       // Add new space memberships
       for (const space of spaces) {
@@ -192,7 +186,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const { id } = paramValidation.data
     logger.apiRequest('DELETE', `/api/users/${id}`)
 
-    const { rows } = await query('DELETE FROM public.users WHERE id = $1::uuid RETURNING id', [id])
+    const { rows } = await query('DELETE FROM users WHERE id::text = $1', [id])
     if (!rows.length) {
       logger.warn('User not found for deletion', { userId: id })
       return addSecurityHeaders(NextResponse.json({ error: 'Not found' }, { status: 404 }))

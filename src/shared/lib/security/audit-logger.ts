@@ -60,8 +60,8 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
           `INSERT INTO audit_logs (
             id, user_id, action, entity_type, entity_id, new_value, ip_address, user_agent, created_at
           )
-          SELECT gen_random_uuid(), $1::uuid, $2, $3, $4::uuid, $5, $6, $7, NOW()
-          WHERE EXISTS (SELECT 1 FROM users WHERE id = $1::uuid)
+          SELECT gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW()
+          WHERE EXISTS (SELECT 1 FROM users WHERE id::text = $1)
           RETURNING id, created_at as timestamp`,
           [
             userIdToUse,
@@ -79,7 +79,7 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
         return await query(
           `INSERT INTO audit_logs (
             id, user_id, action, entity_type, entity_id, new_value, ip_address, user_agent, created_at
-          ) VALUES (gen_random_uuid(), $1::uuid, $2, $3, $4::uuid, $5, $6, $7, NOW())
+          ) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW())
           RETURNING id, created_at as timestamp`,
           [
             null,

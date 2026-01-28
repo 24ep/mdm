@@ -160,7 +160,7 @@ async function getHandler(request: NextRequest) {
   }
 
   if (spaceId) {
-    whereConditions.push(`u.id IN (SELECT user_id FROM space_members WHERE space_id = $${paramIndex}::uuid)`)
+    whereConditions.push(`u.id::text IN (SELECT user_id::text FROM space_members WHERE space_id::text = $${paramIndex})`)
     queryParams.push(spaceId)
     paramIndex++
   }
@@ -182,8 +182,6 @@ async function getHandler(request: NextRequest) {
         u.is_active as "isActive",
         u.is_two_factor_enabled as "isTwoFactorEnabled",
         u.created_at as "createdAt",
-        u.last_login_at as "lastLoginAt",
-        u.default_space_id as "defaultSpaceId",
         COALESCE(
           json_agg(
             DISTINCT jsonb_build_object(
@@ -210,7 +208,7 @@ async function getHandler(request: NextRequest) {
       LEFT JOIN user_group_members ugm ON u.id = ugm.user_id
       LEFT JOIN user_groups ug ON ugm.group_id = ug.id
       ${whereClause}
-      GROUP BY u.id, u.name, u.email, u.role, u.created_at, u.is_active
+      GROUP BY u.id, u.email, u.name, u.role, u.is_active, u.is_two_factor_enabled, u.created_at
       ORDER BY u.created_at DESC
       LIMIT $${limitParamIndex} OFFSET $${offsetParamIndex}
     `, usersQueryParams)

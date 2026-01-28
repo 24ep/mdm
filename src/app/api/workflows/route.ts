@@ -71,10 +71,10 @@ async function getHandler(request: NextRequest) {
         COUNT(we.id) as execution_count,
         COUNT(CASE WHEN we.status = 'COMPLETED' THEN 1 END) as successful_executions,
         COUNT(CASE WHEN we.status = 'FAILED' THEN 1 END) as failed_executions
-      FROM public.workflows w
-      LEFT JOIN public.data_models dm ON w.data_model_id = dm.id
-      LEFT JOIN public.users u ON w.created_by = u.id
-      LEFT JOIN public.workflow_executions we ON w.id = we.workflow_id
+      FROM workflows w
+      LEFT JOIN data_models dm ON w.data_model_id = dm.id
+      LEFT JOIN users u ON w.created_by = u.id
+      LEFT JOIN workflow_executions we ON w.id = we.workflow_id
       WHERE ${whereClause}
       GROUP BY w.id, w.name, w.description, w.trigger_type, w.status, w.is_active, 
                w.created_at, w.updated_at, dm.name, dm.display_name, u.name
@@ -89,7 +89,7 @@ async function getHandler(request: NextRequest) {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM public.workflows w
+      FROM workflows w
       WHERE ${whereClause}
     `
     const { rows: countRows } = await query(countQuery, params.slice(0, -2))
@@ -146,7 +146,7 @@ async function postHandler(request: NextRequest) {
 
     // Create workflow
     const { rows: workflowRows } = await query(
-      `INSERT INTO public.workflows (name, description, data_model_id, trigger_type, status, created_by)
+      `INSERT INTO workflows (name, description, data_model_id, trigger_type, status, created_by)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
       [name, description, data_model_id, trigger_type, status, session.user.id]
@@ -157,7 +157,7 @@ async function postHandler(request: NextRequest) {
     if (conditions.length > 0) {
       for (const condition of conditions) {
         await query(
-          `INSERT INTO public.workflow_conditions 
+          `INSERT INTO workflow_conditions 
            (workflow_id, attribute_id, operator, value, logical_operator, condition_order)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
@@ -176,7 +176,7 @@ async function postHandler(request: NextRequest) {
     if (actions.length > 0) {
       for (const action of actions) {
         await query(
-          `INSERT INTO public.workflow_actions 
+          `INSERT INTO workflow_actions 
            (workflow_id, target_attribute_id, action_type, new_value, calculation_formula, 
             source_attribute_id, action_order)
            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -198,7 +198,7 @@ async function postHandler(request: NextRequest) {
       if (trigger_type === 'SCHEDULED') {
         // Scheduled workflow with time-based schedule
         await query(
-          `INSERT INTO public.workflow_schedules 
+          `INSERT INTO workflow_schedules 
            (workflow_id, schedule_type, schedule_config, start_date, end_date, timezone)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
@@ -213,7 +213,7 @@ async function postHandler(request: NextRequest) {
       } else if (trigger_type === 'EVENT_BASED' && schedule.schedule_config?.trigger_on_sync) {
         // Event-based workflow triggered by data syncs
         await query(
-          `INSERT INTO public.workflow_schedules 
+          `INSERT INTO workflow_schedules 
            (workflow_id, schedule_type, schedule_config, trigger_on_sync, trigger_on_sync_schedule_id)
            VALUES ($1, $2, $3, $4, $5)`,
           [

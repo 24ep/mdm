@@ -61,9 +61,6 @@ async function getHandler(request: NextRequest) {
         u.role,
         u.is_active,
         u.created_at,
-        u.last_login_at,
-        u.default_space_id,
-        s.name as default_space_name,
         COALESCE(
           json_agg(
             json_build_object(
@@ -77,9 +74,8 @@ async function getHandler(request: NextRequest) {
       FROM users u
       LEFT JOIN space_members sm ON u.id = sm.user_id
       LEFT JOIN spaces sp ON sm.space_id = sp.id
-      LEFT JOIN spaces s ON u.default_space_id = s.id
       ${whereClause}
-      GROUP BY u.id, u.name, u.email, u.role, u.is_active, u.created_at, u.last_login_at, u.default_space_id, s.name
+      GROUP BY u.id, u.name, u.email, u.role, u.is_active, u.created_at
       ORDER BY u.created_at DESC
     `,
     queryParams
@@ -112,8 +108,8 @@ async function getHandler(request: NextRequest) {
       user.role || '',
       user.is_active ? 'Active' : 'Inactive',
       user.created_at ? new Date(user.created_at).toISOString() : '',
-      user.last_login_at ? new Date(user.last_login_at).toISOString() : '',
-      user.default_space_name || '',
+      '', // Last Login (not in DB)
+      '', // Default Space (not in DB)
       `"${spaceMemberships.replace(/"/g, '""')}"`
     ]
     csvRows.push(row.join(','))

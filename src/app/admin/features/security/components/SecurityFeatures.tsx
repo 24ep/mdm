@@ -348,7 +348,6 @@ export function SecurityFeatures() {
           <TabsTrigger value="policies">Policies</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
           <TabsTrigger value="whitelist">IP Whitelist</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="policies" className="space-y-6">
@@ -576,80 +575,6 @@ export function SecurityFeatures() {
           </div>
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6">
-          <h3 className="text-lg font-semibold">Security Settings</h3>
-          {settings && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Password Policy</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="min-length">Minimum Length</Label>
-                      <Input
-                        id="min-length"
-                        type="number"
-                        value={settings.passwordPolicy.minLength}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="max-age">Max Age (days)</Label>
-                      <Input
-                        id="max-age"
-                        type="number"
-                        value={settings.passwordPolicy.maxAge}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Switch checked={settings.passwordPolicy.requireUppercase} />
-                      <Label>Require Uppercase</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch checked={settings.passwordPolicy.requireLowercase} />
-                      <Label>Require Lowercase</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch checked={settings.passwordPolicy.requireNumbers} />
-                      <Label>Require Numbers</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch checked={settings.passwordPolicy.requireSymbols} />
-                      <Label>Require Symbols</Label>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Two-Factor Authentication</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch checked={settings.twoFactor.enabled} />
-                    <Label>Enable 2FA</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch checked={settings.twoFactor.required} />
-                    <Label>Require 2FA for all users</Label>
-                  </div>
-                  <div>
-                    <Label htmlFor="backup-codes">Backup Codes</Label>
-                    <Input
-                      id="backup-codes"
-                      type="number"
-                      value={settings.twoFactor.backupCodes}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
       </div>
     </div>

@@ -16,7 +16,7 @@ let sessionTimeoutCache: { data: number, timestamp: number } | null = null
 async function checkUserEmailExists(email: string): Promise<boolean> {
   try {
     const { rows } = await query(
-      'SELECT id FROM public.users WHERE email = $1 LIMIT 1',
+      'SELECT id FROM users WHERE email = $1 LIMIT 1',
       [email],
       30000,
       { skipTracing: true }
@@ -35,7 +35,7 @@ async function checkUserEmailExists(email: string): Promise<boolean> {
 async function getOrCreateSSOUser(email: string, name: string, provider: string) {
   try {
     const { rows: existingUsers } = await query(
-      'SELECT id, email, name, role, allowed_login_methods FROM public.users WHERE email = $1 LIMIT 1',
+      'SELECT id, email, name, role, allowed_login_methods FROM users WHERE email = $1 LIMIT 1',
       [email],
       30000,
       { skipTracing: true }
@@ -49,12 +49,13 @@ async function getOrCreateSSOUser(email: string, name: string, provider: string)
         allowedLoginMethods: existingUsers[0].allowed_login_methods
       }
     }
+    
+    // If we've reached here, the user exists in DB (confirmed by checkUserEmailExists) 
+    // but the detail query failed or returned no results.
     return null
   } catch (error: any) {
-    // Silently return null if database query fails
-    // This prevents SSO authentication from crashing if DB isn't ready
     if (process.env.NODE_ENV === 'development') {
-      console.warn('Error getting/creating SSO user:', error?.message)
+      console.warn('Error getting SSO user:', error?.message)
     }
     return null
   }
@@ -223,7 +224,7 @@ providers.push(
       }
       try {
         const { rows } = await query(
-          'SELECT id, email, name, password, role, is_active, requires_password_change, lockout_until, failed_login_attempts, allowed_login_methods, two_factor_secret, is_two_factor_enabled, two_factor_backup_codes FROM public.users WHERE email = $1 LIMIT 1',
+          'SELECT id, email, name, password, role, is_active, requires_password_change, lockout_until, failed_login_attempts, allowed_login_methods, two_factor_secret, is_two_factor_enabled, two_factor_backup_codes FROM users WHERE email = $1 LIMIT 1',
           [credentials.email],
           30000,
           { skipTracing: true }
@@ -263,7 +264,7 @@ providers.push(
           const newFailedAttempts = (user.failed_login_attempts || 0) + 1
 
           await query(
-            'UPDATE public.users SET failed_login_attempts = $1 WHERE id = $2::uuid',
+            'UPDATE users SET failed_login_attempts = $1 WHERE id::text = $2',
             [newFailedAttempts, user.id],
             5000,
             { skipTracing: true }
@@ -272,7 +273,7 @@ providers.push(
           // Lockout if more than 2 failed attempts (i.e., this is the 3rd failure or more)
           if (newFailedAttempts > 2) {
             await query(
-              'UPDATE public.users SET is_active = false WHERE id = $1::uuid',
+              'UPDATE users SET is_active = false WHERE id::text = $1',
               [user.id],
               5000,
               { skipTracing: true }
@@ -300,7 +301,7 @@ providers.push(
                      // Remove used backup code
                      const newBackupCodes = user.two_factor_backup_codes.filter((c: string) => c !== credentials.totpCode);
                      await query(
-                        'UPDATE public.users SET two_factor_backup_codes = $1 WHERE id = $2::uuid',
+                        'UPDATE users SET two_factor_backup_codes = $1 WHERE id::text = $2',
                         [newBackupCodes, user.id],
                         5000,
                         { skipTracing: true }
@@ -316,7 +317,7 @@ providers.push(
         // Reset failed attempts on successful login if user had some failures
         if (user.failed_login_attempts > 0) {
           await query(
-            'UPDATE public.users SET failed_login_attempts = 0 WHERE id = $1::uuid',
+            'UPDATE users SET failed_login_attempts = 0 WHERE id::text = $1',
             [user.id],
             5000,
             { skipTracing: true }
@@ -480,17 +481,18 @@ export const authOptions: NextAuthOptions = {
           // specific check for allowed methods
           const allowed = ssoUser.allowedLoginMethods
           if (allowed && Array.isArray(allowed) && allowed.length > 0) {
-            // Map provider id to stored method name if necessary (e.g. 'azure-ad', 'google')
-            // NextAuth provider IDs are typically 'google', 'azure-ad', etc.
             if (!allowed.includes(account.provider)) {
-              // We can't easily throw an error message to the UI here in standard NextAuth flow without hacking
-              // returning false will redirect to error page
               return false
             }
           }
 
           (user as any).id = ssoUser.id;
           (user as any).role = ssoUser.role
+        } else {
+          // If we can't map to a DB user, we must fail sign in
+          // otherwise we end up with provider IDs (like Google Subjects) in the session
+          // which causes FK violations in the database.
+          return false
         }
         
         await sendLoginAlert();

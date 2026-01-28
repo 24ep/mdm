@@ -21,7 +21,7 @@ async function putHandler(
 
     const { id } = await params
     const body = await request.json()
-    const { name, email, role, isActive, defaultSpaceId, spaces } = body
+    const { name, email, role, isActive, spaces } = body
 
     const sets: string[] = []
     const values: any[] = []
@@ -55,10 +55,7 @@ async function putHandler(
       values.push(role)
       sets.push(`role = $${values.length}`)
     }
-    if (defaultSpaceId !== undefined) {
-      values.push(defaultSpaceId || null)
-      sets.push(`default_space_id = $${values.length}::uuid`)
-    }
+
     if (body.allowedLoginMethods !== undefined) {
       values.push(body.allowedLoginMethods)
       sets.push(`allowed_login_methods = $${values.length}::text[]`)
@@ -75,7 +72,7 @@ async function putHandler(
     const sql = `UPDATE users SET ${sets.join(
       ', '
     )}, updated_at = NOW() WHERE id = $${values.length
-      }::uuid RETURNING id, email, name, role, is_active, requires_password_change, lockout_until, created_at, default_space_id, allowed_login_methods`
+      }::uuid RETURNING id, email, name, role, is_active, requires_password_change, lockout_until, created_at, allowed_login_methods`
 
     const { rows } = await query(sql, values)
     if (!rows.length) {
@@ -118,8 +115,7 @@ async function putHandler(
         role: rows[0].role,
         isActive: rows[0].is_active,
         allowedLoginMethods: rows[0].allowed_login_methods,
-        createdAt: rows[0].created_at,
-        defaultSpaceId: rows[0].default_space_id
+        createdAt: rows[0].created_at
       }
     })
   } catch (error) {

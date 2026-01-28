@@ -443,7 +443,7 @@ export async function GET() {
         AppSettings: {
           type: 'object',
           properties: {
-            appName: { type: 'string' },
+            siteName: { type: 'string' },
             primaryColor: { type: 'string' },
             secondaryColor: { type: 'string' },
             deletePolicyDays: { type: 'integer' },
@@ -452,7 +452,7 @@ export async function GET() {
         AppSettingsUpdate: {
           type: 'object',
           properties: {
-            appName: { type: 'string' },
+            siteName: { type: 'string' },
             primaryColor: { type: 'string' },
             secondaryColor: { type: 'string' },
             deletePolicyDays: { type: 'integer' },

@@ -41,7 +41,7 @@ async function getHandler(request: NextRequest) {
              (
                SELECT COUNT(*)::int
                FROM customers cu
-               WHERE cu.company_id = c.id AND cu.deleted_at IS NULL
+               WHERE cu.company_id::text = c.id::text AND cu.deleted_at IS NULL
              ) AS customers_count
       FROM companies c
       ${whereSql}

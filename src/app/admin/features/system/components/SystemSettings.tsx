@@ -77,8 +77,7 @@ export function SystemSettings() {
     enableLoginAlert: false,
 
     // UI Protection
-    disableRightClick: false,
-    secureLoginPage: true,
+    uiProtectionEnabled: false,
 
     // Features
     enableThemeConfig: true,
@@ -87,6 +86,9 @@ export function SystemSettings() {
     enableNotifications: true,
     enableAnalytics: false,
     requireAdminApproval: false,
+    requireEmailVerification: true,
+    enableAuditTrail: true,
+    deletePolicyDays: 30,
 
     // Storage
     maxFileSize: 10485760, // 10MB
@@ -120,8 +122,9 @@ export function SystemSettings() {
           orgPhone: data.orgPhone || prev.orgPhone,
           orgEmail: data.orgEmail || prev.orgEmail,
           orgWebsite: data.orgWebsite || prev.orgWebsite,
-          disableRightClick: data.disableRightClick !== undefined ? data.disableRightClick : prev.disableRightClick,
-          secureLoginPage: data.secureLoginPage !== undefined ? data.secureLoginPage : prev.secureLoginPage,
+          uiProtectionEnabled: data.uiProtectionEnabled !== undefined 
+            ? (data.uiProtectionEnabled === true || data.uiProtectionEnabled === 'true')
+            : (data.disableRightClick !== undefined ? (data.disableRightClick === true || data.disableRightClick === 'true') : prev.uiProtectionEnabled),
           enableThemeConfig: data.enableThemeConfig !== undefined ? data.enableThemeConfig === 'true' || data.enableThemeConfig === true : prev.enableThemeConfig,
           enableUserRegistration: data.enableUserRegistration !== undefined ? data.enableUserRegistration === 'true' || data.enableUserRegistration === true : prev.enableUserRegistration,
           enableGuestAccess: data.enableGuestAccess !== undefined ? data.enableGuestAccess === 'true' || data.enableGuestAccess === true : prev.enableGuestAccess,
@@ -129,6 +132,12 @@ export function SystemSettings() {
           enableAnalytics: data.enableAnalytics !== undefined ? data.enableAnalytics === 'true' || data.enableAnalytics === true : prev.enableAnalytics,
           requireAdminApproval: data.requireAdminApproval !== undefined ? data.requireAdminApproval === 'true' || data.requireAdminApproval === true : prev.requireAdminApproval,
           enableLoginAlert: data.enableLoginAlert !== undefined ? data.enableLoginAlert === 'true' || data.enableLoginAlert === true : prev.enableLoginAlert,
+          requireEmailVerification: data.requireEmailVerification !== undefined ? data.requireEmailVerification === 'true' || data.requireEmailVerification === true : prev.requireEmailVerification,
+          enableAuditTrail: data.enableAuditTrail !== undefined ? data.enableAuditTrail === 'true' || data.enableAuditTrail === true : prev.enableAuditTrail,
+          deletePolicyDays: data.deletePolicyDays !== undefined ? Number(data.deletePolicyDays) : prev.deletePolicyDays,
+          siteName: data.siteName || prev.siteName,
+          siteDescription: data.siteDescription || prev.siteDescription,
+          siteUrl: data.siteUrl || prev.siteUrl,
         }))
       }
     } catch (error) {
@@ -149,7 +158,6 @@ export function SystemSettings() {
         body: JSON.stringify({
           settings: {
             sessionTimeout: String(settings.sessionTimeout),
-            secureLoginPage: settings.secureLoginPage,
             faviconUrl: settings.faviconUrl,
             logoUrl: settings.logoUrl,
             orgName: settings.orgName,
@@ -164,9 +172,15 @@ export function SystemSettings() {
             enableNotifications: settings.enableNotifications,
             enableAnalytics: settings.enableAnalytics,
             requireAdminApproval: settings.requireAdminApproval,
-            disableRightClick: settings.disableRightClick,
+            uiProtectionEnabled: settings.uiProtectionEnabled,
             requireTwoFactor: settings.requireTwoFactor,
             enableLoginAlert: settings.enableLoginAlert,
+            siteName: settings.siteName,
+            siteDescription: settings.siteDescription,
+            siteUrl: settings.siteUrl,
+            requireEmailVerification: settings.requireEmailVerification,
+            enableAuditTrail: settings.enableAuditTrail,
+            deletePolicyDays: settings.deletePolicyDays,
           }
         }),
       })
@@ -416,16 +430,48 @@ export function SystemSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="supportEmail">Support Email</Label>
-                  <Input
-                    id="supportEmail"
-                    type="email"
-                    value={settings.supportEmail}
-                    onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-                    placeholder="support@myapp.com"
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="supportEmail">Support Email</Label>
+                    <Input
+                      id="supportEmail"
+                      type="email"
+                      value={settings.supportEmail}
+                      onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                      placeholder="support@myapp.com"
+                    />
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium mb-4 text-primary">Data Retention & Governance</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="enableAuditTrail">Enable Audit Trail</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Record all administrative actions and system changes
+                          </p>
+                        </div>
+                        <Switch
+                          id="enableAuditTrail"
+                          checked={settings.enableAuditTrail}
+                          onCheckedChange={(checked) => setSettings({ ...settings, enableAuditTrail: checked })}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="deletePolicyDays">Audit Log Retention (Days)</Label>
+                          <Input
+                            id="deletePolicyDays"
+                            type="number"
+                            value={settings.deletePolicyDays}
+                            onChange={(e) => setSettings({ ...settings, deletePolicyDays: parseInt(e.target.value) || 0 })}
+                            placeholder="30"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
               </CardContent>
             </Card>
 
@@ -904,29 +950,29 @@ export function SystemSettings() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label htmlFor="disableRightClick">Disable Application Right-Click</Label>
+                        <Label htmlFor="uiProtectionEnabled">UI Security Protection</Label>
                         <p className="text-sm text-muted-foreground">
-                          Prevent right-click context menu throughout the application
+                          Disable DevTools (F12), right-click, and view-source throughout the application
                         </p>
                       </div>
                       <Switch
-                        id="disableRightClick"
-                        checked={settings.disableRightClick}
-                        onCheckedChange={(checked) => setSettings({ ...settings, disableRightClick: checked })}
+                        id="uiProtectionEnabled"
+                        checked={settings.uiProtectionEnabled}
+                        onCheckedChange={(checked) => setSettings({ ...settings, uiProtectionEnabled: checked })}
                       />
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label htmlFor="secureLoginPage">Secure Login Page</Label>
+                        <Label htmlFor="requireEmailVerification">Require Email Verification</Label>
                         <p className="text-sm text-muted-foreground">
-                          Disable DevTools (F12) and Right-Click on login page
+                          Users must verify their email address before access is granted
                         </p>
                       </div>
                       <Switch
-                        id="secureLoginPage"
-                        checked={settings.secureLoginPage}
-                        onCheckedChange={(checked) => setSettings({ ...settings, secureLoginPage: checked })}
+                        id="requireEmailVerification"
+                        checked={settings.requireEmailVerification}
+                        onCheckedChange={(checked) => setSettings({ ...settings, requireEmailVerification: checked })}
                       />
                     </div>
                   </div>

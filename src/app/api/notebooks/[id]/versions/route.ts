@@ -35,8 +35,8 @@ async function getHandler(
         created_at,
         updated_at,
         is_current
-      FROM public.notebook_versions
-      WHERE notebook_id = $1::uuid
+      FROM notebook_versions
+      WHERE notebook_id::text = $1
       ORDER BY version_number DESC
       LIMIT 100`,
       [notebookId]
@@ -47,7 +47,7 @@ async function getHandler(
       rows.map(async (version) => {
         if (version.created_by) {
           const { rows: userRows } = await query(
-            'SELECT name, email FROM public.users WHERE id = $1::uuid',
+            'SELECT name, email FROM users WHERE id::text = $1',
             [version.created_by]
           )
           if (userRows.length > 0) {
@@ -123,7 +123,7 @@ async function postHandler(
 
     // Insert new version
     const { rows: insertRows } = await query(
-      `INSERT INTO public.notebook_versions 
+      `INSERT INTO notebook_versions 
        (notebook_id, space_id, version_number, notebook_data, commit_message, 
         commit_description, branch_name, tags, change_summary, created_by, is_current)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -146,7 +146,7 @@ async function postHandler(
     // If this is the current version, mark others as not current
     if (is_current) {
       await query(
-        'UPDATE public.notebook_versions SET is_current = false WHERE notebook_id = $1::uuid AND id != $2::uuid',
+        'UPDATE notebook_versions SET is_current = false WHERE notebook_id::text = $1 AND id::text != $2',
         [notebookId, insertRows[0].id]
       )
     }
