@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { checkRateLimit } from '@/lib/rate-limiter'
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
-    const initialStatus = requireAdminApproval ? 'pending' : 'active'
+    const initialIsActive = !requireAdminApproval
 
     // Create user
     const newUser = await prisma.user.create({
@@ -78,13 +78,13 @@ export async function POST(request: NextRequest) {
         name,
         password: hashedPassword,
         role: 'USER',
-        status: initialStatus
+        isActive: initialIsActive
       },
       select: {
         id: true,
         email: true,
         name: true,
-        status: true
+        isActive: true
       }
     })
 

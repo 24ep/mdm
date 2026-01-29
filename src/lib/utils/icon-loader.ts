@@ -37,11 +37,13 @@ export function loadIcon(iconName: string): LazyIconComponent | null {
                 if (iconName.startsWith('ho-') || iconName.startsWith('hs-')) {
                     const [prefix, ...rest] = iconName.split('-')
                     const realName = rest.join('-')
-                    const path = prefix === 'ho' 
-                        ? '@heroicons/react/24/outline' 
-                        : '@heroicons/react/24/solid'
                     
-                    const module = await import(path)
+                    let module;
+                    if (prefix === 'ho') {
+                        module = await import('@heroicons/react/24/outline');
+                    } else {
+                        module = await import('@heroicons/react/24/solid');
+                    }
                     const Icon = module[realName] as IconComponent
                     
                     if (!Icon) {

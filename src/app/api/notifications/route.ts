@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuthWithId, withErrorHandling } from '@/lib/api-middleware';
 import { query } from '@/lib/db';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { NotificationFilters, CreateNotificationRequest } from '@/types/notifications';
 import { logger } from '@/lib/logger';
 import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation';
