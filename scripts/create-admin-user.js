@@ -28,12 +28,11 @@ async function createAdminUser() {
     // Hash password
     const hashedPassword = await bcrypt.hash('password123', 12)
 
-    if (existingUser.rows.length > 0) {
       console.log(`✅ Admin user already exists. Updating password...`)
 
       const updatedUser = await client.query(`
         UPDATE public.users 
-        SET password = $2, role = 'ADMIN', updated_at = NOW()
+        SET password = $2, role = 'ADMIN', is_active = true, updated_at = NOW()
         WHERE email = $1
         RETURNING *
       `, ['admin@example.com', hashedPassword])
@@ -45,8 +44,8 @@ async function createAdminUser() {
     // Create admin user
     const userId = randomUUID()
     const result = await client.query(`
-      INSERT INTO public.users (id, email, name, password, role, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      INSERT INTO public.users (id, email, name, password, role, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW())
       RETURNING *
     `, [
       userId,
