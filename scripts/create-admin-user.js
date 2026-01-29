@@ -28,16 +28,27 @@ async function createAdminUser() {
     // Hash password
     const hashedPassword = await bcrypt.hash('password123', 12)
 
-      console.log(`✅ Admin user already exists. Updating password...`)
+      console.log(`✅ Admin user already exists. Updating password and resetting security flags...`)
 
       const updatedUser = await client.query(`
         UPDATE public.users 
-        SET password = $2, role = 'ADMIN', is_active = true, updated_at = NOW()
+        SET 
+          password = $2, 
+          role = 'ADMIN', 
+          is_active = true, 
+          lockout_until = NULL, 
+          failed_login_attempts = 0,
+          allowed_login_methods = $3,
+          updated_at = NOW()
         WHERE email = $1
         RETURNING *
-      `, ['admin@example.com', hashedPassword])
+      `, ['admin@example.com', hashedPassword, ['email', 'credentials']])
 
-      console.log(`✅ Updated admin user password to: password123`)
+      console.log(`✅ Updated admin user:`)
+      console.log(`   - Password reset`)
+      console.log(`   - Set to Active`)
+      console.log(`   - Unlocked (cleared failed attempts/lockout)`)
+      console.log(`   - Allowed login methods: email, credentials`)
       return updatedUser.rows[0]
     }
 
