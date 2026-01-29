@@ -77,6 +77,13 @@ pipeline {
                     sh "docker push ${env.FULL_IMAGE_NAME}:${env.IMAGE_TAG}"
                     sh "docker push ${env.FULL_IMAGE_NAME}:latest"
 
+                    // --- PLUGIN HUB BUILD & PUSH ---
+                    echo "Building Plugin Hub: ${env.REGISTRY}/${env.REGISTRY_PROJECT}/unified-data-platform/plugin-hub:${env.IMAGE_TAG}"
+                    sh "docker build -t ${env.REGISTRY}/${env.REGISTRY_PROJECT}/unified-data-platform/plugin-hub:${env.IMAGE_TAG} -t ${env.REGISTRY}/${env.REGISTRY_PROJECT}/unified-data-platform/plugin-hub:latest -f plugin-hub/Dockerfile plugin-hub"
+                    sh "docker push ${env.REGISTRY}/${env.REGISTRY_PROJECT}/unified-data-platform/plugin-hub:${env.IMAGE_TAG}"
+                    sh "docker push ${env.REGISTRY}/${env.REGISTRY_PROJECT}/unified-data-platform/plugin-hub:latest"
+                    // -------------------------------
+
                     sh "docker logout ${env.REGISTRY}"
                 }
             }
@@ -87,6 +94,9 @@ pipeline {
                     try {
                         sh "docker rmi ${env.FULL_IMAGE_NAME}:${env.IMAGE_TAG} || true"
                         sh "docker rmi ${env.FULL_IMAGE_NAME}:latest || true"
+                        // Cleanup plugin-hub images
+                        sh "docker rmi ${env.REGISTRY}/${env.REGISTRY_PROJECT}/unified-data-platform/plugin-hub:${env.IMAGE_TAG} || true"
+                        sh "docker rmi ${env.REGISTRY}/${env.REGISTRY_PROJECT}/unified-data-platform/plugin-hub:latest || true"
                     } catch (e) {
                          echo "Cleanup warning: ${e.message}"
                     }
@@ -107,7 +117,7 @@ pipeline {
                         echo "Triggering Portainer Webhook for deployment..."
                         try {
                             withCredentials([string(credentialsId: env.PORTAINER_WEBHOOK_ID, variable: 'WEBHOOK_URL')]) {
-                                sh "curl -X POST '${WEBHOOK_URL}'"
+                                sh 'curl -X POST "$WEBHOOK_URL"'
                             }
                         } catch (e) {
                             echo "Webhook deployment failed or credential not found. Skipping..."
