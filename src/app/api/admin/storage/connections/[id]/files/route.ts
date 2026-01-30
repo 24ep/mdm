@@ -13,7 +13,7 @@ async function getHandler(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now()
-  try {
+
     const authResult = await requireAuthWithId()
     if (!authResult.success) return authResult.response
     const { session } = authResult
