@@ -6,77 +6,88 @@ import { validateQuery, validateBody, commonSchemas } from '@/lib/api-validation
 import { z } from 'zod'
 
 async function getHandler(request: NextRequest) {
-  const startTime = Date.now()
-  const authResult = await requireAuth()
-  if (!authResult.success) return authResult.response
-  const { session } = authResult
+  try {
+    const startTime = Date.now()
+    // Use requireAuthWithId to ensure we have a valid user ID (consistency with other routes)
+    const authResult = await requireAuthWithId()
+    if (!authResult.success) return authResult.response
+    const { session } = authResult
 
-  // Validate query parameters
-  const queryValidation = validateQuery(request, z.object({
-    page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
-    limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
-  }))
+    // Validate query parameters
+    const queryValidation = validateQuery(request, z.object({
+      page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
+      limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
+    }))
 
-  if (!queryValidation.success) {
-    return queryValidation.response
+    if (!queryValidation.success) {
+      return queryValidation.response
+    }
+
+    const { page, limit } = queryValidation.data
+    // Safe logging check
+    logger.apiRequest('GET', '/api/spaces', { userId: session?.user?.id, page, limit })
+
+    const offset = (page - 1) * limit
+
+    // Check if tags column exists first
+    const tagsColumnCheck = await query(`
+        SELECT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_schema = 'public' 
+          AND table_name = 'spaces' 
+          AND column_name = 'tags'
+        ) as exists
+      `)
+
+    const tagsColumnExists = tagsColumnCheck.rows[0]?.exists || false
+
+    // Build query based on whether tags column exists
+    // Note: limit and offset are safe integers, so we can interpolate them directly
+    const listSql = tagsColumnExists
+      ? `
+          SELECT s.id, s.name, s.description, s.slug, s.is_default, s.is_active, 
+                s.icon, s.logo_url, s.created_at, s.updated_at, s.deleted_at,
+                COALESCE(s.tags, '[]'::jsonb) as tags,
+                (SELECT COUNT(*)::int FROM space_members sm WHERE sm.space_id::uuid = s.id::uuid) as member_count
+          FROM spaces s
+          ORDER BY s.is_default DESC, s.deleted_at NULLS LAST, s.name ASC
+          LIMIT ${limit} OFFSET ${offset}
+        `
+      : `
+          SELECT s.id, s.name, s.description, s.slug, s.is_default, s.is_active, 
+                s.icon, s.logo_url, s.created_at, s.updated_at, s.deleted_at,
+                '[]'::jsonb as tags,
+                (SELECT COUNT(*)::int FROM space_members sm WHERE sm.space_id::uuid = s.id::uuid) as member_count
+          FROM spaces s
+          ORDER BY s.is_default DESC, s.deleted_at NULLS LAST, s.name ASC
+          LIMIT ${limit} OFFSET ${offset}
+        `
+
+    const countSql = `
+        SELECT COUNT(*)::int AS total 
+        FROM spaces s
+      `
+
+    const [{ rows: spaces }, { rows: totalRows }] = await Promise.all([
+      query(listSql),
+      query(countSql),
+    ])
+
+    const total = totalRows[0]?.total || 0
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/spaces', 200, duration, { total })
+    return NextResponse.json({
+      spaces: spaces || [],
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    })
+  } catch (error: any) {
+    console.error('CRITICAL ERROR in GET /api/spaces:', error);
+    // Return detailed error in dev
+    return NextResponse.json(
+      { error: 'Internal server error', details: error?.message, stack: error?.stack },
+      { status: 500 }
+    );
   }
-
-  const { page, limit } = queryValidation.data
-  logger.apiRequest('GET', '/api/spaces', { userId: session.user.id, page, limit })
-
-  const offset = (page - 1) * limit
-
-  // Check if tags column exists first
-  const tagsColumnCheck = await query(`
-      SELECT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'spaces' 
-        AND column_name = 'tags'
-      ) as exists
-    `)
-
-  const tagsColumnExists = tagsColumnCheck.rows[0]?.exists || false
-
-  // Build query based on whether tags column exists
-  // Note: limit and offset are safe integers, so we can interpolate them directly
-  const listSql = tagsColumnExists
-    ? `
-        SELECT s.id, s.name, s.description, s.slug, s.is_default, s.is_active, 
-               s.icon, s.logo_url, s.created_at, s.updated_at, s.deleted_at,
-               COALESCE(s.tags, '[]'::jsonb) as tags,
-               (SELECT COUNT(*)::int FROM space_members sm WHERE sm.space_id::uuid = s.id::uuid) as member_count
-        FROM spaces s
-        ORDER BY s.is_default DESC, s.deleted_at NULLS LAST, s.name ASC
-        LIMIT ${limit} OFFSET ${offset}
-      `
-    : `
-        SELECT s.id, s.name, s.description, s.slug, s.is_default, s.is_active, 
-               s.icon, s.logo_url, s.created_at, s.updated_at, s.deleted_at,
-               '[]'::jsonb as tags,
-               (SELECT COUNT(*)::int FROM space_members sm WHERE sm.space_id::uuid = s.id::uuid) as member_count
-        FROM spaces s
-        ORDER BY s.is_default DESC, s.deleted_at NULLS LAST, s.name ASC
-        LIMIT ${limit} OFFSET ${offset}
-      `
-
-  const countSql = `
-      SELECT COUNT(*)::int AS total 
-      FROM spaces s
-    `
-
-  const [{ rows: spaces }, { rows: totalRows }] = await Promise.all([
-    query(listSql),
-    query(countSql),
-  ])
-
-  const total = totalRows[0]?.total || 0
-  const duration = Date.now() - startTime
-  logger.apiResponse('GET', '/api/spaces', 200, duration, { total })
-  return NextResponse.json({
-    spaces: spaces || [],
-    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-  })
 }
 
 export const GET = withErrorHandling(getHandler, 'GET /api/spaces')

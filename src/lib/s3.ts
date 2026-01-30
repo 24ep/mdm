@@ -38,10 +38,24 @@ async function getS3Config() {
   }
 
   // 2. Fallback to Env
+  const minioEndpoint = process.env.MINIO_ENDPOINT
+  const minioPort = process.env.MINIO_PORT
+  
+  let endpoint = process.env.S3_ENDPOINT
+  if (!endpoint && minioEndpoint) {
+    if (minioEndpoint.startsWith('http')) {
+      endpoint = minioEndpoint
+    } else {
+      const protocol = minioPort === '443' ? 'https' : 'http'
+      const portSuffix = (minioPort && minioPort !== '80' && minioPort !== '443') ? `:${minioPort}` : ''
+      endpoint = `${protocol}://${minioEndpoint}${portSuffix}`
+    }
+  }
+
   return {
     region: process.env.AWS_REGION || 'us-east-1',
-    endpoint: process.env.S3_ENDPOINT || undefined,
-    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+    endpoint: endpoint,
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true' || !!minioEndpoint,
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID || process.env.MINIO_ACCESS_KEY || '',
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || process.env.MINIO_SECRET_KEY || '',

@@ -70,7 +70,9 @@ const nextConfig = {
     // Enable modularizeImports for lucide-react to tree-shake unused icons
     // Enable modularizeImports for lucide-react to tree-shake unused icons
     // modularizeImports removed due to being invalid in this Next.js version
-
+    
+    // Enable instrumentation hook for startup checks
+    instrumentationHook: true,
   },
 
   // Disable source maps to save memory and space used during build

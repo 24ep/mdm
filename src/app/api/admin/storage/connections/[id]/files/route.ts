@@ -107,17 +107,7 @@ async function getHandler(
       }
     )
     return addSecurityHeaders(NextResponse.json({ files }))
-  } catch (error: any) {
-    const duration = Date.now() - startTime
-    logger.apiResponse(
-      'GET',
-      '/api/admin/storage/connections/[id]/files',
-      500,
-      duration
-    )
-    return handleApiError(error, 'Storage Connection Files API')
-  }
 }
 
-export const GET = getHandler
+export const GET = withErrorHandling(getHandler, 'GET /api/admin/storage/connections/[id]/files')
 
