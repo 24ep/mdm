@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { AttachmentStorageService } from '@/lib/attachment-storage'
 import { logger } from '@/lib/logger'
 import { validateParams, validateQuery, commonSchemas } from '@/lib/api-validation'
-import { handleApiError, requireAuthWithId } from '@/lib/api-middleware'
+import { handleApiError, requireAuthWithId, withErrorHandling } from '@/lib/api-middleware'
 import { addSecurityHeaders } from '@/lib/security-headers'
 import { z } from 'zod'
 
