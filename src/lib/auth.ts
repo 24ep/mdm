@@ -341,19 +341,14 @@ providers.push(
         }
       } catch (error: any) {
         // Log the actual error
-        console.error('Auth Error:', error.message)
+        console.error('Auth Error:', error)
 
-        // Throw known errors so they can be displayed
-        if (error.message.includes("Account is")) {
-          throw error
-        }
+        // Use error message or fallback
+        const errorMessage = error?.message || 'Authentication failed'
 
-        // Silently return null if database query fails
-        // This prevents authentication from crashing if DB isn't ready
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('Authorization error:', error?.message)
-        }
-        return null
+        // Always throw the error so NextAuth passes it to the client
+        // This prevents "Invalid Credentials" (401) when the DB is actually down
+        throw new Error(errorMessage)
       }
     }
   })

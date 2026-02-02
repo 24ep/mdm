@@ -28,6 +28,7 @@ async function createAdminUser() {
     // Hash password
     const hashedPassword = await bcrypt.hash('password123', 12)
 
+    if (existingUser.rows.length > 0) {
       console.log(`✅ Admin user already exists. Updating password and resetting security flags...`)
 
       const updatedUser = await client.query(`

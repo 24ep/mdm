@@ -161,6 +161,8 @@ async function postHandler(request: NextRequest) {
   const authResult = await requireAuthWithId()
   if (!authResult.success) return authResult.response
   const { session } = authResult
+  
+  console.log('[DEBUG] Chatbot POST - Session User:', JSON.stringify(session.user));
 
   // Rate limiting for creating chatbots (strict - relaxed for dev)
   const rateLimitResult = await checkRateLimit('create-chatbot', session.user.id, {
@@ -725,6 +727,18 @@ async function postHandler(request: NextRequest) {
     return NextResponse.json({ chatbot: mergedChatbot }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating chatbot:', error)
+    
+    // Handle specific Prisma errors
+    if (error.code === 'P2003') {
+       // P2003: Foreign key constraint failed
+       if (error.meta?.field_name?.includes('created_by') || error.message?.includes('chatbots_created_by_fkey')) {
+         return NextResponse.json(
+           { error: 'Session invalid: User record not found. Please log out and log in again.' },
+           { status: 401 }
+         )
+       }
+    }
+
     return NextResponse.json(
       { error: error?.message || 'Failed to create chatbot', details: error?.toString(), stack: error?.stack },
       { status: 500 }

@@ -18,14 +18,15 @@ const CONFIG_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
  */
 async function getSigNozConfig(): Promise<SigNozConfig | null> {
   try {
-    // Dynamic import to avoid circular dependency with db -> tracing -> signoz -> db
-    const { query } = await import('./db')
-    
     // Check cache first
     const now = Date.now()
     if (cachedConfig && (now - configCacheTime) < CONFIG_CACHE_TTL) {
       return cachedConfig
     }
+
+    // Dynamic import to avoid circular dependency with db -> tracing -> signoz -> db
+    // Moved inside cache miss to avoid loading it on every request if cache is valid
+    const { query } = await import('./db')
 
     const sql = `
       SELECT config, status, is_enabled
