@@ -133,8 +133,8 @@ async function postHandler(request: NextRequest) {
 
   if (tagsColumnExists) {
     insertSql = `
-        INSERT INTO spaces (id, name, description, slug, is_default, created_by, tags)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4::boolean, $5::uuid, $6::jsonb)
+        INSERT INTO spaces (id, name, description, slug, is_default, created_by, tags, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4::boolean, $5::uuid, $6::jsonb, NOW())
         RETURNING id, name, description, slug, is_default, is_active, icon, logo_url, 
                   created_at, updated_at,
                   COALESCE(tags, '[]'::jsonb) as tags
@@ -149,8 +149,8 @@ async function postHandler(request: NextRequest) {
     ]
   } else {
     insertSql = `
-        INSERT INTO spaces (id, name, description, slug, is_default, created_by)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4::boolean, $5::uuid)
+        INSERT INTO spaces (id, name, description, slug, is_default, created_by, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4::boolean, $5::uuid, NOW())
         RETURNING id, name, description, slug, is_default, is_active, icon, logo_url, 
                   created_at, updated_at
       `
