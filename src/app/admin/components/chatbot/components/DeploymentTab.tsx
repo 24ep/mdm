@@ -32,14 +32,15 @@ export function DeploymentTab({
 
   // Handle restoring a version
   const handleRestoreVersion = (version: ChatbotVersion) => {
-    // The version's config should be merged back into formData
-    // For now, we restore the version string - the actual config restoration
-    // would need the full version config from the API
+    // Merge the version's config back into formData
+    // This allows the user to see exactly what was in that version and edit it further
     setFormData(prev => ({
       ...prev,
+      ...version.config, // Apply the full saved configuration
       currentVersion: version.version,
-      isPublished: version.isPublished
+      isPublished: false // When restoring, it becomes a new draft by default
     }))
+    toast.success(`Loaded configuration from v${version.version}`)
   }
 
   const versions = selectedChatbot?.versions || formData.versions || []
@@ -62,6 +63,30 @@ export function DeploymentTab({
           ) : (
             <Badge variant="secondary">Draft</Badge>
           )}
+          {(() => {
+            const latestVersion = versions[0]
+            if (!latestVersion || !formData.isPublished) return null
+            
+            // Compare essential fields to detect changes
+            // Note: This is an approximation. A deep comparison of all style/config fields would be better.
+            const latestConfig = latestVersion.config || {}
+            
+            // Check if any field in formData (excluding metadata) differs from latestConfig
+            const hasChanges = Object.keys(formData).some(key => {
+              if (['versions', 'createdAt', 'updatedAt', 'currentVersion', 'isPublished', 'id'].includes(key)) return false
+              return JSON.stringify((formData as any)[key]) !== JSON.stringify(latestConfig[key])
+            })
+
+            if (hasChanges) {
+              return (
+                <Badge variant="outline" className="text-amber-500 border-amber-500/50 bg-amber-500/10 gap-1 animate-pulse">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  Unpublished Changes
+                </Badge>
+              )
+            }
+            return null
+          })()}
         </div>
         <div className="flex items-center gap-2">
           {/* Publish/Unpublish Button */}

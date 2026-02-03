@@ -20,10 +20,14 @@ export async function GET(request: NextRequest) {
 
   try {
     // Fetch chatbot configuration server-side (including versions for merged config)
-    const rawChatbot = await db.chatbot.findUnique({
-      where: { id: chatbotId },
+    const rawChatbot = await db.chatbot.findFirst({
+      where: { 
+        id: chatbotId,
+        deletedAt: null
+      },
       include: {
         versions: {
+          where: { isPublished: true },
           orderBy: { createdAt: 'desc' },
           take: 1
         }

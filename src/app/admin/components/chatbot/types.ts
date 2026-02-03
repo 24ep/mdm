@@ -5,6 +5,7 @@ export interface ChatbotVersion {
   createdBy: string
   isPublished: boolean
   changes?: string
+  config?: any
 }
 
 export interface ChatKitColorAccent {

@@ -55,8 +55,9 @@ export async function GET(
       },
       include: {
         versions: {
+          where: { isPublished: true },
           orderBy: { createdAt: 'desc' },
-          take: 5
+          take: 1
         }
       }
     })

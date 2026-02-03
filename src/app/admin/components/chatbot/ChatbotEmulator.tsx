@@ -35,6 +35,7 @@ export function ChatbotEmulator({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const startXRef = useRef<number>(0)
   const startWidthRef = useRef<number>(0)
+  const [previewSource, setPreviewSource] = useState<'draft' | 'live'>('draft')
 
   // Handle resize drag
   const handleResizeStart = (e: React.MouseEvent) => {
@@ -134,13 +135,19 @@ export function ChatbotEmulator({
   useEffect(() => {
     if (!selectedChatbot?.id || !emulatorRef.current || !formData) return
     const iframe = emulatorRef.current
+    
+    // If previewSource is 'live', we want to show the latest published version
+    const activeConfig = previewSource === 'live' 
+      ? (selectedChatbot.versions?.find(v => v.isPublished)?.config || selectedChatbot)
+      : formData
+
     try {
       iframe.contentWindow?.postMessage(
         {
           type: 'chatbot-config-update',
           id: selectedChatbot.id,
           config: {
-            ...formData,
+            ...activeConfig,
             id: selectedChatbot.id,
           },
         },
@@ -149,7 +156,7 @@ export function ChatbotEmulator({
     } catch (e) {
       // ignore
     }
-  }, [selectedChatbot?.id, formData])
+  }, [selectedChatbot?.id, formData, previewSource, selectedChatbot?.versions])
 
   // Send emulator config updates to iframe
   useEffect(() => {
@@ -183,6 +190,28 @@ export function ChatbotEmulator({
       </div>
       <div className="flex items-center justify-between px-3 py-2 border-b bg-background z-10" style={{ borderColor: formData.borderColor }}>
         <div className="flex items-center gap-2">
+          {/* Live/Draft Toggle */}
+          <div className="flex items-center bg-muted/50 rounded-lg p-0.5 mr-2">
+            <Button
+              variant={previewSource === 'draft' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={`h-7 px-3 text-xs font-medium rounded-md transition-all ${previewSource === 'draft' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+              onClick={() => setPreviewSource('draft')}
+            >
+              Draft
+            </Button>
+            <Button
+              variant={previewSource === 'live' ? 'secondary' : 'ghost'}
+              size="sm"
+              className={`h-7 px-3 text-xs font-medium rounded-md transition-all ${previewSource === 'live' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+              onClick={() => setPreviewSource('live')}
+              disabled={!selectedChatbot?.isPublished}
+              title={!selectedChatbot?.isPublished ? "Publish the chatbot to preview the live version" : ""}
+            >
+              Live
+            </Button>
+          </div>
+          <div className="w-px h-4 bg-border mx-1" />
           <div className="text-sm font-medium">Emulator</div>
           <div className="w-px h-4 bg-border mx-1" />
           <div className="flex rounded-lg p-0.5 gap-0.5">

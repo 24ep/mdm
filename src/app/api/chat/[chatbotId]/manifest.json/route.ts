@@ -16,10 +16,14 @@ export async function GET(
 
     // Fetch chatbot configuration
     // Fetch chatbot configuration directly from DB
-    const chatbotData = await db.chatbot.findUnique({
-      where: { id: chatbotId },
+    const chatbotData = await db.chatbot.findFirst({
+      where: { 
+        id: chatbotId,
+        deletedAt: null 
+      },
       include: {
         versions: {
+          where: { isPublished: true },
           orderBy: { createdAt: 'desc' },
           take: 1
         }
