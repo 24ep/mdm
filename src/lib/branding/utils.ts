@@ -79,11 +79,15 @@ export function rgbaToHsl(color: string): string {
     const b = parseInt(match[3]) / 255
     const alpha = match[4] ? parseFloat(match[4]) : 1
 
-    // If alpha is less than 1, we need to blend with white/black background
-    // to get the effective color. For very transparent colors, this is important.
-    // For now, we'll convert the RGB values directly, but note that alpha is lost.
-    const max = Math.max(r, g, b)
-    const min = Math.min(r, g, b)
+    // If alpha is less than 1, blend with white background (since we are in light theme context)
+    // to preserve the visual appearance in HSL which doesn't support alpha channel directly
+    // in the way our CSS variables are structured.
+    const rb = r * alpha + (1 - alpha)
+    const gb = g * alpha + (1 - alpha)
+    const bb = b * alpha + (1 - alpha)
+
+    const max = Math.max(rb, gb, bb)
+    const min = Math.min(rb, gb, bb)
     let h = 0
     let s = 0
     const l = (max + min) / 2
@@ -92,9 +96,9 @@ export function rgbaToHsl(color: string): string {
       const d = max - min
       s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
       switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
-        case g: h = ((b - r) / d + 2) / 6; break
-        case b: h = ((r - g) / d + 4) / 6; break
+        case rb: h = ((gb - bb) / d + (gb < bb ? 6 : 0)) / 6; break
+        case gb: h = ((bb - rb) / d + 2) / 6; break
+        case bb: h = ((rb - gb) / d + 4) / 6; break
       }
     }
 
