@@ -497,27 +497,6 @@ export function PlatformSidebar({
             selectedGroup === 'infrastructure' ? (
               // Infrastructure group - show Horizon tab with VMs and Services
               <div className="w-full h-full flex flex-col">
-                {/* Collapse button for secondary sidebar */}
-                {onToggleCollapse && (
-                  <div className="border-b border-border">
-                    <Button
-                      variant="ghost"
-                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none !hover:bg-muted cursor-pointer"
-                      onClick={onToggleCollapse}
-                      style={{
-                        pointerEvents: 'auto',
-                        position: 'relative',
-                        zIndex: 101,
-                        color: 'inherit'
-                      }}
-                      title="Collapse secondary sidebar"
-                      aria-label="Collapse secondary sidebar"
-                    >
-                      <ChevronLeftIcon className="h-4 w-4 mr-2 stroke-2" />
-                      <span>Collapse</span>
-                    </Button>
-                  </div>
-                )}
                 <HorizonSidebar
                   selectedVmId={selectedVmId}
                   onVmSelect={onVmSelect}
@@ -532,27 +511,6 @@ export function PlatformSidebar({
               </div>
             ) : selectedGroup && groupedTabs[selectedGroup as keyof typeof groupedTabs] ? (
               <div className="w-full pb-4">
-                {/* Collapse button for secondary sidebar */}
-                {onToggleCollapse && (
-                  <div className="border-b border-border mb-2">
-                    <Button
-                      variant="ghost"
-                      className="platform-sidebar-menu-button w-full justify-start text-sm font-medium h-9 px-4 rounded-none !hover:bg-muted cursor-pointer"
-                      onClick={onToggleCollapse}
-                      style={{
-                        pointerEvents: 'auto',
-                        position: 'relative',
-                        zIndex: 101,
-                        color: 'inherit'
-                      }}
-                      title="Collapse secondary sidebar"
-                      aria-label="Collapse secondary sidebar"
-                    >
-                      <ChevronLeftIcon className="h-4 w-4 mr-2 stroke-2" />
-                      <span>Collapse</span>
-                    </Button>
-                  </div>
-                )}
 
                 {/* Group Header Label */}
                 {selectedGroup && groupMetadata[selectedGroup] && (
