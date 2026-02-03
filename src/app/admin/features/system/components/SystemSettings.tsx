@@ -80,7 +80,6 @@ export function SystemSettings() {
     uiProtectionEnabled: false,
 
     // Features
-    enableThemeConfig: true,
     enableUserRegistration: true,
     enableGuestAccess: false,
     enableNotifications: true,
@@ -125,7 +124,6 @@ export function SystemSettings() {
           uiProtectionEnabled: data.uiProtectionEnabled !== undefined 
             ? (data.uiProtectionEnabled === true || data.uiProtectionEnabled === 'true')
             : (data.disableRightClick !== undefined ? (data.disableRightClick === true || data.disableRightClick === 'true') : prev.uiProtectionEnabled),
-          enableThemeConfig: data.enableThemeConfig !== undefined ? data.enableThemeConfig === 'true' || data.enableThemeConfig === true : prev.enableThemeConfig,
           enableUserRegistration: data.enableUserRegistration !== undefined ? data.enableUserRegistration === 'true' || data.enableUserRegistration === true : prev.enableUserRegistration,
           enableGuestAccess: data.enableGuestAccess !== undefined ? data.enableGuestAccess === 'true' || data.enableGuestAccess === true : prev.enableGuestAccess,
           enableNotifications: data.enableNotifications !== undefined ? data.enableNotifications === 'true' || data.enableNotifications === true : prev.enableNotifications,
@@ -166,7 +164,6 @@ export function SystemSettings() {
             orgPhone: settings.orgPhone,
             orgEmail: settings.orgEmail,
             orgWebsite: settings.orgWebsite,
-            enableThemeConfig: settings.enableThemeConfig,
             enableUserRegistration: settings.enableUserRegistration,
             enableGuestAccess: settings.enableGuestAccess,
             enableNotifications: settings.enableNotifications,
@@ -998,22 +995,6 @@ export function SystemSettings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="enableThemeConfig" className="flex items-center gap-2">
-                        <Palette className="h-4 w-4" />
-                        Enable Theme Configuration
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Allow users to customize theme and colors
-                      </p>
-                    </div>
-                    <Switch
-                      id="enableThemeConfig"
-                      checked={settings.enableThemeConfig}
-                      onCheckedChange={(checked) => setSettings({ ...settings, enableThemeConfig: checked })}
-                    />
-                  </div>
 
                   <div className="flex items-center justify-between">
                     <div>

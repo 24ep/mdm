@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Template } from '@/lib/template-generator'
-import { getStoredTemplates, updateStoredTemplate, deleteStoredTemplate } from '@/lib/server-template-storage'
+import { getStoredTemplates, saveStoredTemplates, updateStoredTemplate, deleteStoredTemplate } from '@/lib/server-template-storage'
 
 export async function GET(request: NextRequest) {
   try {

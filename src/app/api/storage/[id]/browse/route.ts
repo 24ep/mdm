@@ -64,16 +64,22 @@ async function getHandler(
 }
 
 async function listMinioObjects(config: any, path: string): Promise<FileItem[]> {
-    const endpoint = new URL(config.endpoint)
+    let endpointUrl = config.endpoint
+    if (!endpointUrl.includes('://')) {
+        const isSSL = config.use_ssl || config.useSSL || false
+        endpointUrl = (isSSL ? 'https://' : 'http://') + endpointUrl
+    }
+
+    const endpoint = new URL(endpointUrl)
     const port = endpoint.port ? parseInt(endpoint.port) : (endpoint.protocol === 'https:' ? 443 : 80)
-    const useSSL = endpoint.protocol === 'https:' || config.use_ssl
+    const useSSL = endpoint.protocol === 'https:' || config.use_ssl || config.useSSL
 
     const minioClient = new MinioClient({
         endPoint: endpoint.hostname,
         port: port,
         useSSL: useSSL,
-        accessKey: config.access_key,
-        secretKey: config.secret_key,
+        accessKey: config.access_key || config.accessKey,
+        secretKey: config.secret_key || config.secretKey,
         region: config.region || 'us-east-1'
     })
 

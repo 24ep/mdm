@@ -17,62 +17,20 @@ function isValidUUID(id: string): boolean {
 
 /**
  * Load branding configuration from API
- * First tries to load from the active database theme, then falls back to system_settings
  */
 export async function loadBrandingConfig(): Promise<BrandingConfig | null> {
   try {
-    // First, check for stored database theme ID
-    if (typeof window !== 'undefined') {
-      const storedDbThemeId = localStorage.getItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
-      
-      if (storedDbThemeId && isValidUUID(storedDbThemeId)) {
-        const response = await fetch(`/api/themes/${storedDbThemeId}`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.theme?.config) {
-            console.log('[Branding] Loaded config from stored theme:', storedDbThemeId)
-            return data.theme.config as BrandingConfig
-          }
-        }
-      }
-    }
-
-    // Try to get the active theme from the database
-    const themesResponse = await fetch('/api/themes')
-    if (themesResponse.ok) {
-      const themesData = await themesResponse.json()
-      const activeTheme = themesData.themes?.find((t: any) => t.isActive)
-      
-      if (activeTheme?.id && isValidUUID(activeTheme.id)) {
-        const themeResponse = await fetch(`/api/themes/${activeTheme.id}`)
-        if (themeResponse.ok) {
-          const themeData = await themeResponse.json()
-          if (themeData.theme?.config) {
-            // Save the theme ID for future use
-            if (typeof window !== 'undefined') {
-              localStorage.setItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID, activeTheme.id)
-            }
-            console.log('[Branding] Loaded config from active theme:', activeTheme.id)
-            return themeData.theme.config as BrandingConfig
-          }
-        }
-      }
-    }
-
-    // Fall back to system_settings (legacy support)
     const response = await fetch('/api/admin/branding')
     if (response.ok) {
       const data = await response.json()
       if (data.branding) {
-        console.log('[Branding] Loaded config from system_settings (legacy)')
-        return data.branding
+        return data.branding as BrandingConfig
       }
     }
   } catch (error) {
     console.error('Error loading branding config:', error)
   }
   
-  console.warn('[Branding] No branding config found')
   return null
 }
 

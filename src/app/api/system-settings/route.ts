@@ -8,7 +8,6 @@ const defaultSettings = {
     siteName: 'Unified Data Platform',
     deletePolicyDays: 30,
     enableAuditTrail: true,
-    enableThemeConfig: true,
     requireEmailVerification: true,
     requireAdminApproval: false,
     uiProtectionEnabled: false

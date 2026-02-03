@@ -14,12 +14,16 @@ async function getHandler(request: NextRequest) {
     if (!authResult.success) return authResult.response
 
     try {
+
         const groups = await db.menuGroup.findMany({
             where: { isVisible: true },
             orderBy: { priority: 'asc' },
             include: {
                 items: {
-                    where: { isVisible: true },
+                    where: { 
+                        isVisible: true,
+                        slug: { not: 'themes' }
+                    },
                     orderBy: { priority: 'asc' },
                 },
             },

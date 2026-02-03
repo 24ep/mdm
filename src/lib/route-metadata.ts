@@ -277,13 +277,6 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     category: 'system',
     description: 'Notification settings',
   },
-  '/system/themes': {
-    name: 'Theme Manager',
-    icon: 'Palette',
-    color: '#ec4899',
-    category: 'system',
-    description: 'Customize themes and colors',
-  },
   '/system/export': {
     name: 'Data Export/Import',
     icon: 'Download',

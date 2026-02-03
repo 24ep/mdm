@@ -87,7 +87,7 @@ async function getHandler(request: NextRequest) {
   // Rate limiting for listing chatbots
   const rateLimitResult = await checkRateLimit('list-chatbots', session.user.id, {
     enabled: true,
-    maxRequestsPerMinute: 60,
+    maxRequestsPerMinute: 120,
     blockDuration: 60,
   })
 
@@ -164,10 +164,10 @@ async function postHandler(request: NextRequest) {
   
   console.log('[DEBUG] Chatbot POST - Session User:', JSON.stringify(session.user));
 
-  // Rate limiting for creating chatbots (strict - relaxed for dev)
+  // Rate limiting for creating chatbots
   const rateLimitResult = await checkRateLimit('create-chatbot', session.user.id, {
     enabled: true,
-    maxRequestsPerMinute: 60, // Relaxed for debugging
+    maxRequestsPerMinute: 30,
     blockDuration: 60,
   })
 

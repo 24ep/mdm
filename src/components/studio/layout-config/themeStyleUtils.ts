@@ -1,7 +1,6 @@
 'use client'
 
-import { BrandingConfig } from '@/lib/theme-types'
-import { THEME_STORAGE_KEYS } from '@/lib/theme-constants'
+import { BrandingConfig } from '@/app/admin/features/system/types'
 import { ComponentStyle } from './types'
 
 /**
@@ -29,49 +28,17 @@ function isValidUUID(id: string): boolean {
   return UUID_REGEX.test(id)
 }
 
-/**
- * Gets component style from user's selected theme or active theme config
- * Returns a ComponentStyle object compatible with widget properties
- */
 export async function getThemeComponentStyle(componentType: string): Promise<ComponentStyle | undefined> {
   try {
-    // Check for stored database theme ID (must be a valid UUID)
-    const storedDbThemeId = typeof window !== 'undefined' 
-      ? localStorage.getItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID) 
-      : null
-    
-    let themeToUse = null
-    
-    // Only try to fetch if we have a valid UUID
-    if (storedDbThemeId && isValidUUID(storedDbThemeId)) {
-      const userThemeResponse = await fetch(`/api/themes/${storedDbThemeId}`)
-      if (userThemeResponse.ok) {
-        const data = await userThemeResponse.json()
-        themeToUse = data.theme
-      }
-    }
-    
-    // If no user theme found, fall back to active theme
-    if (!themeToUse) {
-      const response = await fetch('/api/themes')
-      if (!response.ok) return undefined
-      
+    let brandingConfig: BrandingConfig | null = null
+    const response = await fetch('/api/admin/branding')
+    if (response.ok) {
       const data = await response.json()
-      const activeTheme = data.themes?.find((t: any) => t.isActive)
-      
-      // Fetch full theme details
-      if (activeTheme?.id && isValidUUID(activeTheme.id)) {
-        const themeResponse = await fetch(`/api/themes/${activeTheme.id}`)
-        if (themeResponse.ok) {
-          const themeData = await themeResponse.json()
-          themeToUse = themeData.theme
-        }
-      }
+      brandingConfig = data.branding as BrandingConfig
     }
     
-    if (!themeToUse || !themeToUse.config) return undefined
-    
-    const brandingConfig = themeToUse.config as BrandingConfig
+    if (!brandingConfig) return undefined
+
     const componentKey = getThemeComponentKey(componentType)
     
     if (!componentKey || !brandingConfig.componentStyling) return undefined

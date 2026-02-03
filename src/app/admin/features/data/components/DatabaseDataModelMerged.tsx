@@ -190,16 +190,15 @@ export function DatabaseDataModelMerged() {
 
   const loadThemeConfig = async () => {
     try {
-      const response = await fetch('/api/themes')
+      const response = await fetch('/api/admin/branding')
       if (response.ok) {
         const data = await response.json()
-        const activeTheme = data.themes?.find((t: any) => t.isActive)
-        if (activeTheme?.config) {
-          setThemeConfig(activeTheme.config as BrandingConfig)
+        if (data.branding) {
+          setThemeConfig(data.branding as BrandingConfig)
         }
       }
     } catch (error) {
-      console.error('Error loading theme config:', error)
+      console.error('Error loading branding config:', error)
     }
   }
 

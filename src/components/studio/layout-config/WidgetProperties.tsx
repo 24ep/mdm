@@ -10,7 +10,7 @@ import { widgetsPalette, PlacedWidget } from './widgets'
 import { ComponentStyle } from './types'
 import { getWidgetComponentType } from './globalStyleUtils'
 import { getThemeComponentStyleSync } from './themeStyleUtils'
-import { BrandingConfig } from '@/lib/theme-types'
+import { BrandingConfig } from '@/app/admin/features/system/types'
 import { PositionSection } from './PositionSection'
 import { LayoutSection } from './LayoutSection'
 import { AppearanceSection } from './AppearanceSection'
@@ -47,12 +47,11 @@ export function WidgetProperties({
   useEffect(() => {
     const fetchTheme = async () => {
       try {
-        const response = await fetch('/api/themes')
+        const response = await fetch('/api/admin/branding')
         if (response.ok) {
           const data = await response.json()
-          const activeTheme = data.themes?.find((t: any) => t.isActive)
-          if (activeTheme?.config) {
-            const brandingConfig = activeTheme.config as BrandingConfig
+          if (data.branding) {
+            const brandingConfig = data.branding as BrandingConfig
             setThemeConfig(brandingConfig)
             
             // Get component style for this widget

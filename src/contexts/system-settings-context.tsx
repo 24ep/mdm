@@ -5,8 +5,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 export interface SystemSettings {
     siteName: string
     deletePolicyDays: number
-    enableAuditTrail: boolean
-    enableThemeConfig: boolean
     requireEmailVerification: boolean
     requireAdminApproval: boolean
     uiProtectionEnabled: boolean
@@ -23,8 +21,6 @@ interface SystemSettingsContextType {
 const defaultSettings: SystemSettings = {
     siteName: 'Unified Data Platform',
     deletePolicyDays: 30,
-    enableAuditTrail: true,
-    enableThemeConfig: true,
     requireEmailVerification: true,
     requireAdminApproval: false,
     uiProtectionEnabled: false

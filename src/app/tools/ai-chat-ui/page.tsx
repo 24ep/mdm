@@ -159,17 +159,19 @@ export default function ChatEmbedUIPage() {
         }
     }
 
-    const handleSave = async (): Promise<Chatbot | null> => {
+    const handleSave = async (dataOverride?: Partial<Chatbot>): Promise<Chatbot | null> => {
+        const dataToSave = { ...editorFormData, ...dataOverride }
+
         // Client-side validation
-        if (!editorFormData.name) {
+        if (!dataToSave.name) {
             toast.error('Name is required')
             return null
         }
-        if (!editorFormData.website) {
+        if (!dataToSave.website) {
             toast.error('Website is required')
             return null
         }
-        if (editorFormData.engineType === 'custom' && !editorFormData.apiEndpoint) {
+        if (dataToSave.engineType === 'custom' && !dataToSave.apiEndpoint) {
             toast.error('API Endpoint is required for Custom engine')
             return null
         }
@@ -178,11 +180,11 @@ export default function ChatEmbedUIPage() {
             const url = selectedChatbot ? `/api/chatbots/${selectedChatbot.id}` : '/api/chatbots'
             const method = selectedChatbot ? 'PATCH' : 'POST'
 
-            console.log('Saving chatbot with data:', editorFormData)
+            console.log('Saving chatbot with data:', dataToSave)
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editorFormData)
+                body: JSON.stringify(dataToSave)
             })
 
             if (!res.ok) {
@@ -203,13 +205,18 @@ export default function ChatEmbedUIPage() {
 
             toast.success(selectedChatbot ? 'Chatbot updated' : 'Chatbot created')
 
-            // Update local state if editing, otherwise refresh list
+            // Update local state
+            if (dataOverride) {
+                setEditorFormData(prev => ({ ...prev, ...dataOverride }))
+            }
+
             if (selectedChatbot) {
                 setChatbots(prev => prev.map(c => c.id === savedChatbot.id ? savedChatbot : c))
                 setSelectedChatbot(savedChatbot) // Update selected chatbot with latest data
             } else {
-                fetchChatbots()
-                setSelectedChatbot(savedChatbot) // Switch to edit mode for the new bot
+                // For new chatbots, we still want to refresh or at least add to list
+                setChatbots(prev => [savedChatbot, ...prev])
+                setSelectedChatbot(savedChatbot)
             }
 
             return savedChatbot
@@ -221,19 +228,26 @@ export default function ChatEmbedUIPage() {
     }
 
     const handlePublish = async (chatbot: Chatbot) => {
-        // Implement publish logic if separate from save, or just use save with isPublished=true
-        // For now, assuming publish might be a separate action or just a toggle in editor
-        // Let's toggle availability
         try {
+            const newIsPublished = !chatbot.isPublished
             const res = await fetch(`/api/chatbots/${chatbot.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isPublished: !chatbot.isPublished })
+                body: JSON.stringify({ isPublished: newIsPublished })
             })
             if (!res.ok) throw new Error('Failed to update publish status')
-            toast.success(chatbot.isPublished ? 'Chatbot unpublished' : 'Chatbot published')
-            fetchChatbots()
+            
+            toast.success(newIsPublished ? 'Chatbot published' : 'Chatbot unpublished')
+            
+            // Update local state instead of full fetch
+            setChatbots(prev => prev.map(c => c.id === chatbot.id ? { ...c, isPublished: newIsPublished } : c))
+            
+            if (selectedChatbot?.id === chatbot.id) {
+                setSelectedChatbot(prev => prev ? { ...prev, isPublished: newIsPublished } : null)
+                setEditorFormData(prev => ({ ...prev, isPublished: newIsPublished }))
+            }
         } catch (e) {
+            console.error(e)
             toast.error('Failed to update status')
         }
     }

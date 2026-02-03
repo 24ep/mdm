@@ -66,7 +66,6 @@ const getFeatureName = (activeTab: string): string => {
     'settings': 'System Settings',
     'page-templates': 'Page Templates',
     'notifications': 'Notifications',
-    'themes': 'Theme & Branding',
     'integrations': 'Integrations',
     'api': 'API Management',
     'space-selection': 'Data Management'
@@ -84,7 +83,6 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
   const [profilePopoverOpen, setProfilePopoverOpen] = useState(false)
   const { notifications, unreadCount, isLoading, markAsRead } = useNotifications()
   const { settings } = useSystemSettingsSafe()
-  const enableThemeConfig = settings.enableThemeConfig !== false
 
   useEffect(() => {
     // Load branding config
@@ -153,8 +151,8 @@ export function TopMenuBar({ activeTab, applicationName = 'Unified Data Platform
       data-component="top-menu-bar"
       style={{
         zIndex: Z_INDEX.navigation,
-        backgroundColor: !enableThemeConfig ? '#FFFFFF' : 'var(--brand-top-menu-bg, hsl(var(--background)))',
-        color: !enableThemeConfig ? '#111827' : 'var(--brand-top-menu-text, hsl(var(--foreground)))'
+        backgroundColor: 'var(--brand-top-menu-bg, hsl(var(--background)))',
+        color: 'var(--brand-top-menu-text, hsl(var(--foreground)))'
       }}
     >
       {/* Left Section: Logo, Application Name, and Selected Feature */}

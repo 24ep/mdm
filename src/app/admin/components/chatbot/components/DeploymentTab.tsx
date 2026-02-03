@@ -19,7 +19,7 @@ interface DeploymentTabProps {
   setFormData: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
   selectedChatbot: Chatbot | null
   onGenerateEmbedCode: (chatbot: Chatbot) => string
-  onSave?: () => Promise<Chatbot | null>
+  onSave?: (data?: Partial<Chatbot>) => Promise<Chatbot | null>
 }
 
 export function DeploymentTab({
@@ -71,49 +71,20 @@ export function DeploymentTab({
             onClick={async () => {
               const newIsPublished = !formData.isPublished
 
-              // Optimistic update
-              setFormData(prev => ({
-                ...prev,
-                isPublished: newIsPublished
-              }))
-
-              let targetBotId = selectedChatbot?.id
-
-              // Persist config first (Save) if handler provided
+              // Use onSave if available to persist the change in one go
               if (onSave) {
-                const savedBot = await onSave()
+                // This will perform the PATCH/POST with latest formData + isPublished override
+                const savedBot = await onSave({ isPublished: newIsPublished })
                 if (!savedBot) {
-                  // Save failed, revert toggle
-                  setFormData(prev => ({ ...prev, isPublished: !newIsPublished }))
+                  // Error toast already handled in page.tsx
                   return
                 }
-                targetBotId = savedBot.id
-              }
-
-              // 3. Update Publish Status in Backend
-              // Only proceed if we have a valid ID (it might be a fresh create)
-              if (targetBotId) {
-                try {
-                  const response = await fetch(`/api/chatbots/${targetBotId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    // We only send the status flag here. The config was saved in step 2.
-                    body: JSON.stringify({ isPublished: newIsPublished })
-                  })
-                  if (response.ok) {
-                    toast.success(newIsPublished ? 'Chatbot published' : 'Chatbot unpublished')
-                  } else {
-                    toast.error('Failed to update publish status')
-                    // Revert local state on error
-                    setFormData(prev => ({ ...prev, isPublished: !newIsPublished }))
-                  }
-                } catch (error) {
-                  toast.error('Failed to update publish status')
-                  // Revert local state on error
-                  setFormData(prev => ({ ...prev, isPublished: !newIsPublished }))
-                }
               } else {
-                // LocalStorage only or fallback
+                // Local only fallback (for creation flow usually)
+                setFormData(prev => ({
+                  ...prev,
+                  isPublished: newIsPublished
+                }))
                 toast.success(newIsPublished ? 'Marked as published (save to persist)' : 'Marked as draft (save to persist)')
               }
             }}

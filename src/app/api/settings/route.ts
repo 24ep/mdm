@@ -74,18 +74,36 @@ async function putHandler(request: NextRequest) {
     }, {})
 
     const updatedSettings: Record<string, any> = {}
-    for (const [key, value] of Object.entries(settings)) {
-      // Properly serialize the value - if it's an object, JSON stringify it
+    // Initialize updatedSettings with current values, then apply changes from the request
+    Object.assign(updatedSettings, currentSettings)
+
+    const changeEntries = Object.entries(settings).filter(([key, value]) => {
       const serializedValue = typeof value === 'object' && value !== null
         ? JSON.stringify(value)
         : String(value)
+      
+      // Store serialized value for later use
+      ;(value as any)._serialized = serializedValue
+      
+      // Update the updatedSettings object with the new value from the request
+      // This ensures updatedSettings reflects the *intended* final state for audit log
+      updatedSettings[key] = value
 
-      const res = await prisma.systemSetting.upsert({
-        where: { key },
-        update: { value: serializedValue, updatedAt: new Date() },
-        create: { key, value: serializedValue }
-      })
-      updatedSettings[key] = res.value
+      return currentSettings[key] !== serializedValue
+    })
+
+    if (changeEntries.length > 0) {
+      // Use a transaction for better performance and consistency
+      await prisma.$transaction(
+        changeEntries.map(([key, value]) => {
+          const serializedValue = (value as any)._serialized
+          return prisma.systemSetting.upsert({
+            where: { key },
+            update: { value: serializedValue, updatedAt: new Date() },
+            create: { key, value: serializedValue }
+          })
+        })
+      )
     }
 
     // Create audit log

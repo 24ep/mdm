@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import { applyBrandingColors, applyGlobalStyling, applyComponentStyling, clearBrandingStyles } from '@/lib/branding'
 import { THEME_STORAGE_KEYS, THEME_DEFAULTS, THEME_ERROR_MESSAGES } from '@/lib/theme-constants'
-import { safeParseBrandingConfig, type BrandingConfig } from '@/lib/theme-types'
+import { type BrandingConfig } from '@/app/admin/features/system/types'
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -103,112 +103,28 @@ export function BrandingInitializer() {
     // Prevent concurrent fetches
     if (fetchingRef.current) return
 
-    const loadAndApplyTheme = async () => {
+    const loadAndApplyBranding = async () => {
       fetchingRef.current = true
 
       try {
         setError(null)
 
-        // Check system settings for enableThemeConfig
-        try {
-          const settingsResponse = await fetch('/api/system-settings')
-          if (settingsResponse.ok) {
-            const settingsData = await settingsResponse.json()
-            if (settingsData.success && settingsData.settings?.enableThemeConfig === false) {
-              console.log('[BrandingInitializer] Theme configuration is disabled in system settings. Clearing branding styles.')
-              clearBrandingStyles()
-              
-              // Apply default mode
-              if (theme !== THEME_DEFAULTS.MODE) {
-                setTheme(THEME_DEFAULTS.MODE)
-              }
-              if (THEME_DEFAULTS.MODE === 'light') {
-                document.documentElement.classList.remove('dark')
-              } else {
-                document.documentElement.classList.add('dark')
-              }
-              
-              appliedRef.current = null
-              fetchingRef.current = false
-              return
-            }
-          }
-        } catch (settingsError) {
-          console.warn('[BrandingInitializer] Failed to fetch system settings:', settingsError)
-          // Continue with theme loading if settings fetch fails
-        }
-
-        // Check for stored database theme ID (UUID format)
-        const storedDbThemeId = localStorage.getItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
-
-        // Try to fetch user's stored theme first (only if valid UUID)
-        if (storedDbThemeId && isValidUUID(storedDbThemeId)) {
-          // Prevent re-applying the same theme
-          if (appliedRef.current === storedDbThemeId) {
+        const response = await fetch('/api/admin/branding')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.branding) {
+            const config = data.branding as BrandingConfig
+            // Use light mode by default or based on current theme if wanted
+            // For now, consistently apply the branding
+            applyThemeConfig('system', 'System Branding', theme === 'dark' ? 'dark' : 'light', config)
             fetchingRef.current = false
             return
           }
-
-          try {
-            const response = await fetch(`/api/themes/${storedDbThemeId}`)
-            if (response.ok) {
-              const data = await response.json()
-              const themeData = data.theme
-
-              if (themeData?.config) {
-                const configResult = safeParseBrandingConfig(themeData.config)
-                if (configResult.success) {
-                  const themeMode = themeData.themeMode === 'dark' ? 'dark' : 'light'
-                  applyThemeConfig(themeData.id, themeData.name, themeMode, configResult.data)
-                  fetchingRef.current = false
-                  return
-                }
-              }
-            }
-          } catch (fetchError) {
-            console.warn('[BrandingInitializer] Failed to fetch stored theme:', fetchError)
-          }
         }
 
-        // Fall back to active theme from database
-        try {
-          const response = await fetch('/api/themes')
-          if (response.ok) {
-            const data = await response.json()
-            const activeTheme = data.themes?.find((t: any) => t.isActive)
-
-            if (activeTheme?.id && isValidUUID(activeTheme.id)) {
-              // Prevent re-applying the same theme
-              if (appliedRef.current === activeTheme.id) {
-                fetchingRef.current = false
-                return
-              }
-
-              // Fetch full theme details with config
-              const themeResponse = await fetch(`/api/themes/${activeTheme.id}`)
-              if (themeResponse.ok) {
-                const themeData = (await themeResponse.json()).theme
-
-                if (themeData?.config) {
-                  const configResult = safeParseBrandingConfig(themeData.config)
-                  if (configResult.success) {
-                    const themeMode = themeData.themeMode === 'dark' ? 'dark' : 'light'
-                    applyThemeConfig(themeData.id, themeData.name, themeMode, configResult.data)
-                    fetchingRef.current = false
-                    return
-                  }
-                }
-              }
-            }
-          }
-        } catch (fetchError) {
-          console.warn('[BrandingInitializer] Failed to fetch active theme:', fetchError)
-        }
-
-        // No valid theme found - clear all branding and use defaults from globals.css
-        console.log('[BrandingInitializer] No active theme found in database, clearing branding and using defaults')
+        // No valid branding found - clear all branding and use defaults
+        console.log('[BrandingInitializer] No branding config found, clearing branding and using defaults')
         clearBrandingStyles()
-        localStorage.removeItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
         if (theme !== THEME_DEFAULTS.MODE) {
           setTheme(THEME_DEFAULTS.MODE)
         }
@@ -220,11 +136,9 @@ export function BrandingInitializer() {
         appliedRef.current = null
 
       } catch (error) {
-        console.error('[BrandingInitializer] Error loading theme:', error)
+        console.error('[BrandingInitializer] Error loading branding:', error)
         setError(THEME_ERROR_MESSAGES.FAILED_TO_LOAD)
-        // On error, clear branding and apply default mode
         clearBrandingStyles()
-        localStorage.removeItem(THEME_STORAGE_KEYS.DATABASE_THEME_ID)
         if (theme !== THEME_DEFAULTS.MODE) {
           setTheme(THEME_DEFAULTS.MODE)
         }
@@ -235,7 +149,7 @@ export function BrandingInitializer() {
       }
     }
 
-    loadAndApplyTheme()
+    loadAndApplyBranding()
   }, [mounted, applyThemeConfig, setTheme, theme])
 
   // This component doesn't render anything

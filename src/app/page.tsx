@@ -48,7 +48,7 @@ import { BigQueryInterface } from './admin/features/business-intelligence'
 import { OutlineKnowledgeBase } from '@plugins/knowledge-base/src/components/OutlineKnowledgeBase'
 import { MarketplaceHome } from '@/features/marketplace'
 import { InfrastructureOverview } from '@/features/infrastructure'
-import { NotificationCenter, ThemeManager } from './admin/features/system'
+import { NotificationCenter } from './admin/features/system'
 import { SecurityFeatures } from './admin/features/security'
 import { DatabaseManagement } from './admin/features/data'
 import { CacheManagement, StorageManagement } from './admin/features/storage'
@@ -99,7 +99,6 @@ const getRouteForTab = (tab: string): string => {
     'settings': '/system/settings',
     'page-templates': '/system/page-templates',
     'notifications': '/system/notifications',
-    'themes': '/system/themes',
 
     'api': '/system/api',
     'space-selection': '/admin/space-selection',

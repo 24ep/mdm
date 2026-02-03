@@ -166,7 +166,6 @@ export function PlatformSidebar({
   const { data: session } = useSession()
   const { permissions: userPermissions } = useUserPermissions()
   const { settings } = useSystemSettingsSafe()
-  const enableThemeConfig = settings.enableThemeConfig !== false
 
   // Build groupedTabs from database menu config, with plugin injection and role filtering
   const groupedTabs = useMemo(() => {
@@ -357,17 +356,13 @@ export function PlatformSidebar({
 
 
 
-  const sidebarBg = !enableThemeConfig 
-    ? (mode === 'primary' ? '#FFFFFF' : 'hsl(var(--muted))')
-    : (mode === 'primary'
+  const sidebarBg = mode === 'primary'
         ? 'var(--brand-platform-sidebar-bg, hsl(var(--background)))'
-        : 'var(--brand-secondary-sidebar-bg, hsl(var(--muted)))')
+        : 'var(--brand-secondary-sidebar-bg, hsl(var(--muted)))'
 
-  const sidebarText = !enableThemeConfig
-    ? (mode === 'primary' ? '#111827' : 'hsl(var(--muted-foreground))')
-    : (mode === 'primary'
+  const sidebarText = mode === 'primary'
         ? 'var(--brand-platform-sidebar-text, hsl(var(--foreground)))'
-        : 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))')
+        : 'var(--brand-secondary-sidebar-text, hsl(var(--muted-foreground)))'
 
   return (
     <div

@@ -45,7 +45,6 @@ export interface SystemSettings {
   uiProtectionEnabled: boolean
 
   // Features
-  enableThemeConfig: boolean
   enableUserRegistration: boolean
   enableGuestAccess: boolean
   enableNotifications: boolean
@@ -61,81 +60,6 @@ export interface SystemSettings {
   storageProvider: 'local' | 's3' | 'supabase'
 }
 
-export interface Theme {
-  id: string
-  name: string
-  type: 'system' | 'space'
-  spaceId?: string
-  spaceName?: string
-  isActive: boolean
-  isDefault: boolean
-  colors: {
-    primary: string
-    secondary: string
-    accent: string
-    background: string
-    foreground: string
-    muted: string
-    border: string
-    input?: string
-    ring?: string
-  }
-  typography?: {
-    fontFamily: string
-    fontSize: {
-      xs: string
-      sm: string
-      base: string
-      lg: string
-      xl: string
-      '2xl': string
-      '3xl': string
-    }
-    fontWeight: {
-      normal: string
-      medium: string
-      semibold: string
-      bold: string
-    }
-  }
-  spacing?: {
-    xs: string
-    sm: string
-    md: string
-    lg: string
-    xl: string
-  }
-  borderRadius?: {
-    sm: string
-    md: string
-    lg: string
-    xl: string
-  }
-  shadows?: {
-    sm: string
-    md: string
-    lg: string
-    xl: string
-  }
-  customCSS?: string
-  logo?: {
-    url: string
-    alt: string
-    width: number
-    height: number
-  }
-  favicon?: {
-    url: string
-    type: string
-  }
-  fonts?: {
-    heading: string
-    body: string
-    mono: string
-  }
-  createdAt: Date
-  updatedAt: Date
-}
 
 export interface BrandingConfig {
   // Application branding

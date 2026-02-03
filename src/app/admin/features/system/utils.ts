@@ -3,32 +3,7 @@
  * Helper functions for system operations
  */
 
-import { Theme, TemplateItem, NotificationTemplate } from './types'
-
-/**
- * Check if theme is active
- */
-export function isThemeActive(theme: Theme): boolean {
-  return theme.isActive === true
-}
-
-/**
- * Filter themes by type
- */
-export function filterThemesByType(themes: Theme[], type: Theme['type'] | 'all'): Theme[] {
-  if (type === 'all') return themes
-  return themes.filter(theme => theme.type === type)
-}
-
-/**
- * Sort themes by name
- */
-export function sortThemesByName(themes: Theme[], order: 'asc' | 'desc' = 'asc'): Theme[] {
-  return [...themes].sort((a, b) => {
-    const comparison = a.name.localeCompare(b.name)
-    return order === 'asc' ? comparison : -comparison
-  })
-}
+import { TemplateItem, NotificationTemplate } from './types'
 
 /**
  * Filter templates by scope
