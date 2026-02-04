@@ -106,12 +106,13 @@
     --z-popover: 1100;
     --z-floating-toolbar: 1200;
     --z-sortable-dragging: 1300;
+    --z-drawer-overlay: 1000;
+    --z-drawer: 1001;
+    --z-modal-overlay: 2000;
+    --z-modal: 2001;
+    --z-toast: 9999;
     --z-overlay: 2000;
-    --z-drawer: 2100;
-    --z-modal: 2200;
-    --z-dialog: 2300;
     --z-notification: 3000;
-    --z-toast: 3100;
     --z-alert: 3200;
     --z-widget: 4000;
     --z-widget-overlay: 3900;
@@ -123,12 +124,34 @@
     --z-chat-widget-overlay-text: 10003;
     --z-chat-widget-preview: 10004;
     
-    /* Platform Sidebar overrides */
-    --brand-platform-sidebar-bg: hsl(0 0% 100%);
+    /* Semantic Tokens - Driven by BrandingInitializer */
+    --brand-primary: 0 0% 0%; 
+    --brand-secondary: 240 4.8% 95.9%;
+    --brand-warning: 38 92% 50%;
+    --brand-danger: 0 84% 60%;
     
-    /* Top Bar overrides */
-    --brand-top-menu-bg: hsl(0 0% 100%);
-    --brand-top-menu-text: hsl(222.2 84% 4.9%); /* Dark text */
+    --brand-body-bg: 0 0% 100%;
+    --brand-body-text: 222.2 84% 4.9%;
+    
+    --brand-ui-bg: 0 0% 100%;
+    --brand-ui-border: 214.3 31.8% 91.4%;
+    
+    --brand-sidebar-primary-bg: 0 0% 100%;
+    --brand-sidebar-primary-text: 222.2 84% 4.9%;
+    --brand-sidebar-secondary-bg: 0 0% 98%;
+    --brand-sidebar-secondary-text: 222.2 84% 4.9%;
+    
+    --brand-top-menu-bg: 0 0% 100%;
+    --brand-top-menu-text: 222.2 84% 4.9%;
+    
+    /* Component specific semantic tokens */
+    --brand-input-bg: 0 0% 97%;
+    --brand-input-border: 214.3 31.8% 91.4%;
+    --brand-button-radius: 0.375rem;
+    --brand-input-radius: 0.375rem;
+
+    /* Legacy compatibility tokens */
+    --brand-platform-sidebar-bg: hsl(0 0% 100%);
     --brand-secondary-sidebar-bg: hsl(0 0% 100%);
   }
 
@@ -136,6 +159,23 @@
     /* Supabase Dark Theme - Deep Slate */
     --background: 222.2 47.4% 5.2%;
     --foreground: 210 40% 98%;
+
+    /* Dark Mode Brand Overrides */
+    --brand-body-bg: 222.2 47.4% 5.2%;
+    --brand-body-text: 210 40% 98%;
+    --brand-ui-bg: 222.2 47.4% 8%;
+    --brand-ui-border: 217.2 32.6% 17.5%;
+    
+    --brand-sidebar-primary-bg: 222.2 47.4% 8%;
+    --brand-sidebar-primary-text: 210 40% 98%;
+    --brand-sidebar-secondary-bg: 222.2 47.4% 6%;
+    --brand-sidebar-secondary-text: 210 40% 98%;
+    
+    --brand-top-menu-bg: 222.2 47.4% 8%;
+    --brand-top-menu-text: 210 40% 98%;
+    
+    --brand-input-bg: 217.2 32.6% 12%;
+    --brand-input-border: 217.2 32.6% 17.5%;
 
     --card: 222.2 47.4% 8%;
     --card-foreground: 210 40% 98%;

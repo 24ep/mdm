@@ -23,3 +23,6 @@ export { applyApplicationBranding } from './application'
 // Loader functions
 export { loadBrandingConfig, initializeBranding } from './loader'
 
+// Theme presets
+export * from './themes'
+

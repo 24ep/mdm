@@ -14,41 +14,62 @@ import { applyApplicationBranding } from './application'
 export function applyBrandingColors(branding: BrandingConfig) {
   const root = document.documentElement
 
-  // Apply primary and secondary colors
+  // Helper to set semantic token (HSL numbers) and direct brand variable
+  const setBrandColor = (semanticName: string, color: string) => {
+    if (!color) return
+    const hsl = rgbaToHsl(color)
+    root.style.setProperty(semanticName, hsl)
+    // Direct usage variable (e.g. --brand-primary-raw if needed, but usually --brand-primary is the HSL numbers)
+  }
+
+  // 1. Core Branding Colors (Mainly for Shadcn/Tailwind internals)
   root.style.setProperty('--primary', rgbaToHsl(branding.primaryColor))
   root.style.setProperty('--secondary', rgbaToHsl(branding.secondaryColor))
-
-  // Apply warning and danger colors as CSS variables
   root.style.setProperty('--warning', rgbaToHsl(branding.warningColor))
   root.style.setProperty('--destructive', rgbaToHsl(branding.dangerColor))
 
-  // Also set as custom properties for direct use
-  root.style.setProperty('--brand-primary', branding.primaryColor)
-  root.style.setProperty('--brand-secondary', branding.secondaryColor)
-  root.style.setProperty('--brand-warning', branding.warningColor)
-  root.style.setProperty('--brand-danger', branding.dangerColor)
+  // 2. Map to Semantic Tokens (The new way)
+  setBrandColor('--brand-primary', branding.primaryColor)
+  setBrandColor('--brand-secondary', branding.secondaryColor)
+  setBrandColor('--brand-warning', branding.warningColor)
+  setBrandColor('--brand-danger', branding.dangerColor)
 
-  // Apply UI component colors
-  root.style.setProperty('--brand-ui-bg', branding.uiBackgroundColor || branding.topMenuBackgroundColor)
-  // Trim and validate uiBorderColor to ensure rgba values work correctly (handles both with and without spaces)
-  const uiBorderColor = branding.uiBorderColor ? branding.uiBorderColor.trim() : 'rgba(0, 0, 0, 0.1)'
-  root.style.setProperty('--brand-ui-border', uiBorderColor)
+  setBrandColor('--brand-body-bg', branding.bodyBackgroundColor)
+  setBrandColor('--brand-body-text', branding.bodyTextColor || (hasAlphaChannel(branding.bodyBackgroundColor) ? '#000000' : '#111827'))
 
-  // Set --border and --input CSS variables for Tailwind's border-border and bg-input classes
-  // We MUST use HSL format (numbers only) because globals.css wraps these in hsl()
-  // Our improved rgbaToHsl now handles alpha by blending with white.
+  setBrandColor('--brand-ui-bg', branding.uiBackgroundColor || branding.topMenuBackgroundColor)
+  setBrandColor('--brand-ui-border', branding.uiBorderColor || 'rgba(0, 0, 0, 0.1)')
+
+  setBrandColor('--brand-top-menu-bg', branding.topMenuBackgroundColor)
+  setBrandColor('--brand-top-menu-text', branding.topMenuTextColor)
+
+  // Sidebar mapping
+  setBrandColor('--brand-sidebar-primary-bg', branding.platformSidebarBackgroundColor)
+  setBrandColor('--brand-sidebar-primary-text', branding.platformSidebarTextColor)
+  setBrandColor('--brand-sidebar-secondary-bg', branding.secondarySidebarBackgroundColor)
+  setBrandColor('--brand-sidebar-secondary-text', branding.secondarySidebarTextColor)
+
+  // Component mapping
+  const inputStyling = branding.componentStyling?.['text-input']
+  if (inputStyling?.backgroundColor) {
+    setBrandColor('--brand-input-bg', inputStyling.backgroundColor)
+  }
+  if (inputStyling?.borderColor) {
+    setBrandColor('--brand-input-border', inputStyling.borderColor)
+  }
+
+  // 3. Legacy compatibility mappings (for components still using these variables)
+  root.style.setProperty('--brand-platform-sidebar-bg', branding.platformSidebarBackgroundColor)
+  root.style.setProperty('--brand-secondary-sidebar-bg', branding.secondarySidebarBackgroundColor)
+  root.style.setProperty('--brand-top-menu-bg-raw', branding.topMenuBackgroundColor) // For direct usage if needed
+  
+  // Set --border and --input specifically as HSL numbers for Tailwind
+  const uiBorderColor = branding.uiBorderColor || 'rgba(0, 0, 0, 0.1)'
   const borderHsl = rgbaToHsl(uiBorderColor)
   root.style.setProperty('--border', borderHsl)
   root.style.setProperty('--input', borderHsl)
-  console.log('[Branding] Set --border to HSL:', borderHsl, 'from:', uiBorderColor)
 
-  root.style.setProperty('--brand-top-menu-bg', branding.topMenuBackgroundColor)
-  root.style.setProperty('--brand-platform-sidebar-bg', branding.platformSidebarBackgroundColor)
-  root.style.setProperty('--brand-secondary-sidebar-bg', branding.secondarySidebarBackgroundColor)
-  root.style.setProperty('--brand-top-menu-text', branding.topMenuTextColor)
-  root.style.setProperty('--brand-platform-sidebar-text', branding.platformSidebarTextColor)
-  root.style.setProperty('--brand-secondary-sidebar-text', branding.secondarySidebarTextColor)
-  root.style.setProperty('--brand-body-bg', branding.bodyBackgroundColor)
+  // Space module specifics
 
   // Set CSS variables for space settings menu (for inline style fallback)
   const spaceSettingsActive = branding.componentStyling?.['space-settings-menu-active']

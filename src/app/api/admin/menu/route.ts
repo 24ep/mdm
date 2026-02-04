@@ -22,7 +22,6 @@ async function getHandler(request: NextRequest) {
                 items: {
                     where: { 
                         isVisible: true,
-                        slug: { not: 'themes' }
                     },
                     orderBy: { priority: 'asc' },
                 },
