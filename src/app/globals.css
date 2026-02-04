@@ -182,8 +182,6 @@
 
 @layer base {
   * {
-    border-width: 0;
-    border-style: solid;
     border-color: var(--brand-ui-border, hsl(var(--border)));
   }
 

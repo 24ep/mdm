@@ -241,14 +241,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      background-color: ${bgColor} !important;\n`
         componentCSS += `      background-image: none !important;\n`
         // Override Tailwind's --border CSS variable (used by bg-border class)
-        // IMPORTANT: If the background color has an alpha channel, use it directly
-        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
-        if (hasAlphaChannel(bgColor)) {
-          componentCSS += `      --border: ${bgColor} !important;\n`
-        } else {
-          const borderHsl = rgbaToHsl(bgColor)
-          componentCSS += `      --border: ${borderHsl} !important;\n`
-        }
+        const borderHsl = rgbaToHsl(bgColor)
+        componentCSS += `      --border: ${borderHsl} !important;\n`
+        componentCSS += `      --input: ${borderHsl} !important;\n`
       }
       // For platform-sidebar-menu components, aggressively override button styles
       if (componentId.startsWith('platform-sidebar-menu')) {
@@ -394,12 +389,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         componentCSS += `      background-color: ${bgColor} !important;\n`
         componentCSS += `      background-image: none !important;\n`
         // Override Tailwind's --border CSS variable if needed, similar to input
-        if (hasAlphaChannel(bgColor)) {
-          componentCSS += `      --border: ${bgColor} !important;\n`
-        } else {
-          const borderHsl = rgbaToHsl(bgColor)
-          componentCSS += `      --border: ${borderHsl} !important;\n`
-        }
+        const borderHsl = rgbaToHsl(bgColor)
+        componentCSS += `      --border: ${borderHsl} !important;\n`
+        componentCSS += `      --input: ${borderHsl} !important;\n`
       }
       // For platform-sidebar-menu components, aggressively override button styles
       if (componentId.startsWith('platform-sidebar-menu')) {
@@ -617,16 +609,11 @@ export function applyComponentStyling(branding: BrandingConfig) {
       const borderColorValue = componentStyle.borderColor.trim()
       componentCSS += `      border-color: ${borderColorValue} !important;\n`
       // Also set --border CSS variable for Tailwind classes
-      // IMPORTANT: If the border color has an alpha channel, use it directly
-      // because HSL conversion loses the alpha, making transparent colors appear opaque/black
-      if (hasAlphaChannel(borderColorValue)) {
-        componentCSS += `      --border: ${borderColorValue} !important;\n`
-        componentCSS += `      --input: ${borderColorValue} !important;\n`
-      } else {
-        const borderHsl = rgbaToHsl(borderColorValue)
-        componentCSS += `      --border: ${borderHsl} !important;\n`
-        componentCSS += `      --input: ${borderHsl} !important;\n`
-      }
+      // We MUST use HSL format (numbers only) because child elements or Tailwind classes wrap these in hsl()
+      // Our improved rgbaToHsl now handles alpha by blending with white.
+      const borderHsl = rgbaToHsl(borderColorValue)
+      componentCSS += `      --border: ${borderHsl} !important;\n`
+      componentCSS += `      --input: ${borderHsl} !important;\n`
       if (componentId === 'text-input') {
         console.log('[Branding] Setting text-input border-color:', borderColorValue, 'borderWidth:', componentStyle.borderWidth)
       }
@@ -988,9 +975,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `    body:not([data-space]) [data-sidebar="primary"] .border-b.border-border,\n`
         cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"] .border-t.border-border,\n`
         cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="primary"] .border-b.border-border {\n`
-        cssRules += `      border-color: ${sidebarBorderHsl} !important;\n`
-        cssRules += `      border-top-color: ${sidebarBorderHsl} !important;\n`
-        cssRules += `      border-bottom-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `      border-color: hsl(${sidebarBorderHsl}) !important;\n`
+        cssRules += `      border-top-color: hsl(${sidebarBorderHsl}) !important;\n`
+        cssRules += `      border-bottom-color: hsl(${sidebarBorderHsl}) !important;\n`
         cssRules += `    }\n\n`
       }
       cssRules += `    /* Override CSS variable and apply styles directly for platform sidebar primary */\n`
@@ -1044,9 +1031,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `    body:not([data-space]) [data-sidebar="secondary"] .border-b.border-border,\n`
         cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .border-t.border-border,\n`
         cssRules += `    body:not([data-space]) [data-component="platform-sidebar"][data-sidebar="secondary"] .border-b.border-border {\n`
-        cssRules += `      border-color: ${sidebarBorderHsl} !important;\n`
-        cssRules += `      border-top-color: ${sidebarBorderHsl} !important;\n`
-        cssRules += `      border-bottom-color: ${sidebarBorderHsl} !important;\n`
+        cssRules += `      border-color: hsl(${sidebarBorderHsl}) !important;\n`
+        cssRules += `      border-top-color: hsl(${sidebarBorderHsl}) !important;\n`
+        cssRules += `      border-bottom-color: hsl(${sidebarBorderHsl}) !important;\n`
         cssRules += `    }\n\n`
       }
       cssRules += `    /* Override CSS variable and apply styles directly for platform sidebar secondary */\n`
@@ -1189,16 +1176,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `      background-color: ${bgColor} !important;\n`
         cssRules += `      background-image: none !important;\n`
         // Override Tailwind's --border and --input CSS variables
-        // IMPORTANT: If the background color has an alpha channel, use it directly
-        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
-        if (hasAlphaChannel(bgColor)) {
-          cssRules += `      --border: ${bgColor} !important;\n`
-          cssRules += `      --input: ${bgColor} !important;\n`
-        } else {
-          const borderHsl = rgbaToHsl(bgColor)
-          cssRules += `      --border: ${borderHsl} !important;\n`
-          cssRules += `      --input: ${borderHsl} !important;\n`
-        }
+        const borderHsl = rgbaToHsl(bgColor)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
       }
       if (componentStyle.textColor) {
         const textColor = componentStyle.textColor.trim()
@@ -1323,16 +1303,9 @@ export function applyComponentStyling(branding: BrandingConfig) {
         cssRules += `      background-color: ${bgColor} !important;\n`
         cssRules += `      background-image: none !important;\n`
         // Override Tailwind's --border and --input CSS variables
-        // IMPORTANT: If the background color has an alpha channel, use it directly
-        // because HSL conversion loses the alpha, making transparent colors appear opaque/black
-        if (hasAlphaChannel(bgColor)) {
-          cssRules += `      --border: ${bgColor} !important;\n`
-          cssRules += `      --input: ${bgColor} !important;\n`
-        } else {
-          const borderHsl = rgbaToHsl(bgColor)
-          cssRules += `      --border: ${borderHsl} !important;\n`
-          cssRules += `      --input: ${borderHsl} !important;\n`
-        }
+        const borderHsl = rgbaToHsl(bgColor)
+        cssRules += `      --border: ${borderHsl} !important;\n`
+        cssRules += `      --input: ${borderHsl} !important;\n`
       }
       if (componentStyle.textColor) {
         const textColor = componentStyle.textColor.trim()

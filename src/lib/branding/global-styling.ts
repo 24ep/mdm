@@ -282,16 +282,6 @@ export function applyGlobalStyling(branding: BrandingConfig) {
       outline-offset: 2px;
       box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
     }
-
-    /* Override Tailwind border classes for platform sidebars - ensure borderless */
-    body:not([data-space]) [data-sidebar="primary"],
-    body:not([data-space]) [data-sidebar="secondary"] {
-      border-right: none !important;
-      border-left: none !important;
-      border-top: none !important;
-      border-bottom: none !important;
-      border: none !important;
-    }
   `
 
   // Apply tooltip animations (macOS Sonoma style)

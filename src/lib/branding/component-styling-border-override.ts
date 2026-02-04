@@ -27,7 +27,7 @@ export function generateBorderOverrideCSS(branding: BrandingConfig): string {
   cssRules += `  /* Override globals.css rules that use hsl(var(--border)) - --border is rgba, so use var(--border) directly */\n`
   cssRules += `  /* Use more specific selectors to avoid conflicts */\n`
   cssRules += `  body:not([data-space]) * {\n`
-  cssRules += `    border-color: var(--border) !important;\n`
+  cssRules += `    border-color: var(--brand-ui-border, hsl(var(--border))) !important;\n`
   cssRules += `  }\n`
   cssRules += `  /* Override Tailwind's border-border class which uses hsl(var(--border)) */\n`
   cssRules += `  /* Use maximum specificity to override Tailwind utilities */\n`
@@ -52,13 +52,13 @@ export function generateBorderOverrideCSS(branding: BrandingConfig): string {
   cssRules += `  [data-component="platform-sidebar"] .border-t.border-border,\n`
   cssRules += `  [data-component="platform-sidebar"][data-sidebar="primary"] .border-t.border-border,\n`
   cssRules += `  [data-component="platform-sidebar"][data-sidebar="secondary"] .border-t.border-border {\n`
-  cssRules += `    border-color: var(--border) !important;\n`
-  cssRules += `    border-top-color: var(--border) !important;\n`
+  cssRules += `    border-color: var(--brand-ui-border, hsl(var(--border))) !important;\n`
+  cssRules += `    border-top-color: var(--brand-ui-border, hsl(var(--border))) !important;\n`
   cssRules += `  }\n`
   cssRules += `  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),\n`
   cssRules += `  textarea,\n`
   cssRules += `  select {\n`
-  cssRules += `    background-color: var(--border) !important;\n`
+  cssRules += `    background-color: var(--brand-ui-bg, hsl(var(--muted))) !important;\n`
   cssRules += `  }\n\n`
   
   return cssRules
