@@ -124,8 +124,8 @@
     --z-chat-widget-overlay-text: 10003;
     --z-chat-widget-preview: 10004;
     
-    /* Semantic Tokens - Permanent Branding */
-    --brand-primary: 0 0% 0%; 
+    /* Semantic Tokens - Permanent Branding - Light Theme */
+    --brand-primary: 221.2 83.2% 53.3%; /* Blue - matches --ring for light theme */
     --brand-secondary: 240 4.8% 95.9%;
     --brand-warning: 38 92% 50%;
     --brand-danger: 0 84% 60%;
@@ -150,8 +150,8 @@
     --brand-button-radius: 0.5rem;
     --brand-input-radius: 0.375rem;
 
-    /* Fixed Component Styles */
-    --brand-button-bg: linear-gradient(180deg, #1d1d1f 0%, #000000 100%);
+    /* Fixed Component Styles - Light Theme */
+    --brand-button-bg: hsl(221.2 83.2% 53.3%); /* Blue - matches --ring for light theme */
     --brand-button-text: #ffffff;
     --brand-card-bg: #ffffff;
     --brand-card-border: #e2e8f0;
