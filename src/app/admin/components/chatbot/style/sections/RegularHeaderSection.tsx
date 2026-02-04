@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { X } from 'lucide-react'
+import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { Chatbot } from '../../types'
 
 interface RegularHeaderSectionProps {
@@ -81,6 +82,75 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                 />
               </div>
             </div>
+            
+            {/* Close Button Styling */}
+            {formData.headerShowCloseButton !== false && (
+              <div className="space-y-4 mt-4 pt-4 border-t">
+                <h4 className="text-md font-semibold mb-2">Close Button Styling</h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Customize the appearance of the close button in the header.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Background Color</Label>
+                    <ColorInput
+                      value={formData.headerCloseButtonBackgroundColor || ''}
+                      onChange={(color) => {
+                        setFormData({
+                          ...formData,
+                          headerCloseButtonBackgroundColor: color
+                        })
+                      }}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="transparent"
+                      inputClassName="h-8 text-xs pl-7 w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Background color for the close button (leave empty for transparent)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Icon Color</Label>
+                    <ColorInput
+                      value={formData.headerCloseButtonIconColor || ''}
+                      onChange={(color) => {
+                        setFormData({
+                          ...formData,
+                          headerCloseButtonIconColor: color
+                        })
+                      }}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="white"
+                      inputClassName="h-8 text-xs pl-7 w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Color of the X icon (defaults to header font color)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Hover Background Color</Label>
+                    <ColorInput
+                      value={formData.headerCloseButtonHoverBackgroundColor || ''}
+                      onChange={(color) => {
+                        setFormData({
+                          ...formData,
+                          headerCloseButtonHoverBackgroundColor: color
+                        })
+                      }}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="rgba(255, 255, 255, 0.1)"
+                      inputClassName="h-8 text-xs pl-7 w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Background color on hover (defaults to rgba(255, 255, 255, 0.1))
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">

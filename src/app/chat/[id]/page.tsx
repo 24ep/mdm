@@ -330,8 +330,18 @@ export default function ChatPage() {
   // Auto-show for widget (only auto-open, don't auto-close)
   // SKIP for native ChatKit in embed mode - ChatKitRenderer handles its own auto-show logic
   // to prevent conflicting state management that could cause loops
+  const isInitialLoadRef = useRef(true)
+  const lastChatbotIdRef = useRef<string | null>(null)
+  
   useEffect(() => {
     if (!chatbot) return
+    
+    // Reset initial load flag when chatbot ID changes (new chatbot loaded)
+    if (chatbot.id !== lastChatbotIdRef.current) {
+      isInitialLoadRef.current = true
+      lastChatbotIdRef.current = chatbot.id
+    }
+    
     // Skip auto-show for native ChatKit in embed mode - ChatKitRenderer handles its own auto-show
     if (isNativeChatKitMode && isEmbed) {
       console.log('[ChatPage] Skipping auto-show - native ChatKit handles its own state')
@@ -339,21 +349,30 @@ export default function ChatPage() {
     }
     if (previewDeploymentType === 'fullpage') {
       setIsOpen(true) // Full page always shows
+      isInitialLoadRef.current = false
       return
     }
-    // For popover/popup-center, start closed to show widget button
-    setIsOpen(false)
-    const autoOpenDesktop = (chatbot as any).widgetAutoShowDesktop !== undefined
-      ? (chatbot as any).widgetAutoShowDesktop
-      : ((chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true)
-    const autoOpenMobile = (chatbot as any).widgetAutoShowMobile || false
-    const shouldAuto = isMobile ? autoOpenMobile : autoOpenDesktop
+    
+    // In preview/emulator mode, preserve the current isOpen state when config updates
+    // Only reset isOpen on initial load, not on subsequent config updates
+    if (isInitialLoadRef.current) {
+      // For popover/popup-center, start closed to show widget button (only on initial load)
+      setIsOpen(false)
+      isInitialLoadRef.current = false
+      
+      const autoOpenDesktop = (chatbot as any).widgetAutoShowDesktop !== undefined
+        ? (chatbot as any).widgetAutoShowDesktop
+        : ((chatbot as any).widgetAutoShow !== undefined ? (chatbot as any).widgetAutoShow : true)
+      const autoOpenMobile = (chatbot as any).widgetAutoShowMobile || false
+      const shouldAuto = isMobile ? autoOpenMobile : autoOpenDesktop
 
-    if (shouldAuto) {
-      const delayMs = ((chatbot as any).widgetAutoShowDelay || 0) * 1000
-      const t = setTimeout(() => setIsOpen(true), delayMs)
-      return () => clearTimeout(t)
+      if (shouldAuto) {
+        const delayMs = ((chatbot as any).widgetAutoShowDelay || 0) * 1000
+        const t = setTimeout(() => setIsOpen(true), delayMs)
+        return () => clearTimeout(t)
+      }
     }
+    // If not initial load (i.e., config update), preserve current isOpen state
   }, [chatbot, previewDeploymentType, isNativeChatKitMode, isEmbed])
 
   // Notify parent window about open/close state for iframe resizing
@@ -784,6 +803,8 @@ export default function ChatPage() {
         backgroundRepeat: emulatorConfig.backgroundImage ? 'no-repeat' : undefined,
         // When embedded and closed (or just PWA overlay showing), allow clicks to pass through
         pointerEvents: (isEmbed && !isOpen && !isPreview) ? 'none' : 'auto',
+        // Isolate emulator from global.css styles - emulator has its own styling
+        isolation: isPreview ? 'isolate' : undefined,
       }}
     >
       {/* Preview Type Selector - Fixed at top right (only show when not in iframe) */}
@@ -816,12 +837,13 @@ export default function ChatPage() {
 
       {showDeviceFrame ? (
         <div
-          className="relative bg-black shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
+          className="relative shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
           style={{
             width: previewDevice === 'mobile' ? '300px' : '500px',
             height: previewDevice === 'mobile' ? '600px' : '700px',
             borderRadius: previewDevice === 'mobile' ? '40px' : '32px',
-            border: `${previewDevice === 'mobile' ? '8px' : '10px'} solid #1f1f1f`,
+            backgroundColor: '#f5f5f5', // Light gray instead of black
+            border: `${previewDevice === 'mobile' ? '8px' : '10px'} solid #e5e5e5`, // Light theme border
             transform: 'translateZ(0)'
           }}
         >

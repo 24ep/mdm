@@ -8,14 +8,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-br from-[#000000] via-[#1a1a1a] to-[#333333] text-primary-foreground shadow-sm hover:brightness-110 active:scale-[0.98] transition-all duration-200 border-0",
+        default: "bg-primary text-primary-foreground shadow-sm hover:brightness-110 active:scale-[0.98] transition-all duration-200 border-0",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+        // Ghost buttons (used a lot for icon buttons) should not have a background.
+        // Keep background transparent even on hover; only change text/icon color.
+        ghost: "bg-transparent hover:bg-transparent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

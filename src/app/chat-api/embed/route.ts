@@ -195,6 +195,14 @@ export async function GET(request: NextRequest) {
       ? (ckTheme.radius || ckTheme.borderRadius)
       : null;
 
+    // Determine default borderRadius based on avatarStyle
+    // For circle style, always use 50% regardless of widgetBorderRadius setting
+    var defaultBorderRadiusForConfig = chatbot.widgetAvatarStyle === 'circle' 
+      ? '50%' 
+      : chatbot.widgetAvatarStyle === 'square' 
+        ? (chatbot.widgetBorderRadius || '8px')
+        : (chatbot.widgetBorderRadius || '50%');
+    
     var widgetConfig = {
       avatarStyle: chatbot.widgetAvatarStyle,
       position: chatbot.widgetPosition || 'bottom-right',
@@ -202,7 +210,7 @@ export async function GET(request: NextRequest) {
       backgroundColor: chatbot.widgetBackgroundColor || chatKitAccentColor || chatbot.primaryColor,
       borderColor: chatKitBorderColor || chatbot.widgetBorderColor || 'transparent',
       borderWidth: chatbot.widgetBorderWidth || '0px',
-      borderRadius: chatbot.widgetBorderRadius || '50%',
+      borderRadius: defaultBorderRadiusForConfig,
       shadowColor: chatbot.widgetShadowColor || 'rgba(0,0,0,0.2)',
       shadowBlur: chatbot.widgetShadowBlur || '0px',
       shadowX: chatbot.widgetShadowX || '0px',
@@ -280,13 +288,23 @@ export async function GET(request: NextRequest) {
     }
     
     // Determine border radius based on avatar style and granular props
+    // For circle style, always use 50% regardless of widgetBorderRadius setting
+    var defaultBorderRadius = widgetConfig.avatarStyle === 'circle' ? '50%' 
+      : widgetConfig.avatarStyle === 'square' ? '8px' 
+      : '50%'; // circle-with-label defaults to 50%
+    
+    // Only use widgetConfig.borderRadius if avatarStyle is not 'circle'
+    var baseBorderRadius = widgetConfig.avatarStyle === 'circle' 
+      ? '50%' 
+      : (widgetConfig.borderRadius || defaultBorderRadius);
+    
     var avatarBorderRadius = getGranularRadius(
-      widgetConfig.borderRadius,
+      baseBorderRadius,
       chatbot.widgetBorderRadiusTopLeft,
       chatbot.widgetBorderRadiusTopRight,
       chatbot.widgetBorderRadiusBottomRight,
       chatbot.widgetBorderRadiusBottomLeft,
-      widgetConfig.avatarStyle === 'square' ? '8px' : '50%'
+      defaultBorderRadius
     );
     
     // Animation styles

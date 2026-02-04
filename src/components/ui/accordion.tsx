@@ -24,6 +24,7 @@ if (typeof document !== 'undefined') {
           border-top-right-radius: 0px !important;
           border-bottom-left-radius: 0px !important;
           border-bottom-right-radius: 0px !important;
+          color: #000000 !important; /* Black font color */
           border-bottom-color: rgba(0, 0, 0, 0.06) !important;
           border-bottom-width: 0.5px !important;
           border-bottom-style: solid !important;
@@ -35,6 +36,7 @@ if (typeof document !== 'undefined') {
           background: transparent !important;
           background-color: transparent !important;
           background-image: none !important;
+          color: #000000 !important; /* Black font color */
           border-bottom-color: rgba(0, 0, 0, 0.06) !important;
           border-bottom-width: 0.5px !important;
           border-bottom-style: solid !important;
@@ -49,6 +51,7 @@ if (typeof document !== 'undefined') {
           background: transparent !important;
           background-color: transparent !important;
           background-image: none !important;
+          color: #000000 !important; /* Black font color */
           border-bottom-color: rgba(0, 0, 0, 0.06) !important;
           border-bottom-width: 0.5px !important;
           border-bottom-style: solid !important;
@@ -68,7 +71,8 @@ if (typeof document !== 'undefined') {
       style.textContent = `
         [data-radix-accordion-content],
         [class*="AccordionContent"] {
-          background-color: hsl(var(--muted) / 0.3) !important;
+          background-color: transparent !important;
+          color: #000000 !important; /* Black font color */
         }
       `
       document.head.appendChild(style)
@@ -201,7 +205,6 @@ const AccordionTrigger = React.forwardRef<
       onClick={() => itemValue && context?.onValueChange(itemValue)}
       className={cn(
         "flex flex-1 items-center justify-between w-full py-3 font-medium transition-all",
-        "text-foreground",
         "no-underline",
         className
       )}
@@ -210,6 +213,7 @@ const AccordionTrigger = React.forwardRef<
         background: 'transparent',
         backgroundImage: 'none',
         borderRadius: '0px',
+        color: '#000000', // Black font color
         borderBottomColor: 'rgba(0, 0, 0, 0.06)',
         borderBottomWidth: '0.5px',
         borderBottomStyle: 'solid',
@@ -253,7 +257,8 @@ const AccordionContent = React.forwardRef<
         className
       )}
       style={{
-        backgroundColor: 'hsl(var(--muted) / 0.3)',
+        backgroundColor: 'transparent', // Transparent background
+        color: '#000000', // Black font color
         ...style
       } as React.CSSProperties}
       {...props}

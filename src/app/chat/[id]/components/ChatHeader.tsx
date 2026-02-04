@@ -43,11 +43,26 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
     }
   }
 
-  // Shared button styles for header action buttons
+  // Get close button specific styles
+  const closeButtonBackgroundColor = (chatbot as any).headerCloseButtonBackgroundColor || (chatbot as any).closeButtonBackgroundColor
+  const closeButtonIconColor = (chatbot as any).headerCloseButtonIconColor || (chatbot as any).closeButtonIconColor || chatbot.headerFontColor || 'white'
+  const closeButtonHoverBackgroundColor = (chatbot as any).headerCloseButtonHoverBackgroundColor || (chatbot as any).closeButtonHoverBackgroundColor || 'rgba(255, 255, 255, 0.1)'
+  
+  // Shared button styles for header action buttons (clear session button)
   const headerButtonClassName = "h-8 w-8 p-0 flex items-center justify-center transition-all duration-200 ease-out hover:scale-110 active:scale-95 hover:bg-white/10 rounded-md"
   const headerButtonStyle = {
     color: chatbot.headerFontColor || 'white'
   }
+  
+  // Close button specific styles
+  const closeButtonClassName = "h-8 w-8 p-0 flex items-center justify-center transition-all duration-200 ease-out hover:scale-110 active:scale-95 rounded-md"
+  const closeButtonStyle: React.CSSProperties = {
+    color: closeButtonIconColor,
+    backgroundColor: closeButtonBackgroundColor || 'transparent',
+  }
+  
+  // Handle hover state for close button
+  const closeButtonHoverStyle = closeButtonHoverBackgroundColor
 
   // Get individual padding values or fallback to X/Y values
   const headerPaddingTop = (chatbot as any).headerPaddingTop || (chatbot as any).headerPaddingY || '16px'
@@ -200,11 +215,19 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className={headerButtonClassName}
-            style={headerButtonStyle}
+            className={closeButtonClassName}
+            style={closeButtonStyle}
             title="Close chat"
+            onMouseEnter={(e) => {
+              if (closeButtonHoverStyle) {
+                e.currentTarget.style.backgroundColor = closeButtonHoverStyle
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = closeButtonBackgroundColor || 'transparent'
+            }}
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" style={{ color: closeButtonIconColor }} />
           </Button>
         )}
       </div>

@@ -115,9 +115,16 @@ export function getWidgetConfig(chatbot: ChatbotConfig, theme?: any): WidgetConf
     const width = size // Base width for circle/square
 
     // 5. Border Radius
-    let borderRadius = c.widgetBorderRadius || '50%'
-    if (avatarStyle === 'square') {
+    // For circle style, always use 50% regardless of widgetBorderRadius setting
+    // For square style, use widgetBorderRadius or default to 8px
+    let borderRadius: string
+    if (avatarStyle === 'circle') {
+        borderRadius = '50%' // Always circular for circle style
+    } else if (avatarStyle === 'square') {
         borderRadius = c.widgetBorderRadius || '8px' // Default square radius if not set
+    } else {
+        // circle-with-label uses labelBorderRadius, but button itself can be circular
+        borderRadius = c.widgetBorderRadius || '50%'
     }
 
     const labelBorderRadius = c.widgetLabelBorderRadius || borderRadius || '8px'

@@ -432,6 +432,9 @@ export interface Chatbot {
   // Close Button
   closeButtonOffsetX?: string
   closeButtonOffsetY?: string
+  headerCloseButtonBackgroundColor?: string // Background color for close button
+  headerCloseButtonIconColor?: string // Icon color for close button
+  headerCloseButtonHoverBackgroundColor?: string // Hover background color for close button
   // Footer/Input Area
   footerBgColor?: string
   footerBorderColor?: string

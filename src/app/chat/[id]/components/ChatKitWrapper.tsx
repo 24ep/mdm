@@ -726,9 +726,12 @@ export function ChatKitWrapper({
   const widgetSize = (chatbot as any).widgetSize || '60px'
 
   let borderRadius: string
-  if (widgetAvatarStyle === 'square') {
+  if (widgetAvatarStyle === 'circle') {
+    borderRadius = '50%' // Always circular for circle style, ignore widgetBorderRadius
+  } else if (widgetAvatarStyle === 'square') {
     borderRadius = (chatbot as any).widgetBorderRadius || '8px'
   } else {
+    // circle-with-label: use widgetBorderRadius or default to 50%
     borderRadius = (chatbot as any).widgetBorderRadius || '50%'
   }
 

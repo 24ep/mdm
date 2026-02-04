@@ -418,10 +418,22 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
     ? `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowSpread}px ${shadowColor}`
     : undefined
 
+  // Determine border radius based on avatar style
+  const widgetAvatarStyle = (chatbot as any).widgetAvatarStyle || 'circle'
+  let borderRadius: string
+  if (widgetAvatarStyle === 'circle') {
+    borderRadius = '50%' // Always circular for circle style, ignore widgetBorderRadius
+  } else if (widgetAvatarStyle === 'square') {
+    borderRadius = (chatbot as any).widgetBorderRadius || '8px'
+  } else {
+    // circle-with-label: use widgetBorderRadius or default to 50%
+    borderRadius = (chatbot as any).widgetBorderRadius || '50%'
+  }
+
   const baseStyle: React.CSSProperties = {
     width: (chatbot as any).widgetSize || '60px',
     height: (chatbot as any).widgetSize || '60px',
-    borderRadius: (chatbot as any).widgetBorderRadius || '50%',
+    borderRadius: borderRadius,
     border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
     boxShadow: boxShadow,
     zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget

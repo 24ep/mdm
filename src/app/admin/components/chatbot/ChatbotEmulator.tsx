@@ -364,12 +364,13 @@ export function ChatbotEmulator({
           ) : (
             // Mobile/Tablet view - realistic device frame
             <div
-              className="relative bg-black shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
+              className="relative shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-hidden shrink-0"
+              style={{ backgroundColor: '#f5f5f5' }} // Light theme background
               style={{
                 width: deviceType === 'mobile' ? '300px' : '500px',
                 height: deviceType === 'mobile' ? '600px' : '700px',
                 borderRadius: deviceType === 'mobile' ? '40px' : '32px',
-                border: `${deviceType === 'mobile' ? '8px' : '10px'} solid #1f1f1f`,
+                border: `${deviceType === 'mobile' ? '8px' : '10px'} solid #e5e5e5`, // Light theme border
                 transform: 'translateZ(0)'
               }}
             >
@@ -412,7 +413,9 @@ export function ChatbotEmulator({
                   style={{
                     position: 'relative',
                     zIndex: Z_INDEX.content,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    // Isolate emulator from global.css styles
+                    isolation: 'isolate'
                   }}
                 />
               </div>
