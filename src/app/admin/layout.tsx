@@ -51,7 +51,6 @@ const getTabIdFromPath = (pathname: string): string => {
     'settings': 'settings',
     'page-templates': 'page-templates',
     'notifications': 'notifications',
-    'themes': 'themes',
     'export': 'export',
     'integrations': 'integrations',
     'api': 'api',
