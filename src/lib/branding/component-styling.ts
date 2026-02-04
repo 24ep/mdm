@@ -1000,6 +1000,30 @@ export function applyComponentStyling(branding: BrandingConfig) {
       cssRules += `    }\n\n`
     }
 
+    // For platform-sidebar-primary wrapper, apply border color to the right border
+    // The wrapper has border-r.border-border class in PlatformLayout.tsx line 444
+    if (componentId === 'platform-sidebar-primary') {
+      const globalBorderColor = branding.globalStyling?.borderColor?.trim() || branding.uiBorderColor?.trim() || 'rgba(0, 0, 0, 0.06)'
+      const wrapperBorderColor = (componentStyle.borderColor && componentStyle.borderColor.trim() && componentStyle.borderColor.trim() !== 'transparent')
+        ? componentStyle.borderColor.trim()
+        : globalBorderColor
+      
+      if (hasAlphaChannel(wrapperBorderColor)) {
+        cssRules += `    /* Platform sidebar primary wrapper right border - use rgba directly */\\n`
+        cssRules += `    body:not([data-space]) [data-sidebar=\"primary\"].border-r.border-border,\\n`
+        cssRules += `    body:not([data-space]) [data-sidebar=\"primary\"].border-r {\\n`
+        cssRules += `      border-right-color: ${wrapperBorderColor} !important;\\n`
+        cssRules += `    }\\n\\n`
+      } else {
+        const wrapperBorderHsl = rgbaToHsl(wrapperBorderColor)
+        cssRules += `    /* Platform sidebar primary wrapper right border - use HSL */\\n`
+        cssRules += `    body:not([data-space]) [data-sidebar=\"primary\"].border-r.border-border,\\n`
+        cssRules += `    body:not([data-space]) [data-sidebar=\"primary\"].border-r {\\n`
+        cssRules += `      border-right-color: hsl(${wrapperBorderHsl}) !important;\\n`
+        cssRules += `    }\\n\\n`
+      }
+    }
+
     // For platform-sidebar-secondary, always set CSS variables and apply styles directly
     // This ensures the inline style backgroundColor uses the theme color
     // Use main branding config colors if component styling doesn't have them
