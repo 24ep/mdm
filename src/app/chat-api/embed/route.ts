@@ -204,7 +204,11 @@ export async function GET(request: NextRequest) {
         : (chatbot.widgetBorderRadius || '50%');
     
     var widgetConfig = {
-      avatarStyle: chatbot.widgetAvatarStyle,
+      avatarStyle: chatbot.widgetAvatarStyle || 'circle',
+      avatarType: chatbot.widgetAvatarType || chatbot.avatarType || 'icon',
+      avatarImageUrl: chatbot.widgetAvatarImageUrl || chatbot.avatarImageUrl || '',
+      avatarIcon: chatbot.widgetAvatarIcon || chatbot.avatarIcon || 'Bot',
+      avatarIconColor: chatbot.avatarIconColor || chatKitIconColor || '#ffffff',
       position: chatbot.widgetPosition || 'bottom-right',
       size: chatbot.widgetSize || '60px',
       backgroundColor: chatbot.widgetBackgroundColor || chatKitAccentColor || chatbot.primaryColor,
@@ -371,9 +375,9 @@ export async function GET(request: NextRequest) {
     }
     
     // Create button content based on avatar style
+    // iconSvg is pre-rendered server-side and passed to this script
     if (widgetConfig.avatarStyle === 'circle-with-label') {
-      var iconSvg = widgetConfig.widgetAvatarIcon ? getIconSvg(widgetConfig.widgetAvatarIcon, chatKitIconColor) : null;
-      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.style.display=\\'none\\'; this.parentElement.innerHTML=\\'' + (iconSvg || '') + '\\';">' : (iconSvg || '<span style="font-size: 24px; color: ' + (chatKitIconColor || 'white') + ';"></span>');
+      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.style.display=\\'none\\'; this.parentElement.innerHTML=\\'' + (iconSvg || '') + '\\';">' : (widgetConfig.avatarType === 'image' && widgetConfig.avatarImageUrl ? '<img src="' + widgetConfig.avatarImageUrl + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;">' : (iconSvg || '<span style="font-size: 24px; color: ' + (widgetConfig.avatarIconColor || 'white') + ';"></span>'));
       
       button.innerHTML = iconHtml;
       var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
@@ -393,8 +397,8 @@ export async function GET(request: NextRequest) {
       buttonContainer.appendChild(button);
       buttonContainer.appendChild(label);
     } else {
-      var iconSvg = widgetConfig.widgetAvatarIcon ? getIconSvg(widgetConfig.widgetAvatarIcon, chatKitIconColor) : null;
-      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.parentElement.innerHTML=\\'' + (iconSvg || '💬') + '\\';">' : (iconSvg || '<span style="font-size: 24px; color: ' + (chatKitIconColor || 'white') + ';">💬</span>');
+      // iconSvg is pre-rendered server-side and passed to this script
+      var iconHtml = widgetConfig.logo ? '<img src="' + widgetConfig.logo + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;" onerror="this.parentElement.innerHTML=\\'' + (iconSvg || '💬') + '\\';">' : (widgetConfig.avatarType === 'image' && widgetConfig.avatarImageUrl ? '<img src="' + widgetConfig.avatarImageUrl + '" style="width: 100%; height: 100%; border-radius: ' + avatarBorderRadius + '; object-fit: cover;">' : (iconSvg || '<span style="font-size: 24px; color: ' + (widgetConfig.avatarIconColor || 'white') + ';">💬</span>'));
       
       button.innerHTML = iconHtml;
       var buttonBgStyle = getWidgetBackgroundStyle(widgetConfig.backgroundColor, widgetConfig.widgetBlur, widgetConfig.widgetOpacity);
