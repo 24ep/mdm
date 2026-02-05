@@ -74,7 +74,7 @@ export default function PageLayoutSelectionPage() {
   const spaceSlug = params.space
   const pageId = params.pageId
   const editMode = searchParams?.get('editMode') === 'true'
-  const { currentSpace } = useSpace()
+  const { currentSpace, spaces, isLoading: spacesLoading } = useSpace()
   const [page, setPage] = useState<SpacesEditorPage | null>(null)
   const [loading, setLoading] = useState(true)
   const [layouts, setLayouts] = useState<Array<{
@@ -85,15 +85,26 @@ export default function PageLayoutSelectionPage() {
     config?: any
   }>>([])
 
+  // Find space ID from slug - check currentSpace first, then fall back to spaces array
+  const resolvedSpaceId = currentSpace?.id || 
+    spaces.find(s => s.slug?.toLowerCase() === spaceSlug?.toLowerCase())?.id ||
+    spaceSlug
+
   useEffect(() => {
     const loadData = async () => {
+      // Wait for spaces to be loaded before trying to load page
+      if (spacesLoading) {
+        return
+      }
+      
       try {
-        // Load page
-        const spaceId = currentSpace?.id || spaceSlug
-        const pages = await SpacesEditorManager.getPages(spaceId)
+        // Load page using resolved space ID
+        const pages = await SpacesEditorManager.getPages(resolvedSpaceId)
         const foundPage = pages.find(p => p.id === pageId)
         if (foundPage) {
           setPage(foundPage)
+        } else {
+          console.error('Page not found. SpaceId:', resolvedSpaceId, 'PageId:', pageId, 'Available pages:', pages.map(p => p.id))
         }
 
         // Load layout templates from system
@@ -106,15 +117,16 @@ export default function PageLayoutSelectionPage() {
         setLoading(false)
       }
     }
-    loadData()
-  }, [pageId, currentSpace, spaceSlug])
+    
+    if (!spacesLoading && resolvedSpaceId) {
+      loadData()
+    }
+  }, [pageId, resolvedSpaceId, spacesLoading])
 
   const handleNewLayout = async () => {
-    if (!page || !currentSpace) return
+    if (!page || !resolvedSpaceId) return
 
     try {
-      const spaceId = currentSpace.id
-      
       // Create blank layout
       const layoutConfig: any = {
         layoutId: 'blank',
@@ -122,7 +134,7 @@ export default function PageLayoutSelectionPage() {
       }
       
       // Update page with blank layout
-      await SpacesEditorManager.updatePage(spaceId, pageId, {
+      await SpacesEditorManager.updatePage(resolvedSpaceId, pageId, {
         ...page,
         layoutConfig,
         placedWidgets: []
@@ -137,11 +149,10 @@ export default function PageLayoutSelectionPage() {
   }
 
   const handleLayoutSelect = async (layoutId: string) => {
-    if (!page || !currentSpace) return
+    if (!page || !resolvedSpaceId) return
 
     try {
       // Initialize page with selected layout
-      const spaceId = currentSpace.id
       
       // Find the selected layout template
       const selectedLayout = layouts.find(l => l.id === layoutId)
@@ -199,7 +210,7 @@ export default function PageLayoutSelectionPage() {
       }
       
       // Update page with layout info
-      await SpacesEditorManager.updatePage(spaceId, pageId, {
+      await SpacesEditorManager.updatePage(resolvedSpaceId, pageId, {
         ...page,
         layoutConfig,
         placedWidgets: layoutConfig.placedWidgets || []
@@ -213,7 +224,7 @@ export default function PageLayoutSelectionPage() {
     }
   }
 
-  if (loading) {
+  if (loading || spacesLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>

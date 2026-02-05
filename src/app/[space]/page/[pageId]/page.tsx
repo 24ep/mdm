@@ -12,7 +12,7 @@ export default function SpacePageEditor() {
   const params = useParams() as { space: string; pageId: string }
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { currentSpace } = useSpace()
+  const { currentSpace, spaces, isLoading: spacesLoading } = useSpace()
   const spaceSlug = params.space
   const pageId = params.pageId
   // Get editMode from URL query parameter (passed from layout)
@@ -20,15 +20,25 @@ export default function SpacePageEditor() {
   const [page, setPage] = useState<SpacesEditorPage | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Find space ID from slug - check currentSpace first, then fall back to spaces array
+  const resolvedSpaceId = currentSpace?.id || 
+    spaces.find(s => s.slug?.toLowerCase() === spaceSlug?.toLowerCase())?.id ||
+    spaceSlug
+
   useEffect(() => {
     const loadPage = async () => {
+      // Wait for spaces to be loaded before trying to load page
+      if (spacesLoading) {
+        return
+      }
+      
       try {
-        const spaceId = currentSpace?.id || spaceSlug
-        const pages = await SpacesEditorManager.getPages(spaceId)
+        const pages = await SpacesEditorManager.getPages(resolvedSpaceId)
         const foundPage = pages.find(p => p.id === pageId)
         if (foundPage) {
           setPage(foundPage)
         } else {
+          console.error('Page not found. SpaceId:', resolvedSpaceId, 'PageId:', pageId, 'Available pages:', pages.map(p => p.id))
           toast.error('Page not found')
         }
       } catch (error) {
@@ -38,10 +48,11 @@ export default function SpacePageEditor() {
         setLoading(false)
       }
     }
-    if (currentSpace || spaceSlug) {
+    
+    if (!spacesLoading && resolvedSpaceId) {
       loadPage()
     }
-  }, [pageId, currentSpace, spaceSlug])
+  }, [pageId, resolvedSpaceId, spacesLoading])
 
   // If in edit mode and page doesn't have layout, redirect to layout selection
   useEffect(() => {
@@ -54,7 +65,7 @@ export default function SpacePageEditor() {
     }
   }, [editMode, page, loading, router, spaceSlug, pageId])
 
-  if (loading) {
+  if (loading || spacesLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <p className="text-muted-foreground">Loading page...</p>
