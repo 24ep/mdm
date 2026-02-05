@@ -118,53 +118,73 @@ export class SpacesEditorManager {
    * Get spaces editor configuration for a space
    */
   static async getSpacesEditorConfig(spaceId: string): Promise<SpacesEditorConfig | null> {
+    // Get from localStorage first (most recent local changes)
+    let localConfig: SpacesEditorConfig | null = null
     try {
-      // Try to fetch from API first
-      const response = await fetch(`${this.API_BASE}/${spaceId}`)
+      const stored = localStorage.getItem(this.STORAGE_KEY)
+      if (stored) {
+        const configs: Record<string, SpacesEditorConfig> = JSON.parse(stored)
+        localConfig = configs[spaceId] || null
+      }
+    } catch (error) {
+      console.warn('Error reading localStorage:', error)
+    }
+
+    try {
+      // Also fetch from API with cache disabled
+      const response = await fetch(`${this.API_BASE}/${spaceId}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      })
       if (response.ok) {
         const data = await response.json()
-        return data.config
+        const apiConfig = data.config
+        
+        // Compare timestamps and return the most recent
+        if (apiConfig && localConfig) {
+          const apiTime = new Date(apiConfig.updatedAt || 0).getTime()
+          const localTime = new Date(localConfig.updatedAt || 0).getTime()
+          return localTime > apiTime ? localConfig : apiConfig
+        }
+        
+        return apiConfig || localConfig
       }
     } catch (error) {
       console.warn('Failed to fetch spaces editor config from API, using local storage:', error)
     }
 
-    // Fallback to local storage
-    const stored = localStorage.getItem(this.STORAGE_KEY)
-    if (stored) {
-      const configs: Record<string, SpacesEditorConfig> = JSON.parse(stored)
-      return configs[spaceId] || null
-    }
-
-    return null
+    return localConfig
   }
 
   /**
    * Save spaces editor configuration
    */
   static async saveSpacesEditorConfig(config: SpacesEditorConfig): Promise<void> {
-    try {
-      // Try to save to API first
-      const response = await fetch(`${this.API_BASE}/${config.spaceId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(config),
-      })
-
-      if (response.ok) {
-        return
-      }
-    } catch (error) {
-      console.warn('Failed to save spaces editor config to API, using local storage:', error)
-    }
-
-    // Fallback to local storage
+    // Always save to localStorage first for immediate availability
     const stored = localStorage.getItem(this.STORAGE_KEY)
     const configs: Record<string, SpacesEditorConfig> = stored ? JSON.parse(stored) : {}
     configs[config.spaceId] = { ...config, updatedAt: new Date().toISOString() }
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(configs))
+
+    try {
+      // Also save to API
+      const response = await fetch(`${this.API_BASE}/${config.spaceId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
+        body: JSON.stringify(config),
+      })
+
+      if (!response.ok) {
+        console.warn('Failed to save spaces editor config to API, localStorage backup used')
+      }
+    } catch (error) {
+      console.warn('Failed to save spaces editor config to API, using local storage:', error)
+    }
   }
 
   /**

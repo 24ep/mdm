@@ -266,11 +266,12 @@ export const SpaceSidebar = memo(function SpaceSidebar({
     })
   )
 
-  // Load pages from layout config
+  // Load pages from layout config - refresh on spaceId or pathname change
   useEffect(() => {
     let mounted = true
     ;(async () => {
       try {
+        setIsLoadingPages(true)
         const spacePages = await SpacesEditorManager.getPages(spaceId)
         if (mounted) {
           setPages(spacePages || [])
@@ -286,14 +287,14 @@ export const SpaceSidebar = memo(function SpaceSidebar({
 
     // Load users and groups if spaceId is available
     if (spaceId) {
-      fetch(`/api/spaces/${spaceId}/users`)
+      fetch(`/api/spaces/${spaceId}/users`, { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
           if (mounted) setSpaceUsers(data.users || [])
         })
         .catch(err => console.error('Failed to load users', err))
         
-      fetch('/api/user-groups')
+      fetch('/api/user-groups', { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
           if (mounted) setUserGroups(data.groups || [])
@@ -302,7 +303,7 @@ export const SpaceSidebar = memo(function SpaceSidebar({
     }
 
     return () => { mounted = false }
-  }, [spaceId])
+  }, [spaceId, pathname])
 
   // Check if we're on a settings page to expand settings menu
   useEffect(() => {

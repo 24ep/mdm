@@ -28,25 +28,55 @@ export function ChatWidgetButton({
     }, [chatbot])
 
     const containerStyle = useMemo(() => {
+        // Helper to get background styles
+        const getBackgroundStyles = (): React.CSSProperties => {
+            const bgValue = config.backgroundColor
+            // Check if it's an image URL
+            if (bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))) {
+                const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
+                return {
+                    backgroundImage: imageUrl,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                }
+            }
+            // Check if it's a gradient
+            if (bgValue && bgValue.includes('gradient')) {
+                return { background: bgValue }
+            }
+            // It's a solid color
+            return { backgroundColor: bgValue }
+        }
+
         if (!isOpen && config.avatarStyle === 'circle-with-label') {
-            // Pill style (from shared helper logic)
+            // Pill style - keep background, border, and shadow from config
+            // but adjust dimensions for pill shape
             return {
                 ...popoverPositionStyle,
-                ...widgetButtonStyle,
-                background: 'transparent',
-                border: 'none',
-                boxShadow: 'none',
+                ...getBackgroundStyles(),
+                // Dimensions for pill shape
                 width: 'auto',
                 height: config.size,
                 borderRadius: config.labelBorderRadius,
                 paddingLeft: '16px',
                 paddingRight: '16px',
+                // Flex layout
+                display: 'flex',
+                alignItems: 'center',
                 gap: '8px',
                 flexDirection: 'row',
                 justifyContent: 'center',
-                minWidth: config.size
+                minWidth: config.size,
+                // Apply configured border and shadow
+                border: `${config.borderWidth} solid ${config.borderColor}`,
+                boxShadow: config.boxShadow !== 'none' ? config.boxShadow : undefined,
+                zIndex: config.zIndex,
+                cursor: 'pointer',
             } as React.CSSProperties
         }
+        
+        // For circle and square styles, use widgetButtonStyle (which has all the styling)
         return {
             ...popoverPositionStyle,
             ...widgetButtonStyle,
