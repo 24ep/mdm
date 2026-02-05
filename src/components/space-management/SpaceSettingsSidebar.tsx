@@ -95,7 +95,7 @@ const SidebarItemComponent = memo(function SidebarItemComponent({
             "platform-sidebar-menu-button w-full justify-start items-center text-sm h-9 px-4 transition-colors duration-150 cursor-pointer",
             isActive
               ? "platform-sidebar-menu-button-active !bg-muted !text-foreground rounded-sm"
-              : "text-muted-foreground !hover:bg-muted !hover:text-foreground rounded-none",
+              : "text-muted-foreground hover:!bg-transparent hover:!text-foreground rounded-none",
             className
           )}
           style={{ 

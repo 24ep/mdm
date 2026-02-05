@@ -25,8 +25,8 @@ if (typeof document !== 'undefined') {
           border-bottom-left-radius: 0px !important;
           border-bottom-right-radius: 0px !important;
           color: #000000 !important; /* Black font color */
-          border-bottom-color: rgba(0, 0, 0, 0.06) !important;
-          border-bottom-width: 0.5px !important;
+          border-bottom-color: hsl(var(--border)) !important;
+          border-bottom-width: 1px !important;
           border-bottom-style: solid !important;
           box-shadow: none !important;
         }
@@ -37,8 +37,8 @@ if (typeof document !== 'undefined') {
           background-color: transparent !important;
           background-image: none !important;
           color: #000000 !important; /* Black font color */
-          border-bottom-color: rgba(0, 0, 0, 0.06) !important;
-          border-bottom-width: 0.5px !important;
+          border-bottom-color: hsl(var(--border)) !important;
+          border-bottom-width: 1px !important;
           border-bottom-style: solid !important;
           box-shadow: none !important;
         }
@@ -52,8 +52,8 @@ if (typeof document !== 'undefined') {
           background-color: transparent !important;
           background-image: none !important;
           color: #000000 !important; /* Black font color */
-          border-bottom-color: rgba(0, 0, 0, 0.06) !important;
-          border-bottom-width: 0.5px !important;
+          border-bottom-color: hsl(var(--border)) !important;
+          border-bottom-width: 1px !important;
           border-bottom-style: solid !important;
           box-shadow: none !important;
         }
@@ -189,8 +189,8 @@ const AccordionTrigger = React.forwardRef<
       buttonRef.current.style.setProperty('background-color', 'transparent', 'important')
       buttonRef.current.style.setProperty('background-image', 'none', 'important')
       buttonRef.current.style.setProperty('border-radius', '0px', 'important')
-      buttonRef.current.style.setProperty('border-bottom-color', 'rgba(0, 0, 0, 0.06)', 'important')
-      buttonRef.current.style.setProperty('border-bottom-width', '0.5px', 'important')
+      buttonRef.current.style.setProperty('border-bottom-color', 'hsl(var(--border))', 'important')
+      buttonRef.current.style.setProperty('border-bottom-width', '1px', 'important')
       buttonRef.current.style.setProperty('border-bottom-style', 'solid', 'important')
       buttonRef.current.style.setProperty('box-shadow', 'none', 'important')
     }
@@ -214,8 +214,8 @@ const AccordionTrigger = React.forwardRef<
         backgroundImage: 'none',
         borderRadius: '0px',
         color: '#000000', // Black font color
-        borderBottomColor: 'rgba(0, 0, 0, 0.06)',
-        borderBottomWidth: '0.5px',
+        borderBottomColor: 'hsl(var(--border))',
+        borderBottomWidth: '1px',
         borderBottomStyle: 'solid',
         boxShadow: 'none',
         ...style

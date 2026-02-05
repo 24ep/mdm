@@ -487,7 +487,7 @@ export function PlatformLayout({
           {/* Show secondary sidebar when hovering over a group or when a group is selected */}
           {showSpaceSidebar ? (
             <div
-              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
+              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden border-r border-border`}
               data-sidebar="secondary"
               style={{
                 position: 'relative',
@@ -510,7 +510,7 @@ export function PlatformLayout({
             </div>
           ) : showSpaceSettingsSidebar ? (
             <div
-              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
+              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden border-r border-border`}
               data-sidebar="secondary"
               style={{
                 position: 'relative',
@@ -538,7 +538,7 @@ export function PlatformLayout({
             </div>
           ) : displayGroup && displayGroup !== '' && (
             <div
-              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden`}
+              className={`${secondarySidebarCollapsed ? 'w-0' : 'w-56'} flex-shrink-0 transition-all duration-150 ease-in-out overflow-hidden border-r border-border`}
               data-sidebar="secondary"
               style={{
                 position: 'relative',
