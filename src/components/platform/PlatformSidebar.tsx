@@ -315,6 +315,7 @@ export function PlatformSidebar({
       if (tabs && tabs.length > 0) {
         handleTabClick(tabs[0].id, (tabs[0] as any).href)
       } else {
+        // Navigate to space selection page
         router.push('/admin/space-selection')
       }
       return
@@ -339,7 +340,7 @@ export function PlatformSidebar({
     if (tabs && tabs.length > 0) {
       handleTabClick(tabs[0].id, (tabs[0] as any).href)
     }
-  }, [onGroupSelect, handleTabClick, activeTab])
+  }, [onGroupSelect, handleTabClick, activeTab, groupedTabs, router])
 
   // Filter tabs based on search query
   const filterTabs = useCallback((tabs: any[], query: string) => {
