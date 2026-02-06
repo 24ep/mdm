@@ -33,6 +33,7 @@ interface FullPageChatLayoutProps {
     setIsOpen: (isOpen: boolean) => void
     isMobile: boolean
     isEmbed: boolean
+    isPreview?: boolean
     useChatKitInRegularStyle: boolean
     shouldRenderChatKit: boolean
     handleClose: () => void
@@ -62,6 +63,7 @@ export function FullPageChatLayout({
     setIsOpen,
     isMobile,
     isEmbed,
+    isPreview,
     useChatKitInRegularStyle,
     shouldRenderChatKit,
     handleClose,
@@ -186,7 +188,7 @@ export function FullPageChatLayout({
                                     />
                                 )}
                                 {/* PWA Install Banner - Only shows on mobile */}
-                                <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
+                                <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} isPreview={isPreview} />
                                 <div className="flex-1 min-h-0">
                                     {children}
                                 </div>

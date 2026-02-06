@@ -16,7 +16,7 @@ export async function loadBrandingConfig(): Promise<BrandingConfig> {
     if (typeof window === 'undefined') {
       // Server-side: fetch from database directly
       const { prisma } = await import('@/lib/db')
-      const setting = await prisma.system_settings.findUnique({
+      const setting = await prisma.systemSetting.findUnique({
         where: { key: 'branding' }
       })
 

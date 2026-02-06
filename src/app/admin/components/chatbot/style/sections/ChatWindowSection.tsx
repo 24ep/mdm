@@ -10,6 +10,7 @@ import type { Chatbot } from '../../types'
 import { extractNumericValue, ensurePx } from '../styleUtils'
 import { MultiSideInput } from '../components/MultiSideInput'
 import { AccordionSectionWrapper, AccordionSectionGroup } from '../components/AccordionSectionGroup'
+import { FormRow, FormSection } from '../components/FormRow'
 
 interface ChatWindowSectionProps {
   formData: Partial<Chatbot>
@@ -24,9 +25,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
       </div>
       <AccordionSectionWrapper defaultValue="size">
         <AccordionSectionGroup id="size" title="Size" icon={Maximize2} defaultOpen>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Width</Label>
+          <FormSection>
+            <FormRow label="Width" description="Width of the chat window">
               <div className="relative">
                 <Input
                   type="number"
@@ -35,11 +35,10 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                   placeholder="380"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Height</Label>
+            </FormRow>
+            <FormRow label="Height" description="Height of the chat window">
               <div className="relative">
                 <Input
                   type="number"
@@ -48,16 +47,15 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                   placeholder="600"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="background" title="Background & Colors" icon={Palette}>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Background</Label>
+          <FormSection>
+            <FormRow label="Background" description="Background color or image for the chat window">
               <ColorInput
                 value={formData.messageBoxColor || '#ffffff'}
                 onChange={(color) => setFormData({ ...formData, messageBoxColor: color })}
@@ -66,12 +64,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                 placeholder="#ffffff"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-              <p className="text-xs text-muted-foreground">
-                Background color or image for the chat window
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>Upload Embed Header Logo</Label>
+            </FormRow>
+            <FormRow label="Header Logo" description="Logo shown in the embed/popover chat window header">
               <Input
                 type="file"
                 accept="image/*"
@@ -86,14 +80,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                   reader.readAsDataURL(file)
                 }}
               />
-              <p className="text-xs text-muted-foreground">
-                Logo shown in the embed/popover chat window header
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="space-y-2">
-              <Label>Background Blur (%)</Label>
+            </FormRow>
+            <FormRow label="Background Blur" description="Glassmorphism blur effect (0-100%)">
               <div className="relative">
                 <Input
                   type="number"
@@ -106,10 +94,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
               </div>
-              <p className="text-xs text-muted-foreground">Glassmorphism blur effect (0-100%)</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Background Opacity (%)</Label>
+            </FormRow>
+            <FormRow label="Background Opacity" description="Background transparency (0-100%)">
               <div className="relative">
                 <Input
                   type="number"
@@ -122,15 +108,13 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
               </div>
-              <p className="text-xs text-muted-foreground">Background transparency (0-100%)</p>
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="borders" title="Borders" icon={Square}>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Border Color</Label>
+          <FormSection>
+            <FormRow label="Border Color" description="Color of the window border">
               <ColorInput
                 value={formData.chatWindowBorderColor || formData.borderColor || '#e5e7eb'}
                 onChange={(color) => setFormData({ ...formData, chatWindowBorderColor: color })}
@@ -139,30 +123,33 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                 placeholder="#e5e7eb"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Border Width"
-              baseKey="chatWindowBorderWidth"
-              defaultValue={formData.borderWidth || '1px'}
-              type="sides"
-            />
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Border Radius"
-              baseKey="chatWindowBorderRadius"
-              defaultValue={formData.borderRadius || '8px'}
-              type="corners"
-            />
-          </div>
+            </FormRow>
+            <FormRow label="Border Width" description="Width of the window border">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="chatWindowBorderWidth"
+                defaultValue={formData.borderWidth || '1px'}
+                type="sides"
+              />
+            </FormRow>
+            <FormRow label="Border Radius" description="Roundness of window corners">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="chatWindowBorderRadius"
+                defaultValue={formData.borderRadius || '8px'}
+                type="corners"
+              />
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="shadow" title="Shadow" icon={Sun}>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Shadow Color</Label>
+          <FormSection>
+            <FormRow label="Shadow Color" description="Color of the window shadow">
               <ColorInput
                 value={formData.chatWindowShadowColor || formData.shadowColor || '#000000'}
                 onChange={(color) => setFormData({ ...formData, chatWindowShadowColor: color })}
@@ -171,9 +158,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                 placeholder="#000000"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Shadow Blur</Label>
+            </FormRow>
+            <FormRow label="Shadow Blur" description="Blur radius of the shadow">
               <div className="relative">
                 <Input
                   type="number"
@@ -182,44 +168,38 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                   placeholder="4"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="padding" title="Padding" icon={Move}>
-          <div className="grid grid-cols-1 gap-4">
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Chat Window Padding"
-              baseKey="chatWindowPadding"
-              defaultValue="0px"
-              type="sides"
-            />
-          </div>
+          <FormSection>
+            <FormRow label="Window Padding" description="Inner padding of the chat window">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="chatWindowPadding"
+                defaultValue="0px"
+                type="sides"
+              />
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="overlay" title="Overlay (When Chat is Open)" icon={Layers}>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Enable Overlay</Label>
-                <p className="text-xs text-muted-foreground">
-                  Show an overlay behind the chat window and widget when chat is open
-                </p>
-              </div>
+          <FormSection>
+            <FormRow label="Enable Overlay" description="Show an overlay behind the chat window when open">
               <Switch
                 checked={(formData as any).overlayEnabled ?? false}
                 onCheckedChange={(checked) => setFormData({ ...formData, overlayEnabled: checked } as any)}
               />
-            </div>
-
+            </FormRow>
             {(formData as any).overlayEnabled && (
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="space-y-2">
-                  <Label>Overlay Color</Label>
+              <>
+                <FormRow label="Overlay Color" description="Background color of the overlay">
                   <ColorInput
                     value={(formData as any).overlayColor || '#000000'}
                     onChange={(color) => setFormData({ ...formData, overlayColor: color } as any)}
@@ -228,9 +208,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                     placeholder="#000000"
                     inputClassName="h-7 text-xs pl-7 w-full"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Overlay Opacity (%)</Label>
+                </FormRow>
+                <FormRow label="Overlay Opacity" description="Overlay transparency (0-100%)">
                   <div className="relative">
                     <Input
                       type="number"
@@ -243,10 +222,8 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Overlay transparency (0-100%)</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Overlay Blur (%)</Label>
+                </FormRow>
+                <FormRow label="Overlay Blur" description="Glassmorphism blur effect (0-100%)">
                   <div className="relative">
                     <Input
                       type="number"
@@ -259,11 +236,10 @@ export function ChatWindowSection({ formData, setFormData }: ChatWindowSectionPr
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Glassmorphism blur effect (0-100%)</p>
-                </div>
-              </div>
+                </FormRow>
+              </>
             )}
-          </div>
+          </FormSection>
         </AccordionSectionGroup>
       </AccordionSectionWrapper>
     </div>

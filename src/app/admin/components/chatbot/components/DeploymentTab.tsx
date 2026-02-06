@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 
-import { Switch } from '@/components/ui/switch'
 import { Copy, Globe, Info, Smartphone, Check } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
@@ -48,6 +47,20 @@ export function DeploymentTab({
 
   return (
     <div className="space-y-4 pt-4">
+      {/* Workflow Note */}
+      <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="flex items-start gap-2 text-sm text-blue-700 dark:text-blue-300">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">Save &amp; Publish Workflow</p>
+            <p className="text-xs mt-1 text-blue-600 dark:text-blue-400">
+              Use <strong>Save Draft</strong> to save your changes without making them live. 
+              Each save creates a new version. Use <strong>Publish</strong> when ready to make your chatbot live.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Version Status Bar */}
       <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
         <div className="flex items-center gap-3">
@@ -89,44 +102,7 @@ export function DeploymentTab({
           })()}
         </div>
         <div className="flex items-center gap-2">
-          {/* Publish/Unpublish Button */}
-          <Button
-            variant={formData.isPublished ? "outline" : "default"}
-            size="sm"
-            onClick={async () => {
-              const newIsPublished = !formData.isPublished
-
-              // Use onSave if available to persist the change in one go
-              if (onSave) {
-                // This will perform the PATCH/POST with latest formData + isPublished override
-                const savedBot = await onSave({ isPublished: newIsPublished })
-                if (!savedBot) {
-                  // Error toast already handled in page.tsx
-                  return
-                }
-              } else {
-                // Local only fallback (for creation flow usually)
-                setFormData(prev => ({
-                  ...prev,
-                  isPublished: newIsPublished
-                }))
-                toast.success(newIsPublished ? 'Marked as published (save to persist)' : 'Marked as draft (save to persist)')
-              }
-            }}
-            className={formData.isPublished ? "" : "bg-green-600 hover:bg-green-700"}
-          >
-            {formData.isPublished ? (
-              <>
-                <Icons.EyeOff className="h-4 w-4 mr-1.5" />
-                Unpublish
-              </>
-            ) : (
-              <>
-                <Icons.Send className="h-4 w-4 mr-1.5" />
-                Publish
-              </>
-            )}
-          </Button>
+          {/* Version history drawer */}
           <VersionDrawer
             versions={versions}
             currentVersion={currentVersion}
@@ -135,18 +111,6 @@ export function DeploymentTab({
           />
         </div>
       </div>
-
-      <div className="flex items-center space-x-2 pt-2">
-        <Switch
-          id="chatbot-enabled"
-          checked={formData.chatbotEnabled !== false}
-          onCheckedChange={(checked) => setFormData({ ...formData, chatbotEnabled: checked })}
-        />
-        <Label htmlFor="chatbot-enabled">Enable Chatbot Embed</Label>
-      </div>
-      <p className="text-[10px] text-muted-foreground pb-4">
-        Toggle to quickly enable or disable the chatbot widget without unpublishing. When disabled, the widget scripts will refuse to render.
-      </p>
 
       <div className="space-y-2">
         <Label>Deployment Type</Label>

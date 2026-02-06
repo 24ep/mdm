@@ -406,7 +406,7 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
       {/* Toolbar */}
       <LayoutToolbar
         isMobileViewport={isMobileViewport}
@@ -437,9 +437,9 @@ export function PageEditor({ spaceSlug, pageId, editMode: editModeProp = false }
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex border overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex border min-h-0 relative overflow-hidden">
         {/* Canvas/Preview area */}
-        <div className={`flex-1 overflow-hidden h-full flex flex-col min-h-0 border-r relative`}>
+        <div className={`flex-1 flex flex-col min-h-0 border-r relative overflow-hidden`}>
           <Preview
             isMobileViewport={isMobileViewport}
             deviceMode={deviceMode}

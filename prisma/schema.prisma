@@ -40,6 +40,7 @@ model User {
   createdDataRecords                                      DataRecord[]                  @relation("DataRecordCreator")
   createdEavEntities                                      EavEntity[]                   @relation("EavEntityCreator")
   exportJobs                                              ExportJob[]                   @relation("ExportJobCreator")
+  exportProfiles                                          ExportProfile[]               @relation("ExportProfileCreator")
   importJobs                                              ImportJob[]                   @relation("ImportJobCreator")
   importProfiles                                          ImportProfile[]               @relation("ImportProfileCreator")
   infrastructureInstances                                 InfrastructureInstance[]      @relation("UserInfrastructureInstances")
@@ -88,8 +89,39 @@ model User {
   createdTickets                                          Ticket[]                      @relation("TicketCreator")
   websitePWAVersions                                      WebsitePWAVersion[]           @relation("WebsitePWAVersionCreator")
   createdWebsitePWAs                                      WebsitePWA[]                  @relation("WebsitePWACreator")
+  userGroupMemberships                                    UserGroupMember[]             @relation("UserGroupMemberships")
 
   @@map("users")
+}
+
+model UserGroup {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  parentId    String?           @map("parent_id") @db.Uuid
+  isActive    Boolean           @default(true) @map("is_active")
+  sortOrder   Int               @default(0) @map("sort_order")
+  metadata    Json              @default("{}")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  parent      UserGroup?        @relation("UserGroupHierarchy", fields: [parentId], references: [id])
+  children    UserGroup[]       @relation("UserGroupHierarchy")
+  members     UserGroupMember[] @relation("UserGroupMembers")
+
+  @@map("user_groups")
+}
+
+model UserGroupMember {
+  id        String    @id @default(uuid()) @db.Uuid
+  groupId   String    @map("group_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  role      String    @default("MEMBER")
+  createdAt DateTime  @default(now()) @map("created_at")
+  group     UserGroup @relation("UserGroupMembers", fields: [groupId], references: [id], onDelete: Cascade)
+  user      User      @relation("UserGroupMemberships", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("user_group_members")
 }
 
 model Space {
@@ -116,6 +148,7 @@ model Space {
   chatbots                Chatbot[]                @relation("SpaceChatbots")
   dataModels              DataModelSpace[]         @relation("SpaceDataModels")
   exportJobs              ExportJob[]              @relation("SpaceExportJobs")
+  exportProfiles          ExportProfile[]          @relation("SpaceExportProfiles")
   externalConnections     ExternalConnection[]     @relation("SpaceExternalConnections")
   importJobs              ImportJob[]              @relation("SpaceImportJobs")
   importProfiles          ImportProfile[]          @relation("SpaceImportProfiles")
@@ -1138,28 +1171,51 @@ model ImportJob {
   @@map("import_jobs")
 }
 
+model ExportProfile {
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  type        String      @default("STUDIO")
+  config      Json        @default("{}")
+  spaceId     String?     @map("space_id") @db.Uuid
+  createdBy   String      @map("created_by") @db.Uuid
+  deletedAt   DateTime?   @map("deleted_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  creator     User        @relation("ExportProfileCreator", fields: [createdBy], references: [id])
+  space       Space?      @relation("SpaceExportProfiles", fields: [spaceId], references: [id])
+  exportJobs  ExportJob[] @relation("ExportJobProfile")
+
+  @@map("export_profiles")
+}
+
 model ExportJob {
-  id            String    @id @default(uuid()) @db.Uuid
-  dataModelId   String    @map("data_model_id") @db.Uuid
-  format        String    @default("xlsx")
-  status        String    @default("PENDING")
-  progress      Int       @default(0)
-  totalRows     Int?      @map("total_rows")
-  processedRows Int       @default(0) @map("processed_rows")
-  errorMessage  String?   @map("error_message")
-  fileUrl       String?   @map("file_url")
-  fileName      String?   @map("file_name")
-  fileSize      Int?      @map("file_size")
-  filters       Json      @default("{}")
-  columns       Json      @default("[]")
-  createdBy     String    @map("created_by") @db.Uuid
-  spaceId       String?   @map("space_id") @db.Uuid
-  startedAt     DateTime? @map("started_at")
-  completedAt   DateTime? @map("completed_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  creator       User      @relation("ExportJobCreator", fields: [createdBy], references: [id])
-  space         Space?    @relation("SpaceExportJobs", fields: [spaceId], references: [id])
+  id            String         @id @default(uuid()) @db.Uuid
+  dataModelId   String         @map("data_model_id") @db.Uuid
+  profileId     String?        @map("profile_id") @db.Uuid
+  name          String?
+  type          String         @default("custom")
+  format        String         @default("xlsx")
+  status        String         @default("PENDING")
+  progress      Int            @default(0)
+  totalRows     Int?           @map("total_rows")
+  processedRows Int            @default(0) @map("processed_rows")
+  errorMessage  String?        @map("error_message")
+  fileUrl       String?        @map("file_url")
+  fileName      String?        @map("file_name")
+  fileSize      Int?           @map("file_size")
+  includes      Json           @default("[]")
+  filters       Json           @default("{}")
+  columns       Json           @default("[]")
+  createdBy     String         @map("created_by") @db.Uuid
+  spaceId       String?        @map("space_id") @db.Uuid
+  startedAt     DateTime?      @map("started_at")
+  completedAt   DateTime?      @map("completed_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  creator       User           @relation("ExportJobCreator", fields: [createdBy], references: [id])
+  space         Space?         @relation("SpaceExportJobs", fields: [spaceId], references: [id])
+  profile       ExportProfile? @relation("ExportJobProfile", fields: [profileId], references: [id])
 
   @@map("export_jobs")
 }

@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { X } from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { Chatbot } from '../../types'
+import { FormRow, FormSection } from '../components/FormRow'
 
 interface RegularHeaderSectionProps {
   formData: Partial<Chatbot>
@@ -24,38 +25,26 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
         <div className="space-y-4">
           <div className="space-y-4">
             <h4 className="text-md font-semibold">Header Styling</h4>
-            <p className="text-xs text-muted-foreground mb-4">
-              Configure the header appearance, title, description, logo, and custom buttons.
-            </p>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Show Header</Label>
-                <p className="text-xs text-muted-foreground">Show header in chat widget and full page</p>
-              </div>
-              <Switch
-                checked={formData.headerEnabled !== false}
-                onCheckedChange={(checked) => {
-                  setFormData({
-                    ...formData,
-                    headerEnabled: checked
-                  })
-                }}
-              />
-            </div>
+            <FormSection>
+              <FormRow label="Show Header" description="Show header in chat widget and full page">
+                <Switch
+                  checked={formData.headerEnabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      headerEnabled: checked
+                    })
+                  }}
+                />
+              </FormRow>
+            </FormSection>
           </div>
 
           {/* Header Action Buttons */}
           <div className="space-y-4">
             <h4 className="text-md font-semibold mb-2">Header Action Buttons</h4>
-            <p className="text-xs text-muted-foreground mb-4">
-              Show or hide action buttons in the header.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium">Clear Button</Label>
-                  <p className="text-xs text-muted-foreground">Show clear session button</p>
-                </div>
+            <FormSection>
+              <FormRow label="Clear Button" description="Show clear session button">
                 <Switch
                   checked={formData.headerShowClearSession !== false}
                   onCheckedChange={(checked) => {
@@ -65,12 +54,8 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                     })
                   }}
                 />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium">Close Button</Label>
-                  <p className="text-xs text-muted-foreground">Show close chat button</p>
-                </div>
+              </FormRow>
+              <FormRow label="Close Button" description="Show close chat button">
                 <Switch
                   checked={formData.headerShowCloseButton !== false}
                   onCheckedChange={(checked) => {
@@ -80,19 +65,15 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                     })
                   }}
                 />
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
             
             {/* Close Button Styling */}
             {formData.headerShowCloseButton !== false && (
               <div className="space-y-4 mt-4 pt-4 border-t">
                 <h4 className="text-md font-semibold mb-2">Close Button Styling</h4>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Customize the appearance of the close button in the header.
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Background Color</Label>
+                <FormSection>
+                  <FormRow label="Background Color" description="Background color for the close button (leave empty for transparent)">
                     <ColorInput
                       value={formData.headerCloseButtonBackgroundColor || ''}
                       onChange={(color) => {
@@ -106,12 +87,8 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                       placeholder="transparent"
                       inputClassName="h-8 text-xs pl-7 w-full"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Background color for the close button (leave empty for transparent)
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Icon Color</Label>
+                  </FormRow>
+                  <FormRow label="Icon Color" description="Color of the X icon (defaults to header font color)">
                     <ColorInput
                       value={formData.headerCloseButtonIconColor || ''}
                       onChange={(color) => {
@@ -125,12 +102,8 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                       placeholder="white"
                       inputClassName="h-8 text-xs pl-7 w-full"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Color of the X icon (defaults to header font color)
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Hover Background Color</Label>
+                  </FormRow>
+                  <FormRow label="Hover Background" description="Background color on hover">
                     <ColorInput
                       value={formData.headerCloseButtonHoverBackgroundColor || ''}
                       onChange={(color) => {
@@ -144,23 +117,16 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                       placeholder="rgba(255, 255, 255, 0.1)"
                       inputClassName="h-8 text-xs pl-7 w-full"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Background color on hover (defaults to rgba(255, 255, 255, 0.1))
-                    </p>
-                  </div>
-                </div>
+                  </FormRow>
+                </FormSection>
               </div>
             )}
           </div>
 
           <div className="space-y-4">
             <h4 className="text-md font-semibold mb-2">Header Title & Description</h4>
-            <p className="text-xs text-muted-foreground mb-4">
-              Configure the header title and description. These can be simple strings or objects for more advanced styling.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Header Title</Label>
+            <FormSection>
+              <FormRow label="Header Title" description="Title displayed in the header">
                 <Input
                   value={chatkitOptions?.header?.title
                     ? (typeof chatkitOptions.header.title === 'string'
@@ -183,12 +149,8 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                   }}
                   placeholder="Chat Assistant"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Title displayed in the header
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Header Description</Label>
+              </FormRow>
+              <FormRow label="Header Description" description="Description/subtitle displayed in the header">
                 <Input
                   value={chatkitOptions?.header?.description
                     ? (typeof chatkitOptions.header.description === 'string'
@@ -211,21 +173,14 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                   }}
                   placeholder="How can I help you?"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Description/subtitle displayed in the header
-                </p>
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </div>
 
           <div className="space-y-4">
             <h4 className="text-md font-semibold mb-2">Header Logo</h4>
-            <p className="text-xs text-muted-foreground mb-4">
-              Logo displayed in the header (separate from avatar)
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Header Logo URL</Label>
+            <FormSection>
+              <FormRow label="Logo URL" description="URL to the header logo image">
                 <Input
                   value={formData.headerLogo || chatkitOptions?.header?.logo || ''}
                   onChange={(e) => {
@@ -244,9 +199,8 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                   }}
                   placeholder="https://example.com/logo.png"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label>Upload Header Logo</Label>
+              </FormRow>
+              <FormRow label="Upload Logo" description="Or upload a logo file">
                 <Input
                   type="file"
                   accept="image/*"
@@ -271,23 +225,22 @@ export function RegularHeaderSection({ formData, setFormData, chatkitOptions }: 
                     reader.readAsDataURL(file)
                   }}
                 />
-              </div>
-            </div>
-            {(formData.headerLogo || chatkitOptions?.header?.logo) && (
-              <div className="space-y-2">
-                <Label>Preview</Label>
-                <div className="border rounded-lg p-4 flex items-center justify-center bg-muted/50">
-                  <img
-                    src={formData.headerLogo || chatkitOptions?.header?.logo || undefined}
-                    alt="Header logo preview"
-                    className="max-w-full max-h-32 object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none'
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+              </FormRow>
+              {(formData.headerLogo || chatkitOptions?.header?.logo) && (
+                <FormRow label="Preview" description="Current logo preview">
+                  <div className="border rounded-lg p-4 flex items-center justify-center bg-muted/50">
+                    <img
+                      src={formData.headerLogo || chatkitOptions?.header?.logo || undefined}
+                      alt="Header logo preview"
+                      className="max-w-full max-h-32 object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none'
+                      }}
+                    />
+                  </div>
+                </FormRow>
+              )}
+            </FormSection>
           </div>
           <div className="space-y-4">
             <h4 className="text-md font-semibold mb-4">Header Custom Buttons</h4>

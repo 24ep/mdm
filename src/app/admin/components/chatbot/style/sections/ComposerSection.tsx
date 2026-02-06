@@ -6,32 +6,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { X, Paperclip, Image, Video, FileText, Star, Wrench } from 'lucide-react'
+import { FormRow, FormSection } from '../components/FormRow'
 import type { SectionProps } from './types'
 
 export function ComposerSection({ formData, setFormData, chatkitOptions }: SectionProps) {
   return (
     <div className="py-4 px-4 space-y-4">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Placeholder Text</Label>
-          <Input
-            value={chatkitOptions?.composer?.placeholder || ''}
-            onChange={(e) => setFormData({
-              ...formData,
-              chatkitOptions: {
-                ...chatkitOptions,
-                composer: {
-                  ...chatkitOptions?.composer,
-                  placeholder: e.target.value
+        <FormSection>
+          <FormRow label="Placeholder Text" description="Custom placeholder for the message input">
+            <Input
+              value={chatkitOptions?.composer?.placeholder || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                chatkitOptions: {
+                  ...chatkitOptions,
+                  composer: {
+                    ...chatkitOptions?.composer,
+                    placeholder: e.target.value
+                  }
                 }
-              }
-            } as any)}
-            placeholder="Type your message..."
-          />
-          <p className="text-xs text-muted-foreground">
-            Custom placeholder text for the message input field
-          </p>
-        </div>
+              } as any)}
+              placeholder="Type your message..."
+            />
+          </FormRow>
+        </FormSection>
         <div className="space-y-2">
           <Label>Composer Tools</Label>
           <p className="text-xs text-muted-foreground mb-2">

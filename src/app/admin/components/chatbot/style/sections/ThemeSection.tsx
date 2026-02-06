@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
+import { FormRow, FormSection } from '../components/FormRow'
 import type { SectionProps } from './types'
 
 export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionProps) {
@@ -26,91 +27,81 @@ export function ThemeSection({ formData, setFormData, chatkitOptions }: SectionP
             Basic Settings
           </AccordionTrigger>
           <AccordionContent>
-            <div className="space-y-4 pt-2 pb-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Color Scheme</Label>
-                  <Select
-                    value={chatkitOptions?.theme?.colorScheme || 'light'}
-                    onValueChange={(v) => setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...chatkitOptions?.theme,
-                          colorScheme: v as 'light' | 'dark' | 'system'
-                        }
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Color Scheme" description="System auto-detects user's preference">
+                <Select
+                  value={chatkitOptions?.theme?.colorScheme || 'light'}
+                  onValueChange={(v) => setFormData({
+                    ...formData,
+                    chatkitOptions: {
+                      ...chatkitOptions,
+                      theme: {
+                        ...chatkitOptions?.theme,
+                        colorScheme: v as 'light' | 'dark' | 'system'
                       }
-                    } as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="system">System (Auto)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    "System" auto-detects user's browser/device preference
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Corner Radius</Label>
-                  <Select
-                    value={chatkitOptions?.theme?.radius || 'round'}
-                    onValueChange={(v) => setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...chatkitOptions?.theme,
-                          radius: v as 'pill' | 'round' | 'soft' | 'sharp'
-                        }
+                    }
+                  } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="system">System (Auto)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormRow>
+              <FormRow label="Corner Radius" description="Roundness of UI elements">
+                <Select
+                  value={chatkitOptions?.theme?.radius || 'round'}
+                  onValueChange={(v) => setFormData({
+                    ...formData,
+                    chatkitOptions: {
+                      ...chatkitOptions,
+                      theme: {
+                        ...chatkitOptions?.theme,
+                        radius: v as 'pill' | 'round' | 'soft' | 'sharp'
                       }
-                    } as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pill">Pill</SelectItem>
-                      <SelectItem value="round">Round</SelectItem>
-                      <SelectItem value="soft">Soft</SelectItem>
-                      <SelectItem value="sharp">Sharp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Density</Label>
-                  <Select
-                    value={chatkitOptions?.theme?.density || 'normal'}
-                    onValueChange={(v) => setFormData({
-                      ...formData,
-                      chatkitOptions: {
-                        ...chatkitOptions,
-                        theme: {
-                          ...chatkitOptions?.theme,
-                          density: v as 'compact' | 'normal' | 'spacious'
-                        }
+                    }
+                  } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pill">Pill</SelectItem>
+                    <SelectItem value="round">Round</SelectItem>
+                    <SelectItem value="soft">Soft</SelectItem>
+                    <SelectItem value="sharp">Sharp</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormRow>
+              <FormRow label="Density" description="Spacing between elements">
+                <Select
+                  value={chatkitOptions?.theme?.density || 'normal'}
+                  onValueChange={(v) => setFormData({
+                    ...formData,
+                    chatkitOptions: {
+                      ...chatkitOptions,
+                      theme: {
+                        ...chatkitOptions?.theme,
+                        density: v as 'compact' | 'normal' | 'spacious'
                       }
-                    } as any)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="compact">Compact</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="spacious">Spacious</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
+                    }
+                  } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="compact">Compact</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="spacious">Spacious</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 

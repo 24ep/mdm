@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
+import { FormRow, FormSection } from '../components/FormRow'
 import type { SectionProps } from './types'
 
 // ChatKit Icon Select Component - Only shows ChatKit-supported icons (no search)
@@ -53,24 +54,25 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
   return (
     <div className="py-4 px-4 space-y-4">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Greeting Message</Label>
-          <Textarea
-            value={chatkitOptions?.startScreen?.greeting || ''}
-            onChange={(e) => setFormData({
-              ...formData,
-              chatkitOptions: {
-                ...chatkitOptions,
-                startScreen: {
-                  ...chatkitOptions?.startScreen,
-                  greeting: e.target.value
+        <FormSection>
+          <FormRow label="Greeting Message" description="Initial message shown when chat starts">
+            <Textarea
+              value={chatkitOptions?.startScreen?.greeting || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                chatkitOptions: {
+                  ...chatkitOptions,
+                  startScreen: {
+                    ...chatkitOptions?.startScreen,
+                    greeting: e.target.value
+                  }
                 }
-              }
-            } as any)}
-            placeholder="Hello! How can I help you today?"
-            rows={3}
-          />
-        </div>
+              } as any)}
+              placeholder="Hello! How can I help you today?"
+              rows={3}
+            />
+          </FormRow>
+        </FormSection>
 
         <div className="space-y-2">
           <Label>Start Screen Prompts</Label>

@@ -10,6 +10,7 @@ import { extractNumericValue, ensurePx } from '../styleUtils'
 import { MultiSideInput } from '../components/MultiSideInput'
 import { PaddingInput } from '../components/PaddingInput'
 import { SectionGroup } from '../components/SectionGroup'
+import { FormRow, FormSection } from '../components/FormRow'
 import * as Icons from 'lucide-react'
 
 interface MessagesSectionProps {

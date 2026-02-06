@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import { Move, Maximize, Layers, Sun, Settings } from 'lucide-react'
 import { extractNumericValue, ensurePx } from '../styleUtils'
+import { FormRow, FormSection } from '../components/FormRow'
 import type { SectionProps } from './types'
 
 export function PopoverSection({ formData, setFormData, chatkitOptions }: SectionProps) {
@@ -35,9 +36,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-4 pt-2 pb-4">
-              <div className="space-y-2">
-                <Label>Popover Position</Label>
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Position" description="Position relative to widget button">
                 <Select
                   value={formData.popoverPosition || 'left'}
                   onValueChange={(v: any) => setFormData({ ...formData, popoverPosition: v })}
@@ -50,12 +50,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                     <SelectItem value="top">Top of Widget</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Position of chat window relative to widget button
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Widget-Popover Margin</Label>
+              </FormRow>
+              <FormRow label="Margin" description="Spacing between widget and popover">
                 <div className="relative">
                   <Input
                     type="number"
@@ -66,11 +62,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Spacing between widget button and popover window
-                </p>
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -82,9 +75,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-4 pt-2 pb-4">
-              <div className="space-y-2">
-                <Label>Width</Label>
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Width" description="Width of the popover chat window">
                 <div className="relative">
                   <Input
                     type="number"
@@ -95,12 +87,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Width of the popover chat window
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Height</Label>
+              </FormRow>
+              <FormRow label="Height" description="Height of the popover chat window">
                 <div className="relative">
                   <Input
                     type="number"
@@ -111,11 +99,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Height of the popover chat window
-                </p>
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -127,9 +112,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-4 pt-2 pb-4">
-              <div className="space-y-2">
-                <Label>Border Width</Label>
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Border Width" description="Width of the container border">
                 <div className="relative">
                   <Input
                     type="number"
@@ -140,9 +124,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Border Radius</Label>
+              </FormRow>
+              <FormRow label="Border Radius" description="Roundness of container corners">
                 <div className="relative">
                   <Input
                     type="number"
@@ -153,9 +136,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label>Border Color</Label>
+              </FormRow>
+              <FormRow label="Border Color" description="Color of the container border">
                 <ColorInput
                   value={formData.chatWindowBorderColor || formData.borderColor || '#e5e7eb'}
                   onChange={(color) => setFormData({ ...formData, chatWindowBorderColor: color })}
@@ -164,8 +146,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   placeholder="#e5e7eb"
                   inputClassName="h-7 text-xs pl-7 w-full"
                 />
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -177,23 +159,18 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-1 gap-4 pt-2 pb-4">
-              <div className="space-y-2">
-                <Label>Z-Index</Label>
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Z-Index" description="Stacking order (higher = on top)">
                 <div className="relative">
                   <Input
                     type="number"
                     value={(formData as any).widgetZIndex ?? 9999}
                     onChange={(e) => setFormData({ ...formData, widgetZIndex: parseInt(e.target.value) || 9999 } as any)}
                     placeholder="9999"
-                    className="pr-8"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Stacking order of the popover container (higher values appear on top)
-                </p>
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -205,9 +182,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-4 pt-2 pb-4">
-              <div className="space-y-2">
-                <Label>Shadow Color</Label>
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Shadow Color" description="Color of the container shadow">
                 <ColorInput
                   value={formData.chatWindowShadowColor || formData.shadowColor || '#000000'}
                   onChange={(color) => setFormData({ ...formData, chatWindowShadowColor: color })}
@@ -216,12 +192,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   placeholder="#000000"
                   inputClassName="h-7 text-xs pl-7 w-full"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Color of the popover container shadow
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Shadow Blur</Label>
+              </FormRow>
+              <FormRow label="Shadow Blur" description="Blur radius of the shadow">
                 <div className="relative">
                   <Input
                     type="number"
@@ -232,11 +204,8 @@ export function PopoverSection({ formData, setFormData, chatkitOptions }: Sectio
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Blur radius of the popover container shadow
-                </p>
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 

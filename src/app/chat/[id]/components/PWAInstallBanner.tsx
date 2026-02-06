@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import { ChatbotConfig } from '../types'
@@ -10,15 +10,82 @@ interface PWAInstallBannerProps {
     onInstall?: () => void
     onDismiss?: () => void
     isMobile?: boolean
+    /** If true, always shows banner without checking beforeinstallprompt (for emulator/preview) */
+    isPreview?: boolean
 }
 
-export function PWAInstallBanner({ chatbot, onInstall, onDismiss, isMobile }: PWAInstallBannerProps) {
+// Storage key for tracking installed PWAs per chatbot
+const getInstalledKey = (chatbotId: string) => `pwa-installed-${chatbotId}`
+const getDismissedKey = (chatbotId: string) => `pwa-dismissed-${chatbotId}`
+
+export function PWAInstallBanner({ chatbot, onInstall, onDismiss, isMobile, isPreview }: PWAInstallBannerProps) {
+    const chatbotId = (chatbot as any).id || 'default'
     const [dismissed, setDismissed] = useState(false)
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
     const [isInstallable, setIsInstallable] = useState(false)
+    const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(false)
+    
+    // In preview/emulator mode, always show banner when pwaEnabled (skip install checks)
+    const forceShowInPreview = isPreview && (chatbot as any).pwaEnabled
+
+    // Check if already installed (from localStorage or display-mode)
+    const checkIfInstalled = useCallback(() => {
+        // Check localStorage for this specific chatbot
+        try {
+            const installed = localStorage.getItem(getInstalledKey(chatbotId))
+            if (installed === 'true') {
+                return true
+            }
+        } catch (e) {
+            // localStorage not available
+        }
+
+        // Check if running in standalone mode (PWA installed)
+        if (typeof window !== 'undefined') {
+            // iOS Safari check
+            if ((window.navigator as any).standalone === true) {
+                return true
+            }
+            // Standard PWA check
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                return true
+            }
+            // Windows/Chrome installed check
+            if (window.matchMedia('(display-mode: window-controls-overlay)').matches) {
+                return true
+            }
+        }
+
+        return false
+    }, [chatbotId])
+
+    // Check if previously dismissed (session-based, not persistent)
+    const checkIfDismissed = useCallback(() => {
+        try {
+            // Use sessionStorage for dismiss state (resets on new session)
+            const dismissedTime = sessionStorage.getItem(getDismissedKey(chatbotId))
+            if (dismissedTime) {
+                // Dismiss lasts for the session
+                return true
+            }
+        } catch (e) {
+            // sessionStorage not available
+        }
+        return false
+    }, [chatbotId])
 
     // Listen for the beforeinstallprompt event
     useEffect(() => {
+        // Check if already installed or dismissed
+        if (checkIfInstalled()) {
+            setIsAlreadyInstalled(true)
+            return
+        }
+        if (checkIfDismissed()) {
+            setDismissed(true)
+            return
+        }
+
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault()
             setDeferredPrompt(e)
@@ -27,18 +94,24 @@ export function PWAInstallBanner({ chatbot, onInstall, onDismiss, isMobile }: PW
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
-        // Check if already installed
-        const checkInstalled = () => {
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                setIsInstallable(false)
+        // Also listen for appinstalled event to track when user installs
+        const handleAppInstalled = () => {
+            try {
+                localStorage.setItem(getInstalledKey(chatbotId), 'true')
+            } catch (e) {
+                // localStorage not available
             }
+            setIsAlreadyInstalled(true)
+            setIsInstallable(false)
         }
-        checkInstalled()
+
+        window.addEventListener('appinstalled', handleAppInstalled)
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+            window.removeEventListener('appinstalled', handleAppInstalled)
         }
-    }, [])
+    }, [chatbotId, checkIfInstalled, checkIfDismissed])
 
     // Check if PWA is enabled and banner should show
     const pwaEnabled = (chatbot as any).pwaEnabled
@@ -68,19 +141,23 @@ export function PWAInstallBanner({ chatbot, onInstall, onDismiss, isMobile }: PW
         }
     }, [pwaEnabled, dismissed, chatbot, isMobileOrTablet])
 
-    // Don't show if not enabled, already dismissed, or already installed
-    // AND Only show on mobile (hide on desktop view)
+    // Don't show if not enabled, already dismissed, already installed, or not on mobile
     // If isMobile prop is provided, strictly follow it.
     // If not provided, fallback to internal check (max-width: 1024px).
     const showBanner = isMobile !== undefined ? isMobile : isMobileOrTablet
 
-    // CRITICAL: Ensure we are really on mobile if the user wants "no need to show on desktop view"
-    // The previous logic allowed tablets (up to 1024px) which might be considered "desktop" by some users
-    // or if the user simply wants strict mobile phone targeting.
-    // However, the user said "desktop view". 
-    // If `isMobile` comes from `page.tsx`, it uses 768px threshold.
-
-    if (!pwaEnabled || dismissed || !showBanner) {
+    // In preview mode, show banner if pwaEnabled (regardless of install state)
+    // In production mode, also check that it's not already installed
+    if (!pwaEnabled || dismissed) {
+        return null
+    }
+    
+    // Skip installed check in preview mode (for emulator testing)
+    if (!isPreview && isAlreadyInstalled) {
+        return null
+    }
+    
+    if (!showBanner) {
         return null
     }
 
@@ -90,8 +167,15 @@ export function PWAInstallBanner({ chatbot, onInstall, onDismiss, isMobile }: PW
             deferredPrompt.prompt()
             const { outcome } = await deferredPrompt.userChoice
             if (outcome === 'accepted') {
+                // Mark as installed in localStorage
+                try {
+                    localStorage.setItem(getInstalledKey(chatbotId), 'true')
+                } catch (e) {
+                    // localStorage not available
+                }
                 setDeferredPrompt(null)
                 setIsInstallable(false)
+                setIsAlreadyInstalled(true)
                 onInstall?.()
             }
         } else {
@@ -101,6 +185,12 @@ export function PWAInstallBanner({ chatbot, onInstall, onDismiss, isMobile }: PW
     }
 
     const handleDismiss = () => {
+        // Store dismiss in sessionStorage (resets on new session)
+        try {
+            sessionStorage.setItem(getDismissedKey(chatbotId), Date.now().toString())
+        } catch (e) {
+            // sessionStorage not available
+        }
         setDismissed(true)
         onDismiss?.()
     }

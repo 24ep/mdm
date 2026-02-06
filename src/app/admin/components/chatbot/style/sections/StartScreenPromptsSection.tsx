@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { Chatbot } from '../../types'
 import { SectionGroup } from '../components/SectionGroup'
+import { FormRow, FormSection } from '../components/FormRow'
 
 interface StartScreenPromptsSectionProps {
   formData: Partial<Chatbot>
@@ -21,9 +22,8 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
       </div>
       <div className="pt-2">
         <SectionGroup title="Layout" isFirst>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Style Type</Label>
+          <FormSection>
+            <FormRow label="Style Type" description="Display style for prompts">
               <Select
                 value={(formData as any).startScreenPromptsStyle || 'card'}
                 onValueChange={(value: string) => setFormData({ ...formData, startScreenPromptsStyle: value as 'list' | 'card' } as any)}
@@ -36,10 +36,8 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                   <SelectItem value="list">List</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Position</Label>
+            </FormRow>
+            <FormRow label="Position" description="Position of prompts">
               <Select
                 value={(formData as any).startScreenPromptsPosition || 'center'}
                 onValueChange={(value: string) => setFormData({ ...formData, startScreenPromptsPosition: value as 'center' | 'bottom' | 'list' } as any)}
@@ -53,12 +51,8 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                   <SelectItem value="list">List</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="space-y-2">
-              <Label>Icon Display</Label>
+            </FormRow>
+            <FormRow label="Icon Display" description="How icons are shown">
               <Select
                 value={(formData as any).startScreenPromptsIconDisplay || 'suffix'}
                 onValueChange={(value: string) => setFormData({ ...formData, startScreenPromptsIconDisplay: value as 'suffix' | 'show-all' | 'none' } as any)}
@@ -72,14 +66,13 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                   <SelectItem value="none">No Icons</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="Colors">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Background Color</Label>
+          <FormSection>
+            <FormRow label="Background Color" description="Background of prompt buttons">
               <ColorInput
                 value={(formData as any).startScreenPromptsBackgroundColor || '#f3f4f6'}
                 onChange={(color) => setFormData({ ...formData, startScreenPromptsBackgroundColor: color } as any)}
@@ -88,10 +81,8 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 placeholder="#f3f4f6"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Font Color</Label>
+            </FormRow>
+            <FormRow label="Font Color" description="Text color of prompts">
               <ColorInput
                 value={(formData as any).startScreenPromptsFontColor || '#000000'}
                 onChange={(color) => setFormData({ ...formData, startScreenPromptsFontColor: color } as any)}
@@ -100,51 +91,47 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 placeholder="#000000"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="Typography">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Font Family</Label>
+          <FormSection>
+            <FormRow label="Font Family" description="Font for prompt text">
               <Input
                 type="text"
                 value={(formData as any).startScreenPromptsFontFamily || 'Inter'}
                 onChange={(e) => setFormData({ ...formData, startScreenPromptsFontFamily: e.target.value } as any)}
                 placeholder="Inter"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Font Size</Label>
+            </FormRow>
+            <FormRow label="Font Size" description="Size of prompt text">
               <Input
                 type="text"
                 value={(formData as any).startScreenPromptsFontSize || '14px'}
                 onChange={(e) => setFormData({ ...formData, startScreenPromptsFontSize: e.target.value } as any)}
                 placeholder="14px"
               />
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="Spacing">
-          <div className="space-y-2">
-            <Label>Padding</Label>
-            <Input
-              type="text"
-              value={(formData as any).startScreenPromptsPadding || '12px'}
-              onChange={(e) => setFormData({ ...formData, startScreenPromptsPadding: e.target.value } as any)}
-              placeholder="12px"
-            />
-            <p className="text-xs text-muted-foreground">Padding for prompt buttons (e.g., "12px" or "8px 16px")</p>
-          </div>
+          <FormSection>
+            <FormRow label="Padding" description="Padding for prompt buttons (e.g., 12px or 8px 16px)">
+              <Input
+                type="text"
+                value={(formData as any).startScreenPromptsPadding || '12px'}
+                onChange={(e) => setFormData({ ...formData, startScreenPromptsPadding: e.target.value } as any)}
+                placeholder="12px"
+              />
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="Borders">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Border Color</Label>
+          <FormSection>
+            <FormRow label="Border Color" description="Color of prompt borders">
               <ColorInput
                 value={(formData as any).startScreenPromptsBorderColor || '#e5e7eb'}
                 onChange={(color) => setFormData({ ...formData, startScreenPromptsBorderColor: color } as any)}
@@ -153,28 +140,24 @@ export function StartScreenPromptsSection({ formData, setFormData }: StartScreen
                 placeholder="#e5e7eb"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Border Width</Label>
+            </FormRow>
+            <FormRow label="Border Width" description="Width of prompt borders">
               <Input
                 type="text"
                 value={(formData as any).startScreenPromptsBorderWidth || '1px'}
                 onChange={(e) => setFormData({ ...formData, startScreenPromptsBorderWidth: e.target.value } as any)}
                 placeholder="1px"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Border Radius</Label>
+            </FormRow>
+            <FormRow label="Border Radius" description="Roundness of prompt corners">
               <Input
                 type="text"
                 value={(formData as any).startScreenPromptsBorderRadius || '8px'}
                 onChange={(e) => setFormData({ ...formData, startScreenPromptsBorderRadius: e.target.value } as any)}
                 placeholder="8px"
               />
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </SectionGroup>
       </div>
     </div>

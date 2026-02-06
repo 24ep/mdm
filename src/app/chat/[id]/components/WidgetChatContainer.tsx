@@ -13,6 +13,7 @@ interface WidgetChatContainerProps {
     emulatorConfig: any
     isMobile: boolean
     isEmbed: boolean
+    isPreview?: boolean
     useChatKitInRegularStyle: boolean
     shouldRenderChatKit: boolean
     effectiveDeploymentType: 'popover' | 'fullpage' | 'popup-center'
@@ -29,6 +30,7 @@ export function WidgetChatContainer({
     emulatorConfig,
     isMobile,
     isEmbed,
+    isPreview,
     useChatKitInRegularStyle,
     shouldRenderChatKit,
     effectiveDeploymentType,
@@ -145,7 +147,7 @@ export function WidgetChatContainer({
             {/* PWA Install Banner - Only render inside widget if scope is 'chat' (Inline) */}
             {/* If scope is 'website' (Overlay), it is rendered in page.tsx to persist when widget is closed */}
             {((chatbot as any).pwaInstallScope !== 'website') && (
-                <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
+                <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} isPreview={isPreview} />
             )}
 
             <div className="flex-1 min-h-0 flex flex-col" style={{ ...chatStyle, paddingTop: (showDesktopHeader || showMobileHeader) ? paddingTop : 0 }}>

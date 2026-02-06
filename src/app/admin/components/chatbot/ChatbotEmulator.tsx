@@ -111,12 +111,34 @@ export function ChatbotEmulator({
     const handleLoad = () => {
       setTimeout(() => {
         try {
+          // Send preview mode
           iframe.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, window.location.origin)
+          
+          // Send emulator config (page background, etc.)
           iframe.contentWindow?.postMessage(
             {
               type: 'emulator-config-update',
               id: selectedChatbot.id,
               emulatorConfig: emulatorConfig,
+            },
+            window.location.origin
+          )
+          
+          // IMPORTANT: Send chatbot config (widget styles, etc.) on initial load
+          // This ensures the iframe receives the formData styles even if the useEffect
+          // for formData changes ran before the iframe was ready
+          const activeConfig = previewSource === 'live' 
+            ? (selectedChatbot.versions?.find(v => v.isPublished)?.config || selectedChatbot)
+            : formData
+          
+          iframe.contentWindow?.postMessage(
+            {
+              type: 'chatbot-config-update',
+              id: selectedChatbot.id,
+              config: {
+                ...activeConfig,
+                id: selectedChatbot.id,
+              },
             },
             window.location.origin
           )
@@ -129,7 +151,7 @@ export function ChatbotEmulator({
     return () => {
       iframe.removeEventListener('load', handleLoad)
     }
-  }, [selectedChatbot?.id]) // Only re-attach on chatbot change, not on every config change
+  }, [selectedChatbot?.id, formData, previewSource, deviceType]) // Include formData and deviceType to ensure latest config is sent on load and when device changes
 
   // Push realtime style updates to emulator via postMessage
   useEffect(() => {

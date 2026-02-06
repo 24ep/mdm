@@ -11,6 +11,7 @@ import type { Chatbot } from '../../types'
 import { extractNumericValue, ensurePx } from '../styleUtils'
 import { AccordionSectionWrapper, AccordionSectionGroup } from '../components/AccordionSectionGroup'
 import { MultiSideInput } from '../components/MultiSideInput'
+import { FormRow, FormSection } from '../components/FormRow'
 
 interface WidgetButtonSectionProps {
   formData: Partial<Chatbot>
@@ -25,9 +26,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
       </div>
       <AccordionSectionWrapper defaultValue="appearance">
         <AccordionSectionGroup id="appearance" title="Appearance" icon={Eye} defaultOpen>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Avatar Style</Label>
+          <FormSection>
+            <FormRow label="Avatar Style" description="Shape of the widget button">
               <Select
                 value={formData.widgetAvatarStyle || 'circle'}
                 onValueChange={(v: any) => setFormData({ ...formData, widgetAvatarStyle: v })}
@@ -41,9 +41,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   <SelectItem value="circle-with-label">Circle with Label</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Widget Position</Label>
+            </FormRow>
+            <FormRow label="Widget Position" description="Where the widget appears on screen">
               <Select
                 value={formData.widgetPosition || 'bottom-right'}
                 onValueChange={(v: any) => setFormData({ ...formData, widgetPosition: v })}
@@ -60,11 +59,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   <SelectItem value="top-center">Top Center</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="space-y-2">
-              <Label>Popover Position</Label>
+            </FormRow>
+            <FormRow label="Popover Position" description="Position of chat window relative to widget button">
               <Select
                 value={formData.popoverPosition || 'left'}
                 onValueChange={(v: any) => setFormData({ ...formData, popoverPosition: v })}
@@ -77,10 +73,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   <SelectItem value="top">Top of Widget</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Position of chat window relative to widget button</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Widget-Popover Margin</Label>
+            </FormRow>
+            <FormRow label="Widget-Popover Margin" description="Spacing between widget button and popover window">
               <div className="relative">
                 <Input
                   type="number"
@@ -89,17 +83,15 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="10"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-              <p className="text-xs text-muted-foreground">Spacing between widget button and popover window</p>
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="size-colors" title="Size & Colors" icon={Palette}>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Widget Size</Label>
+          <FormSection>
+            <FormRow label="Widget Size" description="Size of the widget button">
               <div className="relative">
                 <Input
                   type="number"
@@ -108,11 +100,10 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="60"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Widget Background</Label>
+            </FormRow>
+            <FormRow label="Widget Background" description="Background color or image for the widget button">
               <ColorInput
                 value={formData.widgetBackgroundColor || '#3b82f6'}
                 onChange={(color) => setFormData({ ...formData, widgetBackgroundColor: color })}
@@ -121,14 +112,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 placeholder="#3b82f6"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-              <p className="text-xs text-muted-foreground">
-                Background color or image for the widget button
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="space-y-2">
-              <Label>Background Blur (%)</Label>
+            </FormRow>
+            <FormRow label="Background Blur" description="Glassmorphism blur effect (0-100%)">
               <div className="relative">
                 <Input
                   type="number"
@@ -141,10 +126,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
               </div>
-              <p className="text-xs text-muted-foreground">Glassmorphism blur effect (0-100%)</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Background Opacity (%)</Label>
+            </FormRow>
+            <FormRow label="Background Opacity" description="Background transparency (0-100%)">
               <div className="relative">
                 <Input
                   type="number"
@@ -157,15 +140,13 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
               </div>
-              <p className="text-xs text-muted-foreground">Background transparency (0-100%)</p>
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="borders" title="Borders" icon={Square}>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Widget Border Color</Label>
+          <FormSection>
+            <FormRow label="Border Color" description="Color of the widget border">
               <ColorInput
                 value={formData.widgetBorderColor || '#ffffff'}
                 onChange={(color) => setFormData({ ...formData, widgetBorderColor: color })}
@@ -174,30 +155,33 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 placeholder="#ffffff"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Widget Border Width"
-              baseKey="widgetBorderWidth"
-              defaultValue="2px"
-              type="sides"
-            />
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Widget Border Radius"
-              baseKey="widgetBorderRadius"
-              defaultValue="50px"
-              type="corners"
-            />
-          </div>
+            </FormRow>
+            <FormRow label="Border Width" description="Width of the widget border">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="widgetBorderWidth"
+                defaultValue="2px"
+                type="sides"
+              />
+            </FormRow>
+            <FormRow label="Border Radius" description="Roundness of widget corners">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="widgetBorderRadius"
+                defaultValue="50px"
+                type="corners"
+              />
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         <AccordionSectionGroup id="shadow" title="Shadow" icon={Sun}>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Widget Shadow Color</Label>
+          <FormSection>
+            <FormRow label="Shadow Color" description="Color of the widget shadow">
               <ColorInput
                 value={formData.widgetShadowColor || '#000000'}
                 onChange={(color) => setFormData({ ...formData, widgetShadowColor: color })}
@@ -206,9 +190,8 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 placeholder="#000000"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Widget Shadow Blur</Label>
+            </FormRow>
+            <FormRow label="Shadow Blur" description="Blur radius of the shadow">
               <div className="relative">
                 <Input
                   type="number"
@@ -217,13 +200,10 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="8"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="space-y-2">
-              <Label>Shadow Offset X</Label>
+            </FormRow>
+            <FormRow label="Shadow Offset X" description="Horizontal shadow offset">
               <div className="relative">
                 <Input
                   type="number"
@@ -232,12 +212,10 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="0"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-              <p className="text-xs text-muted-foreground">Horizontal shadow offset</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Shadow Offset Y</Label>
+            </FormRow>
+            <FormRow label="Shadow Offset Y" description="Vertical shadow offset">
               <div className="relative">
                 <Input
                   type="number"
@@ -246,14 +224,10 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="0"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-              <p className="text-xs text-muted-foreground">Vertical shadow offset</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 mt-4">
-            <div className="space-y-2">
-              <Label>Shadow Spread</Label>
+            </FormRow>
+            <FormRow label="Shadow Spread" description="Shadow spread radius (positive expands, negative contracts)">
               <div className="relative">
                 <Input
                   type="number"
@@ -262,26 +236,23 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="0"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-              <p className="text-xs text-muted-foreground">Shadow spread radius (positive values expand, negative values contract)</p>
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </AccordionSectionGroup>
 
         {formData.widgetAvatarStyle === 'circle-with-label' && (
           <AccordionSectionGroup id="label" title="Label" icon={Tag}>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Widget Label Text</Label>
+            <FormSection>
+              <FormRow label="Label Text" description="Text displayed on the widget">
                 <Input
                   value={formData.widgetLabelText}
                   onChange={(e) => setFormData({ ...formData, widgetLabelText: e.target.value })}
                   placeholder="Chat"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label>Widget Label Color</Label>
+              </FormRow>
+              <FormRow label="Label Color" description="Text color of the label">
                 <ColorInput
                   value={formData.widgetLabelColor || '#ffffff'}
                   onChange={(color) => setFormData({ ...formData, widgetLabelColor: color })}
@@ -290,38 +261,30 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="#ffffff"
                   inputClassName="h-8 text-xs pl-7"
                 />
-              </div>
-            </div>
-            <div className="flex items-center justify-between mt-4">
-              <div className="space-y-0.5">
-                <Label>Show Icon</Label>
-                <p className="text-xs text-muted-foreground">Display icon next to the label text</p>
-              </div>
-              <Switch
-                checked={formData.widgetLabelShowIcon !== false}
-                onCheckedChange={(checked) => setFormData({ ...formData, widgetLabelShowIcon: checked })}
-              />
-            </div>
-            {formData.widgetLabelShowIcon !== false && (
-              <div className="space-y-2 mt-4">
-                <Label>Icon Position</Label>
-                <Select
-                  value={formData.widgetLabelIconPosition || 'left'}
-                  onValueChange={(v: any) => setFormData({ ...formData, widgetLabelIconPosition: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Left of Label</SelectItem>
-                    <SelectItem value="right">Right of Label</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="space-y-2">
-                <Label>Widget Shape</Label>
+              </FormRow>
+              <FormRow label="Show Icon" description="Display icon next to the label text">
+                <Switch
+                  checked={formData.widgetLabelShowIcon !== false}
+                  onCheckedChange={(checked) => setFormData({ ...formData, widgetLabelShowIcon: checked })}
+                />
+              </FormRow>
+              {formData.widgetLabelShowIcon !== false && (
+                <FormRow label="Icon Position" description="Position of icon relative to label">
+                  <Select
+                    value={formData.widgetLabelIconPosition || 'left'}
+                    onValueChange={(v: any) => setFormData({ ...formData, widgetLabelIconPosition: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="left">Left of Label</SelectItem>
+                      <SelectItem value="right">Right of Label</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormRow>
+              )}
+              <FormRow label="Widget Shape" description="Shape of the label widget">
                 <Select
                   value={(formData as any).widgetLabelShape || 'rounded'}
                   onValueChange={(v: any) => {
@@ -348,10 +311,9 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                     <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </FormRow>
               {(formData as any).widgetLabelShape === 'custom' && (
-                <div className="space-y-2">
-                  <Label>Custom Radius</Label>
+                <FormRow label="Custom Radius" description="Custom border radius value">
                   <div className="relative">
                     <Input
                       type="number"
@@ -360,18 +322,17 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                       placeholder="8"
                       className="pr-8"
                     />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
                   </div>
-                </div>
+                </FormRow>
               )}
-            </div>
+            </FormSection>
           </AccordionSectionGroup>
         )}
 
         <AccordionSectionGroup id="behavior" title="Widget Behavior" icon={Settings}>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-2">
-              <Label>Entrance Animation</Label>
+          <FormSection>
+            <FormRow label="Entrance Animation" description="Animation when widget appears">
               <Select
                 value={formData.widgetAnimation || 'fade'}
                 onValueChange={(v: any) => setFormData({ ...formData, widgetAnimation: v })}
@@ -386,45 +347,33 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   <SelectItem value="bounce">Bounce</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Z-Index</Label>
+            </FormRow>
+            <FormRow label="Z-Index" description="Stack order of the widget">
               <Input
                 type="number"
                 value={formData.widgetZIndex || 9999}
                 onChange={(e) => setFormData({ ...formData, widgetZIndex: parseInt(e.target.value) || 9999 })}
                 placeholder="9999"
               />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <div className="space-y-0.5">
-              <Label>Auto Open Chat Window</Label>
-              <p className="text-xs text-muted-foreground">Automatically open the chat window on page load</p>
-            </div>
-            <Switch
-              checked={formData.widgetAutoShow !== undefined ? formData.widgetAutoShow : true}
-              onCheckedChange={(checked) => setFormData({ ...formData, widgetAutoShow: checked })}
-            />
-          </div>
-
-          {formData.widgetAutoShow && (
-            <div className="space-y-2 mb-4">
-              <Label>Auto Show Delay (seconds)</Label>
-              <Input
-                type="number"
-                value={formData.widgetAutoShowDelay || 0}
-                onChange={(e) => setFormData({ ...formData, widgetAutoShowDelay: parseInt(e.target.value) || 0 })}
-                placeholder="0"
-                min={0}
+            </FormRow>
+            <FormRow label="Auto Open Chat" description="Automatically open chat window on page load">
+              <Switch
+                checked={formData.widgetAutoShow !== undefined ? formData.widgetAutoShow : true}
+                onCheckedChange={(checked) => setFormData({ ...formData, widgetAutoShow: checked })}
               />
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-2">
-              <Label>Horizontal Offset</Label>
+            </FormRow>
+            {formData.widgetAutoShow && (
+              <FormRow label="Auto Show Delay" description="Delay in seconds before auto-opening">
+                <Input
+                  type="number"
+                  value={formData.widgetAutoShowDelay || 0}
+                  onChange={(e) => setFormData({ ...formData, widgetAutoShowDelay: parseInt(e.target.value) || 0 })}
+                  placeholder="0"
+                  min={0}
+                />
+              </FormRow>
+            )}
+            <FormRow label="Horizontal Offset" description="Distance from screen edge (X axis)">
               <div className="relative">
                 <Input
                   type="number"
@@ -433,11 +382,10 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="20"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Vertical Offset</Label>
+            </FormRow>
+            <FormRow label="Vertical Offset" description="Distance from screen edge (Y axis)">
               <div className="relative">
                 <Input
                   type="number"
@@ -446,26 +394,17 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="20"
                   className="pr-8"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
               </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <div className="space-y-0.5">
-              <Label>Show Notification Badge</Label>
-              <p className="text-xs text-muted-foreground">Display unread message count badge</p>
-            </div>
-            <Switch
-              checked={formData.showNotificationBadge || false}
-              onCheckedChange={(checked) => setFormData({ ...formData, showNotificationBadge: checked })}
-            />
-          </div>
-
-          {formData.showNotificationBadge && (
-            <div className="space-y-2 mb-4">
-              <Label>Notification Badge Color</Label>
-              <div className="relative">
+            </FormRow>
+            <FormRow label="Notification Badge" description="Display unread message count badge">
+              <Switch
+                checked={formData.showNotificationBadge || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, showNotificationBadge: checked })}
+              />
+            </FormRow>
+            {formData.showNotificationBadge && (
+              <FormRow label="Badge Color" description="Color of the notification badge">
                 <ColorInput
                   value={formData.notificationBadgeColor || '#ef4444'}
                   onChange={(color) => setFormData({ ...formData, notificationBadgeColor: color })}
@@ -474,9 +413,9 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   placeholder="#ef4444"
                   inputClassName="h-7 text-xs pl-7 w-full"
                 />
-              </div>
-            </div>
-          )}
+              </FormRow>
+            )}
+          </FormSection>
         </AccordionSectionGroup>
       </AccordionSectionWrapper>
     </div>

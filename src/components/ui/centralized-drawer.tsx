@@ -34,8 +34,8 @@ export function CentralizedDrawer({
     width = "w-[720px]",
     zIndex,
     className,
-    floating,
-    floatingMargin
+    floating = true,
+    floatingMargin = "16px"
 }: CentralizedDrawerProps) {
     return (
         <Drawer open={open} onOpenChange={onOpenChange}>

@@ -136,7 +136,7 @@ async function postHandler(request: NextRequest) {
   // Associate the data model with all specified spaces
   for (const spaceId of space_ids) {
     await query(
-      'INSERT INTO public.data_model_spaces (data_model_id, space_id) VALUES ($1, $2)',
+      'INSERT INTO public.data_model_spaces (data_model_id, space_id, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())',
       [dataModel.id, spaceId]
     )
   }

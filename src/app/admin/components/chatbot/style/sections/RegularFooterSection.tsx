@@ -12,6 +12,7 @@ import type { Chatbot } from '../../types'
 import { extractNumericValue, ensurePx } from '../styleUtils'
 import { MultiSideInput } from '../components/MultiSideInput'
 import { SectionGroup } from '../components/SectionGroup'
+import { FormRow, FormSection } from '../components/FormRow'
 
 interface RegularFooterSectionProps {
   formData: Partial<Chatbot>
@@ -57,9 +58,8 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
       </div>
       <div className="pt-2">
         <SectionGroup title="Background & Padding" isFirst>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Footer Background Color</Label>
+          <FormSection>
+            <FormRow label="Background Color" description="Background color of the footer area">
               <ColorInput
                 value={formData.footerBgColor || formData.messageBoxColor || '#ffffff'}
                 onChange={(color) => setFormData({ ...formData, footerBgColor: color })}
@@ -68,22 +68,23 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#ffffff"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Footer Padding"
-              baseKey="footerPadding"
-              defaultValue="16px"
-              type="sides"
-            />
-          </div>
+            </FormRow>
+            <FormRow label="Footer Padding" description="Padding around the footer area">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="footerPadding"
+                defaultValue="16px"
+                type="sides"
+              />
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="Footer Borders">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Footer Border Color</Label>
+          <FormSection>
+            <FormRow label="Border Color" description="Color of the footer border">
               <ColorInput
                 value={formData.footerBorderColor || formData.borderColor || '#e5e7eb'}
                 onChange={(color) => setFormData({ ...formData, footerBorderColor: color })}
@@ -92,30 +93,33 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#e5e7eb"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Footer Border Width"
-              baseKey="footerBorderWidth"
-              defaultValue={formData.borderWidth || '1px'}
-              type="sides"
-            />
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Footer Border Radius"
-              baseKey="footerBorderRadius"
-              defaultValue="0px"
-              type="corners"
-            />
-          </div>
+            </FormRow>
+            <FormRow label="Border Width" description="Width of the footer border">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="footerBorderWidth"
+                defaultValue={formData.borderWidth || '1px'}
+                type="sides"
+              />
+            </FormRow>
+            <FormRow label="Border Radius" description="Roundness of footer corners">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="footerBorderRadius"
+                defaultValue="0px"
+                type="corners"
+              />
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="Input Field Styling">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-2">
-              <Label>Input Background Color</Label>
+          <FormSection>
+            <FormRow label="Background Color" description="Background of the input field">
               <ColorInput
                 value={formData.footerInputBgColor || formData.messageBoxColor || '#ffffff'}
                 onChange={(color) => setFormData({ ...formData, footerInputBgColor: color })}
@@ -124,9 +128,8 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#ffffff"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Input Font Color</Label>
+            </FormRow>
+            <FormRow label="Font Color" description="Text color in the input field">
               <ColorInput
                 value={formData.footerInputFontColor || formData.fontColor || '#000000'}
                 onChange={(color) => setFormData({ ...formData, footerInputFontColor: color })}
@@ -135,11 +138,8 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#000000"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Input Border Color</Label>
+            </FormRow>
+            <FormRow label="Border Color" description="Color of the input border">
               <ColorInput
                 value={formData.footerInputBorderColor || formData.borderColor || '#e5e7eb'}
                 onChange={(color) => setFormData({ ...formData, footerInputBorderColor: color })}
@@ -148,30 +148,33 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#e5e7eb"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Input Border Width"
-              baseKey="footerInputBorderWidth"
-              defaultValue={formData.borderWidth || '1px'}
-              type="sides"
-            />
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Input Border Radius"
-              baseKey="footerInputBorderRadius"
-              defaultValue={formData.borderRadius || '8px'}
-              type="corners"
-            />
-          </div>
+            </FormRow>
+            <FormRow label="Border Width" description="Width of the input border">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="footerInputBorderWidth"
+                defaultValue={formData.borderWidth || '1px'}
+                type="sides"
+              />
+            </FormRow>
+            <FormRow label="Border Radius" description="Roundness of input corners">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="footerInputBorderRadius"
+                defaultValue={formData.borderRadius || '8px'}
+                type="corners"
+              />
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="Send Button Styling">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="space-y-2">
-              <Label>Send Button Icon</Label>
+          <FormSection>
+            <FormRow label="Button Icon" description="Icon displayed on the send button">
               <Select
                 value={formData.sendButtonIcon || 'Send'}
                 onValueChange={(v) => setFormData({ ...formData, sendButtonIcon: v })}
@@ -193,9 +196,8 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                   })}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Send Button Background Color</Label>
+            </FormRow>
+            <FormRow label="Background Color" description="Button background color">
               <ColorInput
                 value={formData.sendButtonBgColor || formData.primaryColor || '#3b82f6'}
                 onChange={(color) => setFormData({ ...formData, sendButtonBgColor: color })}
@@ -204,9 +206,8 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#3b82f6"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Send Button Icon Color</Label>
+            </FormRow>
+            <FormRow label="Icon Color" description="Color of the send icon">
               <ColorInput
                 value={formData.sendButtonIconColor || '#ffffff'}
                 onChange={(color) => setFormData({ ...formData, sendButtonIconColor: color })}
@@ -215,32 +216,24 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#ffffff"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="space-y-2">
-              <Label>Send Button Width</Label>
+            </FormRow>
+            <FormRow label="Width" description="Width of send button (defaults to match height)">
               <Input
                 type="text"
                 value={formData.sendButtonWidth || ''}
                 onChange={(e) => setFormData({ ...formData, sendButtonWidth: e.target.value })}
-                placeholder="40px (default: matches height)"
+                placeholder="40px"
               />
-              <p className="text-xs text-muted-foreground">Width of send button (defaults to match height for square)</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Send Button Height</Label>
+            </FormRow>
+            <FormRow label="Height" description="Height of send button (defaults to 40px)">
               <Input
                 type="text"
                 value={formData.sendButtonHeight || ''}
                 onChange={(e) => setFormData({ ...formData, sendButtonHeight: e.target.value })}
-                placeholder="40px (default: matches input height)"
+                placeholder="40px"
               />
-              <p className="text-xs text-muted-foreground">Height of send button (defaults to input field height: 40px)</p>
-            </div>
-            <div className="space-y-2">
-              <Label>Send Button Position</Label>
+            </FormRow>
+            <FormRow label="Position" description="Position relative to input field">
               <Select
                 value={formData.sendButtonPosition || 'outside'}
                 onValueChange={(v: string) => setFormData({ ...formData, sendButtonPosition: v as 'inside' | 'outside' })}
@@ -253,26 +246,22 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                   <SelectItem value="inside">Inside Input</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Position relative to input field</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Send Button Border Radius"
-              baseKey="sendButtonBorderRadius"
-              defaultValue={
-                formData.sendButtonRounded
-                  ? '9999px' // Fully rounded
-                  : formData.sendButtonBorderRadius || '8px'
-              }
-              type="corners"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Send Button Shadow Color</Label>
+            </FormRow>
+            <FormRow label="Border Radius" description="Roundness of button corners">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="sendButtonBorderRadius"
+                defaultValue={
+                  formData.sendButtonRounded
+                    ? '9999px'
+                    : formData.sendButtonBorderRadius || '8px'
+                }
+                type="corners"
+              />
+            </FormRow>
+            <FormRow label="Shadow Color" description="Color of button shadow">
               <ColorInput
                 value={formData.sendButtonShadowColor || '#000000'}
                 onChange={(color) => setFormData({ ...formData, sendButtonShadowColor: color })}
@@ -281,9 +270,8 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 placeholder="#000000"
                 inputClassName="h-7 text-xs pl-7 w-full"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Send Button Shadow Blur</Label>
+            </FormRow>
+            <FormRow label="Shadow Blur" description="Blur amount for shadow">
               <div className="relative">
                 <Input
                   type="number"
@@ -294,40 +282,37 @@ export function RegularFooterSection({ formData, setFormData }: RegularFooterSec
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
               </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4 mt-4">
-            <MultiSideInput
-              formData={formData}
-              setFormData={setFormData}
-              label="Send Button Padding"
-              baseKey="sendButtonPadding"
-              defaultValue="8px"
-              type="sides"
-            />
-          </div>
+            </FormRow>
+            <FormRow label="Padding" description="Internal button padding">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="sendButtonPadding"
+                defaultValue="8px"
+                type="sides"
+              />
+            </FormRow>
+          </FormSection>
         </SectionGroup>
 
         <SectionGroup title="File Upload Layout">
-          <div className="space-y-2">
-            <Label>Button Order</Label>
-            <Select
-              value={formData.fileUploadLayout || 'attach-first'}
-              onValueChange={(v: string) => setFormData({ ...formData, fileUploadLayout: v as 'attach-first' | 'input-first' })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="attach-first">[Attach] [Input] [Send]</SelectItem>
-                <SelectItem value="input-first">[Input] [Attach] [Send]</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Choose the order of attach button, input field, and send button
-            </p>
-          </div>
+          <FormSection>
+            <FormRow label="Button Order" description="Order of attach, input, and send buttons">
+              <Select
+                value={formData.fileUploadLayout || 'attach-first'}
+                onValueChange={(v: string) => setFormData({ ...formData, fileUploadLayout: v as 'attach-first' | 'input-first' })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="attach-first">[Attach] [Input] [Send]</SelectItem>
+                  <SelectItem value="input-first">[Input] [Attach] [Send]</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormRow>
+          </FormSection>
         </SectionGroup>
       </div>
     </div>

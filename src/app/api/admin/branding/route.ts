@@ -8,7 +8,7 @@ async function getHandler(request: NextRequest) {
   // Allow unauthenticated access for branding (used in public pages like signin)
   // No auth check needed - branding is public information
   
-  const setting = await prisma.system_settings.findUnique({
+  const setting = await prisma.systemSetting.findUnique({
     where: { key: 'branding' }
   })
 
@@ -39,7 +39,7 @@ async function putHandler(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
-  await prisma.system_settings.upsert({
+  await prisma.systemSetting.upsert({
     where: { key: 'branding' },
     update: { value: JSON.stringify(body) },
     create: { key: 'branding', value: JSON.stringify(body) }

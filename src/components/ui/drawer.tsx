@@ -147,10 +147,8 @@ const DrawerOverlay = React.forwardRef<
     overlayOpacity?: number
     overlayBlur?: number
   }
->(({ className, overlayColor, overlayOpacity, overlayBlur, ...props }, ref) => {
+>(({ className, overlayColor, overlayOpacity, overlayBlur, style, ...props }, ref) => {
   const context = React.useContext(DrawerContext)
-
-  if (!context?.open) return null
 
   // Get values from props or CSS variables (set by branding config)
   const color = overlayColor || (typeof window !== 'undefined' ? getComputedStyle(document.documentElement).getPropertyValue('--drawer-overlay-color').trim() || '#000000' : '#000000')
@@ -185,7 +183,7 @@ const DrawerOverlay = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "fixed inset-0 animate-in fade-in-0",
+        "fixed inset-0",
         !backgroundColor && "bg-background/80",
         !blurValue && "backdrop-blur-sm",
         className
@@ -196,8 +194,10 @@ const DrawerOverlay = React.forwardRef<
         ...(blurValue ? { 
           backdropFilter: `blur(${blurValue})`,
           WebkitBackdropFilter: `blur(${blurValue})`
-        } : {})
+        } : {}),
+        ...style
       }}
+      onClick={() => context?.setOpen(false)}
       {...props}
     />
   )
@@ -215,8 +215,10 @@ const DrawerContent = React.forwardRef<
     overlayBlur?: number
     showOverlay?: boolean
   }
->(({ className, children, widthClassName, floating, floatingMargin, overlayColor, overlayOpacity, overlayBlur, showOverlay = true, ...props }, ref) => {
+>(({ className, children, widthClassName, floating = true, floatingMargin, overlayColor, overlayOpacity, overlayBlur, showOverlay = true, ...props }, ref) => {
   const context = React.useContext(DrawerContext)
+  const [isVisible, setIsVisible] = React.useState(false)
+  const [isAnimating, setIsAnimating] = React.useState(false)
 
   useDialogEscapeKey(
     context?.open ?? false,
@@ -224,15 +226,35 @@ const DrawerContent = React.forwardRef<
     true
   )
 
-  if (!context?.open) return null
+  // Handle animation states
+  React.useEffect(() => {
+    if (context?.open) {
+      setIsVisible(true)
+      // Small delay to ensure DOM is ready for animation
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsAnimating(true)
+        })
+      })
+    } else {
+      setIsAnimating(false)
+      // Wait for exit animation to complete before hiding
+      const timer = setTimeout(() => {
+        setIsVisible(false)
+      }, 300) // Match transition duration
+      return () => clearTimeout(timer)
+    }
+  }, [context?.open])
+
+  if (!isVisible) return null
 
   // Get drawer style from CSS variables (set by branding config)
   const getDrawerStyle = () => {
     if (typeof window === 'undefined') {
-      return { type: 'normal', margin: '16px', borderRadius: '12px', width: '500px', backgroundBlur: '10px', backgroundOpacity: '95' }
+      return { type: 'floating', margin: '16px', borderRadius: '12px', width: '500px', backgroundBlur: '10px', backgroundOpacity: '95' }
     }
     
-    const type = getComputedStyle(document.documentElement).getPropertyValue('--drawer-style-type').trim() || 'normal'
+    const type = getComputedStyle(document.documentElement).getPropertyValue('--drawer-style-type').trim() || 'floating'
     const margin = getComputedStyle(document.documentElement).getPropertyValue('--drawer-style-margin').trim() || '16px'
     const borderRadius = getComputedStyle(document.documentElement).getPropertyValue('--drawer-style-border-radius').trim() || '12px'
     const width = getComputedStyle(document.documentElement).getPropertyValue('--drawer-style-width').trim() || '500px'
@@ -254,27 +276,29 @@ const DrawerContent = React.forwardRef<
 
   // Determine styling based on drawer type
   const getDrawerClasses = () => {
+    const baseClasses = "fixed border border-border shadow-2xl outline-none transition-all duration-300 ease-out"
+    
     switch (drawerType) {
       case 'modern':
         // Modern: full height, margins top/bottom, right side, rounded
         return cn(
-          "fixed border-l border-border shadow-xl outline-none animate-in slide-in-from-right",
-          "rounded-lg",
+          baseClasses,
+          "rounded-xl",
           defaultWidth
         )
       case 'floating':
         // Floating: margins all around, rounded
         return cn(
-          "fixed border border-border shadow-xl outline-none animate-in slide-in-from-right",
-          "rounded-lg",
+          baseClasses,
+          "rounded-xl",
           defaultWidth
         )
       case 'normal':
       default:
         // Normal: full height, no margins, right side
         return cn(
-          "fixed border-l border-border shadow-xl outline-none animate-in slide-in-from-right",
-          "inset-y-0 right-0 h-full",
+          baseClasses,
+          "inset-y-0 right-0 h-full border-l",
           defaultWidth
         )
     }
@@ -287,6 +311,9 @@ const DrawerContent = React.forwardRef<
       backdropFilter: `blur(${backgroundBlur})`,
       WebkitBackdropFilter: `blur(${backgroundBlur})`,
       backgroundColor: `hsl(var(--background) / ${backgroundOpacity / 100})`,
+      // Animation transform
+      transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
+      opacity: isAnimating ? 1 : 0,
     }
 
     switch (drawerType) {
@@ -324,7 +351,17 @@ const DrawerContent = React.forwardRef<
 
   const content = (
     <>
-      {showOverlay && <DrawerOverlay overlayColor={overlayColor} overlayOpacity={overlayOpacity} overlayBlur={overlayBlur} />}
+      {showOverlay && (
+        <DrawerOverlay 
+          overlayColor={overlayColor} 
+          overlayOpacity={overlayOpacity} 
+          overlayBlur={overlayBlur}
+          style={{
+            opacity: isAnimating ? 1 : 0,
+            transition: 'opacity 300ms ease-out',
+          }}
+        />
+      )}
       <div
         ref={ref}
         className={cn(getDrawerClasses(), className)}

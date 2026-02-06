@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button'
 import { X, Settings, Layout, Palette, Square, History, MousePointerClick, LayoutTemplate } from 'lucide-react'
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
+import { FormRow, FormSection } from '../components/FormRow'
 import type { Chatbot } from '../../types'
 
 interface ChatKitIntegrationSectionProps {
@@ -48,37 +49,22 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-4">
-            <div className="space-y-4">
+            <FormSection>
               {isOpenAIAgentSDK && (
-                <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                  <div className="space-y-1">
-                    <Label>Enable Chatbot Widget</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Turn the chatbot widget on or off. When disabled, the chatbot will not be displayed.
-                    </p>
-                  </div>
+                <FormRow label="Enable Chatbot Widget" description="When disabled, the chatbot will not be displayed">
                   <Switch
                     checked={chatbotEnabled}
                     onCheckedChange={(checked) => setFormData({ ...formData, chatbotEnabled: checked } as any)}
                   />
-                </div>
+                </FormRow>
               )}
-              <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                <div className="space-y-1">
-                  <Label>Enable on Desktop</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {isChatKitEngine
-                      ? "Use regular style UI instead of ChatKit UI on desktop. Mobile always uses ChatKit native UI."
-                      : "Enable ChatKit for regular style engines on desktop. Mobile always uses ChatKit native UI."
-                    }
-                  </p>
-                </div>
+              <FormRow label="Enable on Desktop" description={isChatKitEngine ? "Use regular style UI on desktop" : "Enable ChatKit for regular style engines"}>
                 <Switch
                   checked={isEnabled}
                   onCheckedChange={(checked) => setFormData({ ...formData, useChatKitInRegularStyle: checked })}
                 />
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -298,48 +284,32 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                <div className="space-y-0.5">
-                  <Label>Show Clear Button</Label>
-                  <p className="text-xs text-muted-foreground">Display the clear conversation button in header</p>
-                </div>
+            <FormSection>
+              <FormRow label="Show Clear Button" description="Display clear conversation button in header">
                 <Switch
                   checked={(formData as any).headerShowClearSession !== false}
                   onCheckedChange={(checked) => setFormData({ ...formData, headerShowClearSession: checked } as any)}
                 />
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                <div className="space-y-0.5">
-                  <Label>Show Start Conversation</Label>
-                  <p className="text-xs text-muted-foreground">Show entry message to start chat</p>
-                </div>
+              </FormRow>
+              <FormRow label="Show Start Conversation" description="Show entry message to start chat">
                 <Switch
                   checked={formData.showStartConversation !== false}
                   onCheckedChange={(checked) => handleChange('showStartConversation', checked)}
                 />
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                <div className="space-y-0.5">
-                  <Label>Enable Renaming</Label>
-                  <p className="text-xs text-muted-foreground">Allow users to rename conversations</p>
-                </div>
+              </FormRow>
+              <FormRow label="Enable Renaming" description="Allow users to rename conversations">
                 <Switch
                   checked={(formData as any).enableConversationRenaming !== false}
                   onCheckedChange={(checked) => handleChange('enableConversationRenaming', checked)}
                 />
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                <div className="space-y-0.5">
-                  <Label>Show New Chat Button</Label>
-                  <p className="text-xs text-muted-foreground">Display the "New Chat" button in the sidebar</p>
-                </div>
+              </FormRow>
+              <FormRow label="Show New Chat Button" description="Display New Chat button in sidebar">
                 <Switch
                   checked={(formData as any).showNewChatButton !== false}
                   onCheckedChange={(checked) => setFormData({ ...formData, showNewChatButton: checked } as any)}
                 />
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -352,9 +322,8 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Header Background Color</Label>
+            <FormSection>
+              <FormRow label="Background Color" description="Header background color or image">
                 <ColorInput
                   value={formData.headerBgColor || '#3b82f6'}
                   onChange={(color) => setFormData({ ...formData, headerBgColor: color })}
@@ -363,9 +332,8 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                   placeholder="#3b82f6"
                   inputClassName="h-7 text-xs pl-7 w-full"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label>Header Text Color</Label>
+              </FormRow>
+              <FormRow label="Text Color" description="Header text color">
                 <ColorInput
                   value={formData.headerFontColor || '#ffffff'}
                   onChange={(color) => setFormData({ ...formData, headerFontColor: color })}
@@ -374,8 +342,8 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                   placeholder="#ffffff"
                   inputClassName="h-7 text-xs pl-7 w-full"
                 />
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -388,17 +356,15 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Show Header Border</Label>
+            <FormSection>
+              <FormRow label="Show Header Border" description="Display border under header">
                 <Switch
                   checked={(formData as any).headerBorderEnabled !== false}
                   onCheckedChange={(checked) => setFormData({ ...formData, headerBorderEnabled: checked } as any)}
                 />
-              </div>
+              </FormRow>
               {(formData as any).headerBorderEnabled !== false && (
-                <div className="space-y-2">
-                  <Label>Header Border Color</Label>
+                <FormRow label="Border Color" description="Color of the header border">
                   <ColorInput
                     value={(formData as any).headerBorderColor || '#e5e7eb'}
                     onChange={(color) => setFormData({ ...formData, headerBorderColor: color } as any)}
@@ -407,9 +373,9 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                     placeholder="#e5e7eb"
                     inputClassName="h-7 text-xs pl-7 w-full"
                   />
-                </div>
+                </FormRow>
               )}
-            </div>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -422,12 +388,8 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
             </div>
           </AccordionTrigger>
           <AccordionContent className="pb-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                <div className="space-y-0.5">
-                  <Label>Show History Panel</Label>
-                  <p className="text-xs text-muted-foreground">Enable the chat history panel/sidebar in ChatKit</p>
-                </div>
+            <FormSection>
+              <FormRow label="Show History Panel" description="Enable the chat history panel/sidebar">
                 <Switch
                   checked={(formData as any).chatkitOptions?.history?.enabled !== false}
                   onCheckedChange={(checked) => setFormData({
@@ -441,14 +403,10 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                     }
                   } as any)}
                 />
-              </div>
+              </FormRow>
               {(formData as any).chatkitOptions?.history?.enabled !== false && (
                 <>
-                  <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                    <div className="space-y-0.5">
-                      <Label>Allow Thread Deletion</Label>
-                      <p className="text-xs text-muted-foreground">Show delete action for conversation threads</p>
-                    </div>
+                  <FormRow label="Allow Thread Deletion" description="Show delete action for threads">
                     <Switch
                       checked={(formData as any).chatkitOptions?.history?.showDelete !== false}
                       onCheckedChange={(checked) => setFormData({
@@ -462,12 +420,8 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                         }
                       } as any)}
                     />
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-md border bg-muted/20">
-                    <div className="space-y-0.5">
-                      <Label>Allow Thread Renaming</Label>
-                      <p className="text-xs text-muted-foreground">Show rename action for conversation threads</p>
-                    </div>
+                  </FormRow>
+                  <FormRow label="Allow Thread Renaming" description="Show rename action for threads">
                     <Switch
                       checked={(formData as any).chatkitOptions?.history?.showRename !== false}
                       onCheckedChange={(checked) => setFormData({
@@ -481,10 +435,10 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                         }
                       } as any)}
                     />
-                  </div>
+                  </FormRow>
                 </>
               )}
-            </div>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

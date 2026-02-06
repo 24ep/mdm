@@ -6,6 +6,7 @@ import { ChatbotEditor } from '@/app/admin/components/chatbot/ChatbotEditor'
 import { Chatbot } from '@/app/admin/components/chatbot/types'
 import { ChatbotEmulator } from '@/app/admin/components/chatbot/ChatbotEmulator'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Plus, ArrowLeft } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -159,8 +160,25 @@ export default function ChatEmbedUIPage() {
         }
     }
 
+    // Helper to increment version string (e.g., "1.0.0" -> "1.0.1")
+    const incrementVersion = (version: string | undefined): string => {
+        if (!version) return '1.0.0'
+        const parts = version.split('.')
+        if (parts.length !== 3) return '1.0.0'
+        const patch = parseInt(parts[2] || '0', 10) + 1
+        return `${parts[0]}.${parts[1]}.${patch}`
+    }
+
     const handleSave = async (dataOverride?: Partial<Chatbot>): Promise<Chatbot | null> => {
-        const dataToSave = { ...editorFormData, ...dataOverride }
+        const currentVersion = editorFormData.currentVersion || selectedChatbot?.currentVersion || '1.0.0'
+        const newVersion = incrementVersion(currentVersion)
+        
+        const dataToSave = { 
+            ...editorFormData, 
+            ...dataOverride,
+            currentVersion: newVersion,
+            isPublished: false // Always save as draft
+        }
 
         // Client-side validation
         if (!dataToSave.name) {
@@ -180,7 +198,7 @@ export default function ChatEmbedUIPage() {
             const url = selectedChatbot ? `/api/chatbots/${selectedChatbot.id}` : '/api/chatbots'
             const method = selectedChatbot ? 'PATCH' : 'POST'
 
-            console.log('Saving chatbot with data:', dataToSave)
+            console.log('Saving chatbot as draft with version:', newVersion)
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
@@ -203,12 +221,10 @@ export default function ChatEmbedUIPage() {
             const data = await res.json()
             const savedChatbot = data.chatbot
 
-            toast.success(selectedChatbot ? 'Chatbot updated' : 'Chatbot created')
+            toast.success(`Draft saved (v${newVersion})`)
 
-            // Update local state
-            if (dataOverride) {
-                setEditorFormData(prev => ({ ...prev, ...dataOverride }))
-            }
+            // Update local state with new version
+            setEditorFormData(prev => ({ ...prev, ...dataOverride, currentVersion: newVersion, isPublished: false }))
 
             if (selectedChatbot) {
                 setChatbots(prev => prev.map(c => c.id === savedChatbot.id ? savedChatbot : c))
@@ -223,6 +239,41 @@ export default function ChatEmbedUIPage() {
         } catch (error: any) {
             console.error(error)
             toast.error(error.message || 'Failed to save chatbot')
+            return null
+        }
+    }
+
+    // Publish the current draft - first saves, then publishes
+    const handlePublishFromEditor = async (): Promise<Chatbot | null> => {
+        // First save the current changes as a draft
+        const savedBot = await handleSave()
+        if (!savedBot) return null
+
+        // Then publish it
+        try {
+            const res = await fetch(`/api/chatbots/${savedBot.id}/publish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            
+            if (!res.ok) {
+                throw new Error('Failed to publish chatbot')
+            }
+            
+            const data = await res.json()
+            const publishedChatbot = data.chatbot
+
+            toast.success(`Chatbot published (v${publishedChatbot.currentVersion || savedBot.currentVersion})`)
+
+            // Update local state
+            setEditorFormData(prev => ({ ...prev, isPublished: true }))
+            setChatbots(prev => prev.map(c => c.id === publishedChatbot.id ? publishedChatbot : c))
+            setSelectedChatbot(publishedChatbot)
+
+            return publishedChatbot
+        } catch (error: any) {
+            console.error(error)
+            toast.error(error.message || 'Failed to publish chatbot')
             return null
         }
     }
@@ -299,9 +350,42 @@ export default function ChatEmbedUIPage() {
                             </h1>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {/* Save/Deploy buttons are handled inside specific tabs usually, or we can have a global save here */}
-                        <Button onClick={() => handleSave()}>Save Changes</Button>
+                    <div className="flex items-center gap-3">
+                        {/* Version indicator */}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs">
+                                v{editorFormData.currentVersion || selectedChatbot?.currentVersion || '1.0.0'}
+                            </span>
+                            {editorFormData.isPublished ? (
+                                <span className="text-green-600 text-xs font-medium">Published</span>
+                            ) : (
+                                <span className="text-amber-600 text-xs font-medium">Draft</span>
+                            )}
+                        </div>
+                        <div className="w-px h-6 bg-border" />
+                        {/* Enable/Disable Toggle */}
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                id="chatbot-enabled-header"
+                                checked={editorFormData.chatbotEnabled !== false}
+                                onCheckedChange={(checked) => setEditorFormData(prev => ({ ...prev, chatbotEnabled: checked }))}
+                            />
+                            <span className={`text-xs font-medium ${editorFormData.chatbotEnabled !== false ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                {editorFormData.chatbotEnabled !== false ? 'Enabled' : 'Disabled'}
+                            </span>
+                        </div>
+                        <div className="w-px h-6 bg-border" />
+                        {/* Save Draft - always saves as draft with incremented version */}
+                        <Button variant="outline" onClick={() => handleSave()}>
+                            Save Draft
+                        </Button>
+                        {/* Publish - saves then publishes */}
+                        <Button 
+                            onClick={() => handlePublishFromEditor()}
+                            className="bg-green-600 hover:bg-green-700"
+                        >
+                            Publish
+                        </Button>
                     </div>
                 </div>
 

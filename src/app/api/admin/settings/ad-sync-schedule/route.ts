@@ -6,7 +6,7 @@ async function getHandler(request: NextRequest) {
   const authResult = await requireAuth('ADMIN')
   if (!authResult.success) return authResult.response
 
-  const setting = await prisma.system_settings.findUnique({
+  const setting = await prisma.systemSetting.findUnique({
     where: { key: 'adSyncSchedule' }
   })
 
@@ -33,7 +33,7 @@ async function putHandler(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
 
-    await prisma.system_settings.upsert({
+    await prisma.systemSetting.upsert({
         where: { key: 'adSyncSchedule' },
         update: { value: JSON.stringify(body) },
         create: { key: 'adSyncSchedule', value: JSON.stringify(body) }

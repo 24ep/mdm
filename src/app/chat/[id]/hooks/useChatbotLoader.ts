@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChatbotConfig } from '../types'
 import toast from 'react-hot-toast'
 import { isUuid } from '@/lib/validation'
@@ -24,6 +24,10 @@ export function useChatbotLoader({
     text?: string
     description?: string
   }>({})
+  
+  // Track if we've received config from the editor (postMessage)
+  // This prevents API loads from overwriting editor config
+  const hasEditorConfigRef = useRef(false)
 
   // Helper to merge loaded chatbot with default config to ensure all values are set
   // Filter out undefined values from defaults to prevent them from overriding valid loaded values
@@ -56,6 +60,8 @@ export function useChatbotLoader({
 
   // Load chatbot
   useEffect(() => {
+    // Reset editor config flag when chatbot changes
+    hasEditorConfigRef.current = false
     loadChatbot()
   }, [chatbotId])
 
@@ -92,6 +98,10 @@ export function useChatbotLoader({
       if (!data || typeof data !== 'object') return
       if (data.type === 'chatbot-config-update' && data.id === chatbotId) {
         const cfg = data.config || {}
+        // Mark that we've received config from the editor
+        // This prevents API loads from overwriting this config
+        hasEditorConfigRef.current = true
+        
         // When config is updated from editor, ensure chatbot styles take precedence over theme config
         // This ensures the emulator uses style settings from ai-chat-ui, not theme config
         setChatbot((prev) => {
@@ -110,6 +120,26 @@ export function useChatbotLoader({
   }, [chatbotId])
 
   const loadChatbot = async () => {
+    // Helper to set chatbot state, respecting editor config if already received
+    const setLoadedChatbot = (loadedConfig: ChatbotConfig) => {
+      if (hasEditorConfigRef.current) {
+        // Editor config already received - merge loaded config as base, but preserve editor overrides
+        setChatbot((prev) => {
+          if (prev && (prev as any)._fromEditor) {
+            // Editor config takes precedence - merge loaded as base, then editor config on top
+            const merged = { ...loadedConfig, ...prev }
+            ; (merged as any)._fromEditor = true
+            return merged
+          }
+          return loadedConfig
+        })
+      } else {
+        // No editor config yet - set loaded config directly
+        setChatbot(loadedConfig)
+      }
+      if (onChatbotLoaded) onChatbotLoaded(loadedConfig)
+    }
+    
     // Helper for public fallback (guests/embeds)
     const tryPublicApi = async () => {
       try {
@@ -118,8 +148,7 @@ export function useChatbotLoader({
           const d = await res.json()
           if (d.chatbot) {
             const merged = mergeWithDefaults(d.chatbot)
-            setChatbot(merged)
-            if (onChatbotLoaded) onChatbotLoaded(merged)
+            setLoadedChatbot(merged)
             return true
           }
         }
@@ -141,8 +170,7 @@ export function useChatbotLoader({
             const data = await response.json()
             if (data.chatbot) {
               const merged = mergeWithDefaults(data.chatbot)
-              setChatbot(merged)
-              if (onChatbotLoaded) onChatbotLoaded(merged)
+              setLoadedChatbot(merged)
               return
             }
           }
@@ -160,8 +188,7 @@ export function useChatbotLoader({
           const found = chatbots.find((c: any) => c.id === chatbotId)
           if (found) {
             const merged = mergeWithDefaults(found)
-            setChatbot(merged)
-            if (onChatbotLoaded) onChatbotLoaded(merged)
+            setLoadedChatbot(merged)
             return
           }
         }
@@ -179,8 +206,7 @@ export function useChatbotLoader({
           const found = chatbots.find((c: any) => c.id === chatbotId)
           if (found) {
             const merged = mergeWithDefaults(found)
-            setChatbot(merged)
-            if (onChatbotLoaded) onChatbotLoaded(merged)
+            setLoadedChatbot(merged)
             return
           }
         }

@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { X, User } from 'lucide-react'
+import { FormRow, FormSection } from '../components/FormRow'
 import type { SectionProps } from './types'
 
 export function PersonaPickerSection({ formData, setFormData, chatkitOptions }: SectionProps) {
@@ -18,30 +19,23 @@ export function PersonaPickerSection({ formData, setFormData, chatkitOptions }: 
           Enable the persona picker to allow users to select different AI personas during the conversation. Each persona can have its own name, description, and system prompt to change the AI's behavior and personality.
         </p>
 
-        <div className="flex items-center justify-between p-4 border rounded-lg">
-          <div className="space-y-0.5 flex-1">
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <Label>Enable Persona Picker</Label>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Show a persona selection interface that allows users to switch between different AI personas
-            </p>
-          </div>
-          <Switch
-            checked={chatkitOptions?.personaPicker?.enabled ?? false}
-            onCheckedChange={(checked) => setFormData({
-              ...formData,
-              chatkitOptions: {
-                ...chatkitOptions,
-                personaPicker: {
-                  ...chatkitOptions?.personaPicker,
-                  enabled: checked
+        <FormSection>
+          <FormRow label="Enable Persona Picker" description="Allow users to switch between different AI personas">
+            <Switch
+              checked={chatkitOptions?.personaPicker?.enabled ?? false}
+              onCheckedChange={(checked) => setFormData({
+                ...formData,
+                chatkitOptions: {
+                  ...chatkitOptions,
+                  personaPicker: {
+                    ...chatkitOptions?.personaPicker,
+                    enabled: checked
+                  }
                 }
-              }
-            } as any)}
-          />
-        </div>
+              } as any)}
+            />
+          </FormRow>
+        </FormSection>
 
         {chatkitOptions?.personaPicker?.enabled && (
           <div className="space-y-4 mt-4">

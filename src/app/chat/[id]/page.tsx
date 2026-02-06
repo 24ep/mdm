@@ -685,6 +685,7 @@ export default function ChatPage() {
         setIsOpen={setIsOpen}
         isMobile={isMobile}
         isEmbed={isEmbed}
+        isPreview={false}
         useChatKitInRegularStyle={useChatKitInRegularStyle}
         shouldRenderChatKit={!!shouldRenderChatKit}
         handleClose={handleClose}
@@ -734,7 +735,7 @@ export default function ChatPage() {
         <>
           {/* PWA Banner for native popover mode (Only if NOT host website mode, which has its own fixed banner) */}
           {((chatbot as any).pwaInstallScope !== 'website') && (
-            <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
+            <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} isPreview={isPreview} />
           )}
           {renderChatContent()}
         </>
@@ -763,6 +764,7 @@ export default function ChatPage() {
             emulatorConfig={emulatorConfig}
             isMobile={isMobile}
             isEmbed={isEmbed}
+            isPreview={isPreview}
             useChatKitInRegularStyle={useChatKitInRegularStyle}
             shouldRenderChatKit={!!shouldRenderChatKit}
             effectiveDeploymentType={effectiveDeploymentType}
@@ -780,7 +782,7 @@ export default function ChatPage() {
       {/* In production embed (Host Website mode), it will be in its own separate iframe (see route.ts). */}
       {isPreview && ((chatbot as any).pwaInstallScope === 'website') && (
         <div style={{ pointerEvents: 'auto', position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}>
-          <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} />
+          <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} isPreview={isPreview} />
         </div>
       )}
     </>
