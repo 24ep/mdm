@@ -27,9 +27,8 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
         </div>
         <div className="pt-2">
           <SectionGroup title="Bot Message Styling" isFirst>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Bot Message Background</Label>
+            <FormSection>
+              <FormRow label="Background" description="Bot message background color">
                 <ColorInput
                   value={formData.botMessageBackgroundColor || '#f3f4f6'}
                   onChange={(color) => setFormData({ ...formData, botMessageBackgroundColor: color })}
@@ -38,83 +37,74 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                   placeholder="#f3f4f6"
                   inputClassName="h-7 text-xs pl-7 w-full"
                 />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Bot Message Font Color</Label>
-                  <ColorInput
-                    value={formData.botMessageFontColor || formData.fontColor || '#000000'}
-                    onChange={(color) => setFormData({ ...formData, botMessageFontColor: color })}
-                    allowImageVideo={false}
-                    className="relative"
-                    placeholder="#000000"
-                    inputClassName="h-7 text-xs pl-7 w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Bot Message Font Family</Label>
+              </FormRow>
+              <FormRow label="Font Color" description="Bot message text color">
+                <ColorInput
+                  value={formData.botMessageFontColor || formData.fontColor || '#000000'}
+                  onChange={(color) => setFormData({ ...formData, botMessageFontColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#000000"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </FormRow>
+              <FormRow label="Font Family" description="Bot message font family">
+                <Input
+                  value={formData.botMessageFontFamily || formData.fontFamily || 'Inter'}
+                  onChange={(e) => setFormData({ ...formData, botMessageFontFamily: e.target.value })}
+                  placeholder="Inter"
+                />
+              </FormRow>
+              <FormRow label="Font Size" description="Bot message font size">
+                <div className="relative">
                   <Input
-                    value={formData.botMessageFontFamily || formData.fontFamily || 'Inter'}
-                    onChange={(e) => setFormData({ ...formData, botMessageFontFamily: e.target.value })}
-                    placeholder="Inter"
+                    type="number"
+                    value={extractNumericValue(formData.botMessageFontSize || formData.fontSize || '14px')}
+                    onChange={(e) => setFormData({ ...formData, botMessageFontSize: ensurePx(e.target.value) })}
+                    placeholder="14"
+                    className="pr-8"
                   />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
                 </div>
-                <div className="space-y-2">
-                  <Label>Bot Message Font Size</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      value={extractNumericValue(formData.botMessageFontSize || formData.fontSize || '14px')}
-                      onChange={(e) => setFormData({ ...formData, botMessageFontSize: ensurePx(e.target.value) })}
-                      placeholder="14"
-                      className="pr-8"
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
+              </FormRow>
+              <FormRow label="Padding" description="Bot message padding">
                 <PaddingInput
                   formData={formData}
                   setFormData={setFormData}
-                  label="Bot Message Padding"
+                  label=""
                 />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Bot Bubble Border Color</Label>
-                  <ColorInput
-                    value={formData.botBubbleBorderColor || formData.bubbleBorderColor || formData.borderColor || '#e5e7eb'}
-                    onChange={(color) => setFormData({ ...formData, botBubbleBorderColor: color })}
-                    allowImageVideo={false}
-                    className="relative"
-                    placeholder="#e5e7eb"
-                    inputClassName="h-7 text-xs pl-7 w-full"
-                  />
-                </div>
+              </FormRow>
+              <FormRow label="Border Color" description="Bot bubble border color">
+                <ColorInput
+                  value={formData.botBubbleBorderColor || formData.bubbleBorderColor || formData.borderColor || '#e5e7eb'}
+                  onChange={(color) => setFormData({ ...formData, botBubbleBorderColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#e5e7eb"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </FormRow>
+              <FormRow label="Border Width" description="Bot bubble border width">
                 <MultiSideInput
                   formData={formData}
                   setFormData={setFormData}
-                  label="Bot Bubble Border Width"
+                  label=""
                   baseKey="botBubbleBorderWidth"
                   defaultValue={formData.bubbleBorderWidth || formData.borderWidth || '1px'}
                   type="sides"
                 />
+              </FormRow>
+              <FormRow label="Border Radius" description="Bot bubble border radius">
                 <MultiSideInput
                   formData={formData}
                   setFormData={setFormData}
-                  label="Bot Bubble Border Radius"
+                  label=""
                   baseKey="botBubbleBorderRadius"
                   defaultValue={formData.bubbleBorderRadius || formData.borderRadius || '8px'}
                   type="corners"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Bot Avatar Type</Label>
+              </FormRow>
+              <FormRow label="Avatar Type" description="Icon or custom image">
                 <Select
                   value={formData.avatarType || 'icon'}
                   onValueChange={(v: any) => setFormData({ ...formData, avatarType: v })}
@@ -127,12 +117,10 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                     <SelectItem value="image">Upload Image</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
+              </FormRow>
               {formData.avatarType === 'icon' ? (
                 <>
-                  <div className="space-y-2">
-                    <Label>Bot Avatar Icon</Label>
+                  <FormRow label="Avatar Icon" description="Select bot avatar icon">
                     <Select
                       value={formData.avatarIcon || 'Bot'}
                       onValueChange={(v) => setFormData({ ...formData, avatarIcon: v })}
@@ -154,37 +142,30 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                         })}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Bot Icon Color</Label>
-                      <ColorInput
-                        value={formData.avatarIconColor || '#ffffff'}
-                        onChange={(color) => setFormData({ ...formData, avatarIconColor: color })}
-                        allowImageVideo={false}
-                        className="relative"
-                        placeholder="#ffffff"
-                        inputClassName="h-8 text-xs pl-7"
-                      />
-                      <p className="text-xs text-muted-foreground">Color of the icon inside the avatar</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Bot Avatar Background Color</Label>
-                      <ColorInput
-                        value={formData.avatarBackgroundColor || '#3b82f6'}
-                        onChange={(color) => setFormData({ ...formData, avatarBackgroundColor: color })}
-                        allowImageVideo={false}
-                        className="relative"
-                        placeholder="#3b82f6"
-                        inputClassName="h-8 text-xs pl-7"
-                      />
-                      <p className="text-xs text-muted-foreground">Background color of the avatar circle (when icon type is selected)</p>
-                    </div>
-                  </div>
+                  </FormRow>
+                  <FormRow label="Icon Color" description="Color of the icon inside the avatar">
+                    <ColorInput
+                      value={formData.avatarIconColor || '#ffffff'}
+                      onChange={(color) => setFormData({ ...formData, avatarIconColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#ffffff"
+                      inputClassName="h-8 text-xs pl-7"
+                    />
+                  </FormRow>
+                  <FormRow label="Background Color" description="Background color of the avatar circle">
+                    <ColorInput
+                      value={formData.avatarBackgroundColor || '#3b82f6'}
+                      onChange={(color) => setFormData({ ...formData, avatarBackgroundColor: color })}
+                      allowImageVideo={false}
+                      className="relative"
+                      placeholder="#3b82f6"
+                      inputClassName="h-8 text-xs pl-7"
+                    />
+                  </FormRow>
                 </>
               ) : (
-                <div className="space-y-2">
-                  <Label>Upload Bot Avatar Image</Label>
+                <FormRow label="Upload Image" description="Upload an image file for the bot avatar">
                   <Input
                     type="file"
                     accept="image/*"
@@ -199,106 +180,77 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                       reader.readAsDataURL(file)
                     }}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Upload an image file for the bot avatar
-                  </p>
-                </div>
+                </FormRow>
               )}
-            </div>
+            </FormSection>
           </SectionGroup>
 
           {/* Typing Indicator & Thinking Message */}
           <SectionGroup title="Typing Indicator & Thinking">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Typing Indicator Style</Label>
-                  <Select
-                    value={formData.typingIndicatorStyle || 'spinner'}
-                    onValueChange={(v: any) => setFormData({ ...formData, typingIndicatorStyle: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="spinner">Spinner</SelectItem>
-                      <SelectItem value="dots">Dots</SelectItem>
-                      <SelectItem value="pulse">Pulse</SelectItem>
-                      <SelectItem value="bounce">Bounce</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Typing Indicator Color</Label>
-                  <ColorInput
-                    value={formData.typingIndicatorColor || '#6b7280'}
-                    onChange={(color) => setFormData({ ...formData, typingIndicatorColor: color })}
-                    allowImageVideo={false}
-                    className="relative"
-                    placeholder="#6b7280"
-                    inputClassName="h-7 text-xs pl-7 w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Show Thinking Message</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Display "Thinking..." text like OpenAI (shown next to typing indicator)
-                  </p>
-                </div>
+            <FormSection>
+              <FormRow label="Indicator Style" description="Animation style for typing indicator">
+                <Select
+                  value={formData.typingIndicatorStyle || 'spinner'}
+                  onValueChange={(v: any) => setFormData({ ...formData, typingIndicatorStyle: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="spinner">Spinner</SelectItem>
+                    <SelectItem value="dots">Dots</SelectItem>
+                    <SelectItem value="pulse">Pulse</SelectItem>
+                    <SelectItem value="bounce">Bounce</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormRow>
+              <FormRow label="Indicator Color" description="Color of the typing indicator">
+                <ColorInput
+                  value={formData.typingIndicatorColor || '#6b7280'}
+                  onChange={(color) => setFormData({ ...formData, typingIndicatorColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#6b7280"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </FormRow>
+              <FormRow label="Show Thinking Message" description="Display 'Thinking...' text like OpenAI">
                 <Switch
                   checked={(formData as any).showThinkingMessage ?? false}
                   onCheckedChange={(checked) => setFormData({ ...formData, showThinkingMessage: checked } as any)}
                 />
-              </div>
-
+              </FormRow>
               {(formData as any).showThinkingMessage && (
-                <div className="space-y-2">
-                  <Label>Thinking Message Text</Label>
+                <FormRow label="Thinking Text" description="Custom text to display while thinking">
                   <Input
                     value={(formData as any).thinkingMessageText || 'Thinking...'}
                     onChange={(e) => setFormData({ ...formData, thinkingMessageText: e.target.value } as any)}
                     placeholder="Thinking..."
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Custom text to display while the assistant is thinking
-                  </p>
-                </div>
+                </FormRow>
               )}
-            </div>
+            </FormSection>
           </SectionGroup>
 
           {/* Shared Settings */}
           <SectionGroup title="Display Options">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Show Message Name</Label>
-                  <p className="text-xs text-muted-foreground">Display name above messages</p>
-                </div>
+            <FormSection>
+              <FormRow label="Show Message Name" description="Display name above messages">
                 <Switch
                   checked={formData.showMessageName !== undefined ? formData.showMessageName : false}
                   onCheckedChange={(checked) => setFormData({ ...formData, showMessageName: checked })}
                 />
-              </div>
-
+              </FormRow>
               {formData.showMessageName && (
                 <>
-                  <div className="space-y-2">
-                    <Label>Message Name</Label>
+                  <FormRow label="Message Name" description="If empty, will use chatbot name or header title">
                     <Input
                       value={formData.messageName || ''}
                       onChange={(e) => setFormData({ ...formData, messageName: e.target.value })}
                       placeholder="Leave empty to use chatbot name"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      If empty, will use chatbot name or header title
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Message Name Position</Label>
+                  </FormRow>
+                  <FormRow label="Name Position" description="Choose where to display the message name">
                     <Select
                       value={formData.messageNamePosition || 'top-of-message'}
                       onValueChange={(v: string) => setFormData({ ...formData, messageNamePosition: v as 'top-of-message' | 'top-of-avatar' | 'right-of-avatar' })}
@@ -312,27 +264,17 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                         <SelectItem value="right-of-avatar">Right of Avatar</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Choose where to display the message name
-                    </p>
-                  </div>
+                  </FormRow>
                 </>
               )}
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Show Message Avatar</Label>
-                  <p className="text-xs text-muted-foreground">Display avatar before messages</p>
-                </div>
+              <FormRow label="Show Message Avatar" description="Display avatar before messages">
                 <Switch
                   checked={formData.showMessageAvatar !== undefined ? formData.showMessageAvatar : true}
                   onCheckedChange={(checked) => setFormData({ ...formData, showMessageAvatar: checked })}
                 />
-              </div>
-
+              </FormRow>
               {formData.showMessageAvatar !== false && (
-                <div className="space-y-2">
-                  <Label>Message Avatar Position</Label>
+                <FormRow label="Avatar Position" description="Choose where to display the bot message avatar">
                   <Select
                     value={formData.messageAvatarPosition || 'top-of-message'}
                     onValueChange={(v: string) => setFormData({ ...formData, messageAvatarPosition: v as 'top-of-message' | 'left-of-message' })}
@@ -345,12 +287,9 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                       <SelectItem value="left-of-message">Left of Message</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Choose where to display the bot message avatar
-                  </p>
-                </div>
+                </FormRow>
               )}
-            </div>
+            </FormSection>
           </SectionGroup>
         </div>
       </div>
@@ -361,9 +300,8 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
         </div>
         <div className="pt-2">
           <SectionGroup title="User Message Styling" isFirst>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>User Message Background</Label>
+            <FormSection>
+              <FormRow label="Background" description="User message background color">
                 <ColorInput
                   value={formData.userMessageBackgroundColor || formData.primaryColor || '#3b82f6'}
                   onChange={(color) => setFormData({ ...formData, userMessageBackgroundColor: color })}
@@ -372,97 +310,85 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                   placeholder="#3b82f6"
                   inputClassName="h-7 text-xs pl-7 w-full"
                 />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>User Message Font Color</Label>
-                  <ColorInput
-                    value={formData.userMessageFontColor || '#ffffff'}
-                    onChange={(color) => setFormData({ ...formData, userMessageFontColor: color })}
-                    allowImageVideo={false}
-                    className="relative"
-                    placeholder="#ffffff"
-                    inputClassName="h-7 text-xs pl-7 w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>User Message Font Family</Label>
+              </FormRow>
+              <FormRow label="Font Color" description="User message text color">
+                <ColorInput
+                  value={formData.userMessageFontColor || '#ffffff'}
+                  onChange={(color) => setFormData({ ...formData, userMessageFontColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#ffffff"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </FormRow>
+              <FormRow label="Font Family" description="User message font family">
+                <Input
+                  value={formData.userMessageFontFamily || formData.fontFamily || 'Inter'}
+                  onChange={(e) => setFormData({ ...formData, userMessageFontFamily: e.target.value })}
+                  placeholder="Inter"
+                />
+              </FormRow>
+              <FormRow label="Font Size" description="User message font size">
+                <div className="relative">
                   <Input
-                    value={formData.userMessageFontFamily || formData.fontFamily || 'Inter'}
-                    onChange={(e) => setFormData({ ...formData, userMessageFontFamily: e.target.value })}
-                    placeholder="Inter"
+                    type="number"
+                    value={extractNumericValue(formData.userMessageFontSize || formData.fontSize || '14px')}
+                    onChange={(e) => setFormData({ ...formData, userMessageFontSize: ensurePx(e.target.value) })}
+                    placeholder="14"
+                    className="pr-8"
                   />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
                 </div>
-                <div className="space-y-2">
-                  <Label>User Message Font Size</Label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      value={extractNumericValue(formData.userMessageFontSize || formData.fontSize || '14px')}
-                      onChange={(e) => setFormData({ ...formData, userMessageFontSize: ensurePx(e.target.value) })}
-                      placeholder="14"
-                      className="pr-8"
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
-                  </div>
-                </div>
-              </div>
-
-              <MultiSideInput
-                formData={formData}
-                setFormData={setFormData}
-                label="User Message Padding"
-                baseKey="userBubblePadding"
-                defaultValue={formData.bubblePadding || '12px'}
-                type="sides"
-              />
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>User Bubble Border Color</Label>
-                  <ColorInput
-                    value={formData.userBubbleBorderColor || formData.bubbleBorderColor || formData.borderColor || '#e5e7eb'}
-                    onChange={(color) => setFormData({ ...formData, userBubbleBorderColor: color })}
-                    allowImageVideo={false}
-                    className="relative"
-                    placeholder="#e5e7eb"
-                    inputClassName="h-7 text-xs pl-7 w-full"
-                  />
-                </div>
+              </FormRow>
+              <FormRow label="Padding" description="User message padding">
                 <MultiSideInput
                   formData={formData}
                   setFormData={setFormData}
-                  label="User Bubble Border Width"
+                  label=""
+                  baseKey="userBubblePadding"
+                  defaultValue={formData.bubblePadding || '12px'}
+                  type="sides"
+                />
+              </FormRow>
+              <FormRow label="Border Color" description="User bubble border color">
+                <ColorInput
+                  value={formData.userBubbleBorderColor || formData.bubbleBorderColor || formData.borderColor || '#e5e7eb'}
+                  onChange={(color) => setFormData({ ...formData, userBubbleBorderColor: color })}
+                  allowImageVideo={false}
+                  className="relative"
+                  placeholder="#e5e7eb"
+                  inputClassName="h-7 text-xs pl-7 w-full"
+                />
+              </FormRow>
+              <FormRow label="Border Width" description="User bubble border width">
+                <MultiSideInput
+                  formData={formData}
+                  setFormData={setFormData}
+                  label=""
                   baseKey="userBubbleBorderWidth"
                   defaultValue={formData.bubbleBorderWidth || formData.borderWidth || '1px'}
                   type="sides"
                 />
+              </FormRow>
+              <FormRow label="Border Radius" description="User bubble border radius">
                 <MultiSideInput
                   formData={formData}
                   setFormData={setFormData}
-                  label="User Bubble Border Radius"
+                  label=""
                   baseKey="userBubbleBorderRadius"
                   defaultValue={formData.bubbleBorderRadius || formData.borderRadius || '8px'}
                   type="corners"
                 />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Show User Avatar</Label>
-                  <p className="text-xs text-muted-foreground">Display avatar for user messages</p>
-                </div>
+              </FormRow>
+              <FormRow label="Show User Avatar" description="Display avatar for user messages">
                 <Switch
                   checked={formData.showUserAvatar !== undefined ? formData.showUserAvatar : (formData.showMessageAvatar !== undefined ? formData.showMessageAvatar : true)}
                   onCheckedChange={(checked) => setFormData({ ...formData, showUserAvatar: checked })}
                 />
-              </div>
-
+              </FormRow>
               {formData.showUserAvatar !== false && (
                 <>
-                  <div className="space-y-2">
-                    <Label>User Avatar Type</Label>
+                  <FormRow label="Avatar Type" description="Icon or custom image">
                     <Select
                       value={formData.userAvatarType || 'icon'}
                       onValueChange={(v: any) => setFormData({ ...formData, userAvatarType: v })}
@@ -475,12 +401,10 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                         <SelectItem value="image">Upload Image</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-
+                  </FormRow>
                   {formData.userAvatarType === 'icon' ? (
                     <>
-                      <div className="space-y-2">
-                        <Label>User Icon</Label>
+                      <FormRow label="User Icon" description="Select user avatar icon">
                         <Select
                           value={formData.userAvatarIcon || 'User'}
                           onValueChange={(v) => setFormData({ ...formData, userAvatarIcon: v })}
@@ -502,35 +426,30 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                             })}
                           </SelectContent>
                         </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>User Icon Color</Label>
-                          <ColorInput
-                            value={formData.userAvatarIconColor || '#6b7280'}
-                            onChange={(color) => setFormData({ ...formData, userAvatarIconColor: color })}
-                            allowImageVideo={false}
-                            className="relative"
-                            placeholder="#6b7280"
-                            inputClassName="h-8 text-xs pl-7"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>User Avatar Background Color</Label>
-                          <ColorInput
-                            value={formData.userAvatarBackgroundColor || '#e5e7eb'}
-                            onChange={(color) => setFormData({ ...formData, userAvatarBackgroundColor: color })}
-                            allowImageVideo={false}
-                            className="relative"
-                            placeholder="#e5e7eb"
-                            inputClassName="h-8 text-xs pl-7"
-                          />
-                        </div>
-                      </div>
+                      </FormRow>
+                      <FormRow label="Icon Color" description="User avatar icon color">
+                        <ColorInput
+                          value={formData.userAvatarIconColor || '#6b7280'}
+                          onChange={(color) => setFormData({ ...formData, userAvatarIconColor: color })}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#6b7280"
+                          inputClassName="h-8 text-xs pl-7"
+                        />
+                      </FormRow>
+                      <FormRow label="Background Color" description="User avatar background color">
+                        <ColorInput
+                          value={formData.userAvatarBackgroundColor || '#e5e7eb'}
+                          onChange={(color) => setFormData({ ...formData, userAvatarBackgroundColor: color })}
+                          allowImageVideo={false}
+                          className="relative"
+                          placeholder="#e5e7eb"
+                          inputClassName="h-8 text-xs pl-7"
+                        />
+                      </FormRow>
                     </>
                   ) : (
-                    <div className="space-y-2">
-                      <Label>Upload User Avatar Image</Label>
+                    <FormRow label="Upload Image" description="Upload an image file for the user avatar">
                       <Input
                         type="file"
                         accept="image/*"
@@ -545,14 +464,11 @@ export function MessagesSection({ formData, setFormData }: MessagesSectionProps)
                           reader.readAsDataURL(file)
                         }}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Upload an image file for the user avatar
-                      </p>
-                    </div>
+                    </FormRow>
                   )}
                 </>
               )}
-            </div>
+            </FormSection>
           </SectionGroup>
         </div>
       </div>
