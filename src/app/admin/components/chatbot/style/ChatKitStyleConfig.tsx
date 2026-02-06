@@ -18,7 +18,6 @@ import { useState } from 'react'
 import type { Chatbot } from '../types'
 import type { ChatbotConfig } from '@/app/chat/[id]/types'
 import {
-  ThemeSection,
   LocaleSection,
   PopoverSection,
   WidgetSection,
@@ -43,7 +42,7 @@ const SectionWrapper = ({ children }: { children: React.ReactNode }) => {
 }
 
 export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: ChatKitStyleConfigProps) {
-  const [activeTab, setActiveTab] = useState('theme')
+  const [activeTab, setActiveTab] = useState('popover')
 
   const handleChange = (field: keyof ChatbotConfig, value: any) => {
     setFormData((prev) => ({
@@ -56,12 +55,8 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="theme" value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full gap-6">
+      <Tabs defaultValue="popover" value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full gap-6">
         <TabsList className="flex flex-col h-auto gap-1 bg-transparent p-0 w-full md:w-48 lg:w-64 shrink-0 justify-start">
-          <TabsTrigger value="theme" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
-            <Palette className="h-4 w-4" />
-            Theme & Colors
-          </TabsTrigger>
           <TabsTrigger value="animation" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <Sparkles className="h-4 w-4" />
             Animation
@@ -98,14 +93,7 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
 
         {/* Content Area */}
         <div className="flex-1 min-w-0 space-y-6">
-          {/* Appearance: Theme & Colors */}
-          <TabsContent value="theme" className="m-0 mt-0">
-            <SectionWrapper>
-              <ThemeSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-            </SectionWrapper>
-          </TabsContent>
-
-          {/* Appearance: Animation */}
+          {/* Animation */}
           <TabsContent value="animation" className="m-0 mt-0">
             <div className="w-full bg-white dark:bg-card rounded-lg border shadow-sm p-6">
               <AnimationSection config={config} handleChange={handleChange} />
