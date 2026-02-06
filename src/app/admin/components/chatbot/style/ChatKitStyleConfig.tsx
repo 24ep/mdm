@@ -42,13 +42,6 @@ const SectionWrapper = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-// Tab group header component
-const TabGroupHeader = ({ title }: { title: string }) => (
-  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-    {title}
-  </div>
-)
-
 export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: ChatKitStyleConfigProps) {
   const [activeTab, setActiveTab] = useState('theme')
 
@@ -65,9 +58,6 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
     <div className="space-y-6">
       <Tabs defaultValue="theme" value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row w-full gap-6">
         <TabsList className="flex flex-col h-auto gap-1 bg-transparent p-0 w-full md:w-48 lg:w-64 shrink-0 justify-start">
-          
-          {/* Appearance Group */}
-          <TabGroupHeader title="Appearance" />
           <TabsTrigger value="theme" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <Palette className="h-4 w-4" />
             Theme & Colors
@@ -76,9 +66,6 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
             <Sparkles className="h-4 w-4" />
             Animation
           </TabsTrigger>
-
-          {/* Chat Window Group */}
-          <TabGroupHeader title="Chat Window" />
           <TabsTrigger value="header" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <PanelTop className="h-4 w-4" />
             Header
@@ -91,16 +78,10 @@ export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: Ch
             <History className="h-4 w-4" />
             History Panel
           </TabsTrigger>
-
-          {/* Widget Group */}
-          <TabGroupHeader title="Widget Button" />
           <TabsTrigger value="widget" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <CircleDot className="h-4 w-4" />
             Widget Button
           </TabsTrigger>
-
-          {/* Advanced Group */}
-          <TabGroupHeader title="Advanced" />
           <TabsTrigger value="persona" className="justify-start gap-3 px-3 py-2.5 rounded-md w-full aria-selected:bg-background aria-selected:shadow-sm aria-selected:font-semibold hover:bg-muted/50 transition-all text-sm">
             <UserCircle className="h-4 w-4" />
             Persona Picker
