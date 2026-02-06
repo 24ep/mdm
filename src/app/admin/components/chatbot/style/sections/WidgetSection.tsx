@@ -193,9 +193,8 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-4 pt-2 pb-4">
-              <div className="space-y-2">
-                <Label>Avatar Type</Label>
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Avatar Type" description="Icon or custom image">
                 <Select
                   value={(formData as any).widgetAvatarType || formData.avatarType || 'icon'}
                   onValueChange={(v: any) => setFormData({ ...formData, widgetAvatarType: v } as any)}
@@ -208,10 +207,9 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                     <SelectItem value="image">Image</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </FormRow>
               {(formData as any).widgetAvatarType === 'icon' || (!(formData as any).widgetAvatarType && formData.avatarType !== 'image') ? (
-                <div className="space-y-2">
-                  <Label>Icon</Label>
+                <FormRow label="Icon" description="Click to browse and search available icons">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -239,21 +237,17 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                       />
                     </PopoverContent>
                   </Popover>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Click to browse and search available icons
-                  </p>
-                </div>
+                </FormRow>
               ) : (
-                <div className="space-y-2">
-                  <Label>Image URL</Label>
+                <FormRow label="Image URL" description="Custom widget avatar image URL">
                   <Input
                     value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
                     onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
                     placeholder="https://example.com/avatar.png"
                   />
-                </div>
+                </FormRow>
               )}
-            </div>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
 
@@ -443,17 +437,15 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
               </div>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="grid grid-cols-2 gap-4 pt-2 pb-4">
-                <div className="space-y-2">
-                  <Label>Widget Label Text</Label>
+              <FormSection className="pt-2 pb-4">
+                <FormRow label="Label Text" description="">
                   <Input
                     value={formData.widgetLabelText}
                     onChange={(e) => setFormData({ ...formData, widgetLabelText: e.target.value })}
                     placeholder="Chat"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Widget Label Color</Label>
+                </FormRow>
+                <FormRow label="Label Color" description="">
                   <ColorInput
                     value={formData.widgetLabelColor || '#ffffff'}
                     onChange={(color) => setFormData({ ...formData, widgetLabelColor: color })}
@@ -462,41 +454,30 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                     placeholder="#ffffff"
                     inputClassName="h-8 text-xs pl-7"
                   />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between mt-4">
-                <div className="space-y-0.5">
-                  <Label>Show Icon</Label>
-                  <p className="text-xs text-muted-foreground">Display icon next to the label text</p>
-                </div>
-                <Switch
-                  checked={formData.widgetLabelShowIcon !== false}
-                  onCheckedChange={(checked) => setFormData({ ...formData, widgetLabelShowIcon: checked })}
-                />
-              </div>
-
-              {formData.widgetLabelShowIcon !== false && (
-                <div className="space-y-2 mt-4">
-                  <Label>Icon Position</Label>
-                  <Select
-                    value={formData.widgetLabelIconPosition || 'left'}
-                    onValueChange={(v: any) => setFormData({ ...formData, widgetLabelIconPosition: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="left">Left of Label</SelectItem>
-                      <SelectItem value="right">Right of Label</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="space-y-2">
-                  <Label>Widget Shape</Label>
+                </FormRow>
+                <FormRow label="Show Icon" description="Display icon next to the label text">
+                  <Switch
+                    checked={formData.widgetLabelShowIcon !== false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, widgetLabelShowIcon: checked })}
+                  />
+                </FormRow>
+                {formData.widgetLabelShowIcon !== false && (
+                  <FormRow label="Icon Position" description="">
+                    <Select
+                      value={formData.widgetLabelIconPosition || 'left'}
+                      onValueChange={(v: any) => setFormData({ ...formData, widgetLabelIconPosition: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Left of Label</SelectItem>
+                        <SelectItem value="right">Right of Label</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormRow>
+                )}
+                <FormRow label="Widget Shape" description="">
                   <Select
                     value={(formData as any).widgetLabelShape || 'rounded'}
                     onValueChange={(v: any) => {
@@ -525,10 +506,9 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                       <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FormRow>
                 {((formData as any).widgetLabelShape === 'custom' || (formData as any).widgetLabelShape === 'rounded') && (
-                  <div className="space-y-2">
-                    <Label>Border Radius</Label>
+                  <FormRow label="Border Radius" description="">
                     <div className="relative">
                       <Input
                         type="number"
@@ -537,11 +517,11 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                         placeholder="8"
                         className="pr-8"
                       />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
                     </div>
-                  </div>
+                  </FormRow>
                 )}
-              </div>
+              </FormSection>
             </AccordionContent>
           </AccordionItem>
         )}
@@ -554,9 +534,8 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
             </div>
           </AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-4 pt-2 pb-4">
-              <div className="space-y-2">
-                <Label>Widget Offset X</Label>
+            <FormSection className="pt-2 pb-4">
+              <FormRow label="Offset X" description="Horizontal offset from position">
                 <div className="relative">
                   <Input
                     type="number"
@@ -565,11 +544,10 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                     placeholder="20"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Widget Offset Y</Label>
+              </FormRow>
+              <FormRow label="Offset Y" description="Vertical offset from position">
                 <div className="relative">
                   <Input
                     type="number"
@@ -578,10 +556,10 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                     placeholder="20"
                     className="pr-8"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'hsl(var(--secondary))' }}>px</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">px</span>
                 </div>
-              </div>
-            </div>
+              </FormRow>
+            </FormSection>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

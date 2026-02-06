@@ -86,26 +86,68 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
             {(chatkitOptions?.startScreen?.prompts || []).map((prompt: { name?: string; label?: string; prompt: string; icon?: string }, index: number) => (
               <div key={index} className="border border-border rounded-lg p-3 space-y-2">
                 <div className="flex gap-2 items-start">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-xs">Label (optional)</Label>
-                    <Input
-                      value={prompt.label || ''}
-                      onChange={(e) => {
-                        const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
-                        prompts[index] = { ...prompts[index], label: e.target.value }
-                        setFormData({
-                          ...formData,
-                          chatkitOptions: {
-                            ...chatkitOptions,
-                            startScreen: {
-                              ...chatkitOptions?.startScreen,
-                              prompts
-                            }
-                          }
-                        } as any)
-                      }}
-                      placeholder="Button Label"
-                    />
+                  <div className="flex-1">
+                    <FormSection>
+                      <FormRow label="Label" description="Optional button label" className="py-1">
+                        <Input
+                          value={prompt.label || ''}
+                          onChange={(e) => {
+                            const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
+                            prompts[index] = { ...prompts[index], label: e.target.value }
+                            setFormData({
+                              ...formData,
+                              chatkitOptions: {
+                                ...chatkitOptions,
+                                startScreen: {
+                                  ...chatkitOptions?.startScreen,
+                                  prompts
+                                }
+                              }
+                            } as any)
+                          }}
+                          placeholder="Button Label"
+                        />
+                      </FormRow>
+                      <FormRow label="Prompt Text" description="Required prompt text" className="py-1">
+                        <Input
+                          value={prompt.prompt || ''}
+                          onChange={(e) => {
+                            const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
+                            prompts[index] = { ...prompts[index], prompt: e.target.value }
+                            setFormData({
+                              ...formData,
+                              chatkitOptions: {
+                                ...chatkitOptions,
+                                startScreen: {
+                                  ...chatkitOptions?.startScreen,
+                                  prompts
+                                }
+                              }
+                            } as any)
+                          }}
+                          placeholder="Prompt Text"
+                        />
+                      </FormRow>
+                      <FormRow label="Icon" description="Optional ChatKit icon" className="py-1">
+                        <ChatKitIconSelect
+                          value={prompt.icon || 'none'}
+                          onValueChange={(value) => {
+                            const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
+                            prompts[index] = { ...prompts[index], icon: value === 'none' ? undefined : value }
+                            setFormData({
+                              ...formData,
+                              chatkitOptions: {
+                                ...chatkitOptions,
+                                startScreen: {
+                                  ...chatkitOptions?.startScreen,
+                                  prompts
+                                }
+                              }
+                            } as any)
+                          }}
+                        />
+                      </FormRow>
+                    </FormSection>
                   </div>
                   <Button
                     variant="ghost"
@@ -127,49 +169,6 @@ export function StartScreenSection({ formData, setFormData, chatkitOptions }: Se
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Prompt Text (required)</Label>
-                    <Input
-                      value={prompt.prompt || ''}
-                      onChange={(e) => {
-                        const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
-                        prompts[index] = { ...prompts[index], prompt: e.target.value }
-                        setFormData({
-                          ...formData,
-                          chatkitOptions: {
-                            ...chatkitOptions,
-                            startScreen: {
-                              ...chatkitOptions?.startScreen,
-                              prompts
-                            }
-                          }
-                        } as any)
-                      }}
-                      placeholder="Prompt Text"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Icon (optional)</Label>
-                    <ChatKitIconSelect
-                      value={prompt.icon || 'none'}
-                      onValueChange={(value) => {
-                        const prompts = [...(chatkitOptions?.startScreen?.prompts || [])]
-                        prompts[index] = { ...prompts[index], icon: value === 'none' ? undefined : value }
-                        setFormData({
-                          ...formData,
-                          chatkitOptions: {
-                            ...chatkitOptions,
-                            startScreen: {
-                              ...chatkitOptions?.startScreen,
-                              prompts
-                            }
-                          }
-                        } as any)
-                      }}
-                    />
-                  </div>
                 </div>
               </div>
             ))}

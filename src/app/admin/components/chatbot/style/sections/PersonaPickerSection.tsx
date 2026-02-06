@@ -74,9 +74,8 @@ export function PersonaPickerSection({ formData, setFormData, chatkitOptions }: 
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">ID (optional)</Label>
+                    <FormSection>
+                      <FormRow label="ID" description="Optional persona identifier" className="py-1">
                         <Input
                           value={persona.id || ''}
                           onChange={(e) => {
@@ -95,9 +94,8 @@ export function PersonaPickerSection({ formData, setFormData, chatkitOptions }: 
                           }}
                           placeholder="persona-1"
                         />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Name</Label>
+                      </FormRow>
+                      <FormRow label="Name" description="" className="py-1">
                         <Input
                           value={persona.name || ''}
                           onChange={(e) => {
@@ -116,56 +114,49 @@ export function PersonaPickerSection({ formData, setFormData, chatkitOptions }: 
                           }}
                           placeholder="Friendly Assistant"
                         />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-xs">Description (optional)</Label>
-                      <Input
-                        value={persona.description || ''}
-                        onChange={(e) => {
-                          const updatedPersonas = [...personas]
-                          updatedPersonas[index] = { ...updatedPersonas[index], description: e.target.value }
-                          setFormData({
-                            ...formData,
-                            chatkitOptions: {
-                              ...chatkitOptions,
-                              personaPicker: {
-                                ...chatkitOptions?.personaPicker,
-                                personas: updatedPersonas
+                      </FormRow>
+                      <FormRow label="Description" description="Optional persona description" className="py-1">
+                        <Input
+                          value={persona.description || ''}
+                          onChange={(e) => {
+                            const updatedPersonas = [...personas]
+                            updatedPersonas[index] = { ...updatedPersonas[index], description: e.target.value }
+                            setFormData({
+                              ...formData,
+                              chatkitOptions: {
+                                ...chatkitOptions,
+                                personaPicker: {
+                                  ...chatkitOptions?.personaPicker,
+                                  personas: updatedPersonas
+                                }
                               }
-                            }
-                          } as any)
-                        }}
-                        placeholder="A helpful and friendly AI assistant"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-xs">System Prompt</Label>
-                      <Textarea
-                        value={persona.systemPrompt || ''}
-                        onChange={(e) => {
-                          const updatedPersonas = [...personas]
-                          updatedPersonas[index] = { ...updatedPersonas[index], systemPrompt: e.target.value }
-                          setFormData({
-                            ...formData,
-                            chatkitOptions: {
-                              ...chatkitOptions,
-                              personaPicker: {
-                                ...chatkitOptions?.personaPicker,
-                                personas: updatedPersonas
+                            } as any)
+                          }}
+                          placeholder="A helpful and friendly AI assistant"
+                        />
+                      </FormRow>
+                      <FormRow label="System Prompt" description="Defines how this persona behaves and responds" className="py-1">
+                        <Textarea
+                          value={persona.systemPrompt || ''}
+                          onChange={(e) => {
+                            const updatedPersonas = [...personas]
+                            updatedPersonas[index] = { ...updatedPersonas[index], systemPrompt: e.target.value }
+                            setFormData({
+                              ...formData,
+                              chatkitOptions: {
+                                ...chatkitOptions,
+                                personaPicker: {
+                                  ...chatkitOptions?.personaPicker,
+                                  personas: updatedPersonas
+                                }
                               }
-                            }
-                          } as any)
-                        }}
-                        placeholder="You are a helpful assistant that..."
-                        rows={3}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        The system prompt defines how this persona behaves and responds
-                      </p>
-                    </div>
+                            } as any)
+                          }}
+                          placeholder="You are a helpful assistant that..."
+                          rows={3}
+                        />
+                      </FormRow>
+                    </FormSection>
                   </div>
                 ))}
 

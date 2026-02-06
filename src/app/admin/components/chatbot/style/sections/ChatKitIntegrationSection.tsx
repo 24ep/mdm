@@ -79,63 +79,55 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
           <AccordionContent className="pb-4">
             <div className="space-y-4">
               {/* Title & Description */}
-              <div className="space-y-4 rounded-md border p-4 bg-muted/20">
-                <h4 className="text-sm font-medium mb-2">Title & Description</h4>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="headerShowTitle">Show Title</Label>
-                  <Switch
-                    id="headerShowTitle"
-                    checked={(formData as any).headerShowTitle !== false}
-                    onCheckedChange={(checked) => setFormData({ ...formData, headerShowTitle: checked } as any)}
-                  />
-                </div>
-
-                {(formData as any).headerShowTitle !== false && (
-                  <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input
-                      value={formData.headerTitle || ''}
-                      onChange={(e) => setFormData({ ...formData, headerTitle: e.target.value } as any)}
-                      placeholder="Chatbot Name"
+              <div className="rounded-md border p-4 bg-muted/20">
+                <h4 className="text-sm font-medium mb-4">Title & Description</h4>
+                <FormSection>
+                  <FormRow label="Show Title" description="">
+                    <Switch
+                      id="headerShowTitle"
+                      checked={(formData as any).headerShowTitle !== false}
+                      onCheckedChange={(checked) => setFormData({ ...formData, headerShowTitle: checked } as any)}
                     />
-                    <p className="text-xs text-muted-foreground">Title displayed in the header</p>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label>Header Description</Label>
-                  <Input
-                    value={formData.headerDescription || ''}
-                    onChange={(e) => setFormData({ ...formData, headerDescription: e.target.value })}
-                    placeholder="Short tagline or description"
-                  />
-                </div>
+                  </FormRow>
+                  {(formData as any).headerShowTitle !== false && (
+                    <FormRow label="Title" description="Title displayed in the header">
+                      <Input
+                        value={formData.headerTitle || ''}
+                        onChange={(e) => setFormData({ ...formData, headerTitle: e.target.value } as any)}
+                        placeholder="Chatbot Name"
+                      />
+                    </FormRow>
+                  )}
+                  <FormRow label="Header Description" description="Short tagline or description">
+                    <Input
+                      value={formData.headerDescription || ''}
+                      onChange={(e) => setFormData({ ...formData, headerDescription: e.target.value })}
+                      placeholder="Short tagline or description"
+                    />
+                  </FormRow>
+                </FormSection>
               </div>
 
               {/* Header Logo */}
-              <div className="space-y-4 rounded-md border p-4 bg-muted/20">
-                <h4 className="text-sm font-medium mb-2">Header Logo</h4>
-                <div className="flex items-center justify-between">
-                  <Label>Show Header Logo</Label>
-                  <Switch
-                    checked={(formData as any).headerShowLogo !== false}
-                    onCheckedChange={(checked) => setFormData({ ...formData, headerShowLogo: checked } as any)}
-                  />
-                </div>
-                {(formData as any).headerShowLogo !== false && (
-                  <div className="space-y-2 mt-4">
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Image URL</Label>
+              <div className="rounded-md border p-4 bg-muted/20">
+                <h4 className="text-sm font-medium mb-4">Header Logo</h4>
+                <FormSection>
+                  <FormRow label="Show Header Logo" description="">
+                    <Switch
+                      checked={(formData as any).headerShowLogo !== false}
+                      onCheckedChange={(checked) => setFormData({ ...formData, headerShowLogo: checked } as any)}
+                    />
+                  </FormRow>
+                  {(formData as any).headerShowLogo !== false && (
+                    <>
+                      <FormRow label="Image URL" description="">
                         <Input
                           value={formData.headerLogo || ''}
                           onChange={(e) => setFormData({ ...formData, headerLogo: e.target.value })}
                           placeholder="https://example.com/logo.png"
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Or Upload File</Label>
+                      </FormRow>
+                      <FormRow label="Or Upload File" description="">
                         <Input
                           type="file"
                           accept="image/*"
@@ -150,22 +142,22 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                             reader.readAsDataURL(file)
                           }}
                         />
-                      </div>
-                    </div>
-                    {formData.headerLogo && (
-                      <div className="mt-2">
-                        <img
-                          src={formData.headerLogo}
-                          alt="Header logo"
-                          className="h-12 w-12 object-contain border rounded bg-white"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none'
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                      </FormRow>
+                      {formData.headerLogo && (
+                        <div className="mt-2">
+                          <img
+                            src={formData.headerLogo}
+                            alt="Header logo"
+                            className="h-12 w-12 object-contain border rounded bg-white"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </FormSection>
               </div>
 
               {/* Header Custom Buttons */}
@@ -176,53 +168,53 @@ export function ChatKitIntegrationSection({ formData, setFormData }: ChatKitInte
                 </p>
                 <div className="space-y-2">
                   {((formData as any).chatkitOptions?.header?.customButtonLeft || []).map((button: { icon?: string; label?: string }, index: number) => (
-                    <div key={index} className="border rounded-lg p-3 space-y-2 bg-background">
+                    <div key={index} className="border rounded-lg p-3 bg-background">
                       <div className="flex gap-2 items-start">
-                        <div className="flex-1 grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <Label className="text-xs">Button Label</Label>
-                            <Input
-                              value={button.label || ''}
-                              onChange={(e) => {
-                                const buttons = [...((formData as any).chatkitOptions?.header?.customButtonLeft || [])]
-                                buttons[index] = { ...buttons[index], label: e.target.value }
-                                const currentOptions = (formData as any).chatkitOptions || {}
-                                setFormData({
-                                  ...formData,
-                                  chatkitOptions: {
-                                    ...currentOptions,
-                                    header: {
-                                      ...currentOptions.header,
-                                      customButtonLeft: buttons
+                        <div className="flex-1">
+                          <FormSection>
+                            <FormRow label="Button Label" description="" className="py-1">
+                              <Input
+                                value={button.label || ''}
+                                onChange={(e) => {
+                                  const buttons = [...((formData as any).chatkitOptions?.header?.customButtonLeft || [])]
+                                  buttons[index] = { ...buttons[index], label: e.target.value }
+                                  const currentOptions = (formData as any).chatkitOptions || {}
+                                  setFormData({
+                                    ...formData,
+                                    chatkitOptions: {
+                                      ...currentOptions,
+                                      header: {
+                                        ...currentOptions.header,
+                                        customButtonLeft: buttons
+                                      }
                                     }
-                                  }
-                                } as any)
-                              }}
-                              placeholder="Button Label"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Icon Name</Label>
-                            <Input
-                              value={button.icon || ''}
-                              onChange={(e) => {
-                                const buttons = [...((formData as any).chatkitOptions?.header?.customButtonLeft || [])]
-                                buttons[index] = { ...buttons[index], icon: e.target.value }
-                                const currentOptions = (formData as any).chatkitOptions || {}
-                                setFormData({
-                                  ...formData,
-                                  chatkitOptions: {
-                                    ...currentOptions,
-                                    header: {
-                                      ...currentOptions.header,
-                                      customButtonLeft: buttons
+                                  } as any)
+                                }}
+                                placeholder="Button Label"
+                              />
+                            </FormRow>
+                            <FormRow label="Icon Name" description="" className="py-1">
+                              <Input
+                                value={button.icon || ''}
+                                onChange={(e) => {
+                                  const buttons = [...((formData as any).chatkitOptions?.header?.customButtonLeft || [])]
+                                  buttons[index] = { ...buttons[index], icon: e.target.value }
+                                  const currentOptions = (formData as any).chatkitOptions || {}
+                                  setFormData({
+                                    ...formData,
+                                    chatkitOptions: {
+                                      ...currentOptions,
+                                      header: {
+                                        ...currentOptions.header,
+                                        customButtonLeft: buttons
+                                      }
                                     }
-                                  }
-                                } as any)
-                              }}
-                              placeholder="e.g., Settings, Menu"
-                            />
-                          </div>
+                                  } as any)
+                                }}
+                                placeholder="e.g., Settings, Menu"
+                              />
+                            </FormRow>
+                          </FormSection>
                         </div>
                         <Button
                           variant="ghost"

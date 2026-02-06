@@ -55,9 +55,8 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
               return (
                 <div key={index} className="border rounded-lg p-3 space-y-3">
                   <div className="flex gap-2 items-start">
-                    <div className="flex-1 space-y-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Tool Type</Label>
+                    <div className="flex-1">
+                      <FormRow label="Tool Type" description="" className="py-1">
                         <Select
                           value={toolType}
                           onValueChange={(v) => {
@@ -174,101 +173,91 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
+                      </FormRow>
 
                       {toolType === 'custom' && (
-                        <>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Button Label</Label>
-                              <Input
-                                value={tool.label || ''}
-                                onChange={(e) => {
-                                  const tools = [...(chatkitOptions?.composer?.tools || [])]
-                                  tools[index] = { ...tools[index], label: e.target.value, id: tools[index].id || e.target.value.toLowerCase().replace(/\s+/g, '_') }
-                                  setFormData({
-                                    ...formData,
-                                    chatkitOptions: {
-                                      ...chatkitOptions,
-                                      composer: {
-                                        ...chatkitOptions?.composer,
-                                        tools
-                                      }
+                        <FormSection className="mt-2">
+                          <FormRow label="Button Label" description="" className="py-1">
+                            <Input
+                              value={tool.label || ''}
+                              onChange={(e) => {
+                                const tools = [...(chatkitOptions?.composer?.tools || [])]
+                                tools[index] = { ...tools[index], label: e.target.value, id: tools[index].id || e.target.value.toLowerCase().replace(/\s+/g, '_') }
+                                setFormData({
+                                  ...formData,
+                                  chatkitOptions: {
+                                    ...chatkitOptions,
+                                    composer: {
+                                      ...chatkitOptions?.composer,
+                                      tools
                                     }
-                                  } as any)
-                                }}
-                                placeholder="e.g., Send Feedback"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Short Label (optional)</Label>
-                              <Input
-                                value={tool.shortLabel || ''}
-                                onChange={(e) => {
-                                  const tools = [...(chatkitOptions?.composer?.tools || [])]
-                                  tools[index] = { ...tools[index], shortLabel: e.target.value }
-                                  setFormData({
-                                    ...formData,
-                                    chatkitOptions: {
-                                      ...chatkitOptions,
-                                      composer: {
-                                        ...chatkitOptions?.composer,
-                                        tools
-                                      }
+                                  }
+                                } as any)
+                              }}
+                              placeholder="e.g., Send Feedback"
+                            />
+                          </FormRow>
+                          <FormRow label="Short Label" description="Shorter label for compact display" className="py-1">
+                            <Input
+                              value={tool.shortLabel || ''}
+                              onChange={(e) => {
+                                const tools = [...(chatkitOptions?.composer?.tools || [])]
+                                tools[index] = { ...tools[index], shortLabel: e.target.value }
+                                setFormData({
+                                  ...formData,
+                                  chatkitOptions: {
+                                    ...chatkitOptions,
+                                    composer: {
+                                      ...chatkitOptions?.composer,
+                                      tools
                                     }
-                                  } as any)
-                                }}
-                                placeholder="e.g., Send"
-                              />
-                              <p className="text-xs text-muted-foreground">Shorter label for compact display</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Icon Name</Label>
-                              <Input
-                                value={tool.icon || ''}
-                                onChange={(e) => {
-                                  const tools = [...(chatkitOptions?.composer?.tools || [])]
-                                  tools[index] = { ...tools[index], icon: e.target.value }
-                                  setFormData({
-                                    ...formData,
-                                    chatkitOptions: {
-                                      ...chatkitOptions,
-                                      composer: {
-                                        ...chatkitOptions?.composer,
-                                        tools
-                                      }
+                                  }
+                                } as any)
+                              }}
+                              placeholder="e.g., Send"
+                            />
+                          </FormRow>
+                          <FormRow label="Icon Name" description="" className="py-1">
+                            <Input
+                              value={tool.icon || ''}
+                              onChange={(e) => {
+                                const tools = [...(chatkitOptions?.composer?.tools || [])]
+                                tools[index] = { ...tools[index], icon: e.target.value }
+                                setFormData({
+                                  ...formData,
+                                  chatkitOptions: {
+                                    ...chatkitOptions,
+                                    composer: {
+                                      ...chatkitOptions?.composer,
+                                      tools
                                     }
-                                  } as any)
-                                }}
-                                placeholder="e.g., send, heart, thumbs-up"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Placeholder Override (optional)</Label>
-                              <Input
-                                value={tool.placeholderOverride || ''}
-                                onChange={(e) => {
-                                  const tools = [...(chatkitOptions?.composer?.tools || [])]
-                                  tools[index] = { ...tools[index], placeholderOverride: e.target.value }
-                                  setFormData({
-                                    ...formData,
-                                    chatkitOptions: {
-                                      ...chatkitOptions,
-                                      composer: {
-                                        ...chatkitOptions?.composer,
-                                        tools
-                                      }
+                                  }
+                                } as any)
+                              }}
+                              placeholder="e.g., send, heart, thumbs-up"
+                            />
+                          </FormRow>
+                          <FormRow label="Placeholder Override" description="Custom placeholder when this tool is active" className="py-1">
+                            <Input
+                              value={tool.placeholderOverride || ''}
+                              onChange={(e) => {
+                                const tools = [...(chatkitOptions?.composer?.tools || [])]
+                                tools[index] = { ...tools[index], placeholderOverride: e.target.value }
+                                setFormData({
+                                  ...formData,
+                                  chatkitOptions: {
+                                    ...chatkitOptions,
+                                    composer: {
+                                      ...chatkitOptions?.composer,
+                                      tools
                                     }
-                                  } as any)
-                                }}
-                                placeholder="Override placeholder for this tool"
-                              />
-                              <p className="text-xs text-muted-foreground">Custom placeholder when this tool is active</p>
-                            </div>
-                          </div>
-                        </>
+                                  }
+                                } as any)
+                              }}
+                              placeholder="Override placeholder for this tool"
+                            />
+                          </FormRow>
+                        </FormSection>
                       )}
 
                       {(toolType === 'file_upload_all' || toolType === 'file_upload_image' || toolType === 'file_upload_video' || toolType === 'file_upload_document') && (
@@ -280,9 +269,8 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                             {toolType === 'file_upload_document' && <p className="text-xs">Accepts: Documents (.pdf, .doc, .docx, .txt)</p>}
                             {toolType === 'file_upload_all' && <p className="text-xs">Accepts: All file types</p>}
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Custom Accept Types (optional)</Label>
+                          <FormSection className="mt-2">
+                            <FormRow label="Custom Accept Types" description="Override default accept types" className="py-1">
                               <Input
                                 value={tool.accept || ''}
                                 onChange={(e) => {
@@ -301,10 +289,8 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                                 }}
                                 placeholder="e.g., image/*, video/*, .pdf"
                               />
-                              <p className="text-xs text-muted-foreground">Override default accept types</p>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Placeholder Override (optional)</Label>
+                            </FormRow>
+                            <FormRow label="Placeholder Override" description="Custom placeholder when tool is active" className="py-1">
                               <Input
                                 value={tool.placeholderOverride || ''}
                                 onChange={(e) => {
@@ -323,31 +309,28 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                                 }}
                                 placeholder="e.g., Drop an image here..."
                               />
-                              <p className="text-xs text-muted-foreground">Custom placeholder when tool is active</p>
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-xs">Short Label (optional)</Label>
-                            <Input
-                              value={tool.shortLabel || ''}
-                              onChange={(e) => {
-                                const tools = [...(chatkitOptions?.composer?.tools || [])]
-                                tools[index] = { ...tools[index], shortLabel: e.target.value }
-                                setFormData({
-                                  ...formData,
-                                  chatkitOptions: {
-                                    ...chatkitOptions,
-                                    composer: {
-                                      ...chatkitOptions?.composer,
-                                      tools
+                            </FormRow>
+                            <FormRow label="Short Label" description="Shorter label for compact display" className="py-1">
+                              <Input
+                                value={tool.shortLabel || ''}
+                                onChange={(e) => {
+                                  const tools = [...(chatkitOptions?.composer?.tools || [])]
+                                  tools[index] = { ...tools[index], shortLabel: e.target.value }
+                                  setFormData({
+                                    ...formData,
+                                    chatkitOptions: {
+                                      ...chatkitOptions,
+                                      composer: {
+                                        ...chatkitOptions?.composer,
+                                        tools
+                                      }
                                     }
-                                  }
-                                } as any)
-                              }}
-                              placeholder="e.g., Upload"
-                            />
-                            <p className="text-xs text-muted-foreground">Shorter label for compact display</p>
-                          </div>
+                                  } as any)
+                                }}
+                                placeholder="e.g., Upload"
+                              />
+                            </FormRow>
+                          </FormSection>
                         </div>
                       )}
 
@@ -356,9 +339,8 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                           <div className="p-2 bg-muted rounded text-xs text-muted-foreground">
                             <p>Rating tool configured. Users can rate conversations with a star button.</p>
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs">Short Label (optional)</Label>
+                          <FormSection className="mt-2">
+                            <FormRow label="Short Label" description="" className="py-1">
                               <Input
                                 value={tool.shortLabel || ''}
                                 onChange={(e) => {
@@ -377,9 +359,8 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                                 }}
                                 placeholder="e.g., Rate"
                               />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Placeholder Override (optional)</Label>
+                            </FormRow>
+                            <FormRow label="Placeholder Override" description="" className="py-1">
                               <Input
                                 value={tool.placeholderOverride || ''}
                                 onChange={(e) => {
@@ -398,8 +379,8 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                                 }}
                                 placeholder="Override placeholder for this tool"
                               />
-                            </div>
-                          </div>
+                            </FormRow>
+                          </FormSection>
                         </div>
                       )}
                     </div>
@@ -425,8 +406,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <Label className="text-xs">Pin to Composer</Label>
+                  <FormRow label="Pin to Composer" description="" className="pt-2 border-t py-1">
                     <Switch
                       checked={tool.pinned || false}
                       onCheckedChange={(checked) => {
@@ -444,7 +424,7 @@ export function ComposerSection({ formData, setFormData, chatkitOptions }: Secti
                         } as any)
                       }}
                     />
-                  </div>
+                  </FormRow>
                 </div>
               )
             })}
