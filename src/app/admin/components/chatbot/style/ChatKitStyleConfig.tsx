@@ -14,7 +14,7 @@ import {
   PanelTop,
   CircleDot
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Chatbot } from '../types'
 import type { ChatbotConfig } from '@/app/chat/[id]/types'
 import {
@@ -43,6 +43,28 @@ const SectionWrapper = ({ children }: { children: React.ReactNode }) => {
 
 export function ChatKitStyleConfig({ formData, setFormData, chatkitOptions }: ChatKitStyleConfigProps) {
   const [activeTab, setActiveTab] = useState('popover')
+  
+  // Ensure all borders use light theme color
+  useEffect(() => {
+    const styleId = 'chatbot-style-border-fix'
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style')
+      style.id = styleId
+      style.textContent = `
+        /* Ensure all borders in style config use light theme color */
+        [class*="border-b"]:not([class*="border-black"]):not([class*="border-blue"]):not([class*="border-green"]):not([class*="border-red"]):not([class*="border-yellow"]):not([class*="border-purple"]):not([class*="border-pink"]):not([class*="border-orange"]):not([class*="border-amber"]) {
+          border-color: hsl(var(--border)) !important;
+        }
+        [class*="border"]:not([class*="border-black"]):not([class*="border-blue"]):not([class*="border-green"]):not([class*="border-red"]):not([class*="border-yellow"]):not([class*="border-purple"]):not([class*="border-pink"]):not([class*="border-orange"]):not([class*="border-amber"]):not([class*="border-current"]) {
+          border-color: hsl(var(--border)) !important;
+        }
+        [class*="divide"] {
+          border-color: hsl(var(--border)) !important;
+        }
+      `
+      document.head.appendChild(style)
+    }
+  }, [])
 
   const handleChange = (field: keyof ChatbotConfig, value: any) => {
     setFormData((prev) => ({

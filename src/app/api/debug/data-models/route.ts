@@ -4,7 +4,10 @@ import { query } from '@/lib/db'
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const spaceId = searchParams.get('space_id')
+    const rawSpaceId = searchParams.get('space_id')
+    
+    // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+    const spaceId = rawSpaceId ? rawSpaceId.split(':')[0] : null
     
     // Validate that spaceId is a valid UUID format if provided
     if (spaceId) {

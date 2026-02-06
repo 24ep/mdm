@@ -5,9 +5,11 @@ import { ChatbotList } from '@/app/admin/components/chatbot/ChatbotList'
 import { ChatbotEditor } from '@/app/admin/components/chatbot/ChatbotEditor'
 import { Chatbot } from '@/app/admin/components/chatbot/types'
 import { ChatbotEmulator } from '@/app/admin/components/chatbot/ChatbotEmulator'
+import { DeploymentDrawer } from '@/app/admin/components/chatbot/components/DeploymentDrawer'
+import { VersionDrawer } from '@/app/admin/components/chatbot/components/VersionDrawer'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { Plus, ArrowLeft } from 'lucide-react'
+import { Plus, ArrowLeft, Rocket, History } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
@@ -21,6 +23,7 @@ export default function ChatEmbedUIPage() {
     const [editorFormData, setEditorFormData] = useState<Partial<Chatbot>>({})
     const [activeTab, setActiveTab] = useState<'engine' | 'style' | 'config' | 'deployment' | 'performance' | 'pwa'>('engine')
     const [previewMode, setPreviewMode] = useState<'popover' | 'fullpage' | 'popup-center'>('popover')
+    const [deploymentDrawerOpen, setDeploymentDrawerOpen] = useState(false)
 
     const fetchChatbots = async () => {
         setIsLoading(true)
@@ -171,12 +174,18 @@ export default function ChatEmbedUIPage() {
 
     const handleSave = async (dataOverride?: Partial<Chatbot>): Promise<Chatbot | null> => {
         const currentVersion = editorFormData.currentVersion || selectedChatbot?.currentVersion || '1.0.0'
-        const newVersion = incrementVersion(currentVersion)
+        // Check if current version is a draft (not published)
+        // If isPublished is undefined, treat as draft (new chatbot)
+        const isCurrentlyDraft = editorFormData.isPublished === false || editorFormData.isPublished === undefined
+        
+        // If current version is already a draft, update it instead of creating a new one
+        // Only create a new draft version if the current version is published
+        const versionToSave = isCurrentlyDraft ? currentVersion : incrementVersion(currentVersion)
         
         const dataToSave = { 
             ...editorFormData, 
             ...dataOverride,
-            currentVersion: newVersion,
+            currentVersion: versionToSave,
             isPublished: false // Always save as draft
         }
 
@@ -198,7 +207,8 @@ export default function ChatEmbedUIPage() {
             const url = selectedChatbot ? `/api/chatbots/${selectedChatbot.id}` : '/api/chatbots'
             const method = selectedChatbot ? 'PATCH' : 'POST'
 
-            console.log('Saving chatbot as draft with version:', newVersion)
+            const action = isCurrentlyDraft ? 'updating' : 'creating'
+            console.log(`${action} chatbot draft with version:`, versionToSave)
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
@@ -221,10 +231,13 @@ export default function ChatEmbedUIPage() {
             const data = await res.json()
             const savedChatbot = data.chatbot
 
-            toast.success(`Draft saved (v${newVersion})`)
+            const toastMessage = isCurrentlyDraft 
+                ? `Draft updated (v${versionToSave})`
+                : `Draft saved (v${versionToSave})`
+            toast.success(toastMessage)
 
-            // Update local state with new version
-            setEditorFormData(prev => ({ ...prev, ...dataOverride, currentVersion: newVersion, isPublished: false }))
+            // Update local state with version
+            setEditorFormData(prev => ({ ...prev, ...dataOverride, currentVersion: versionToSave, isPublished: false }))
 
             if (selectedChatbot) {
                 setChatbots(prev => prev.map(c => c.id === savedChatbot.id ? savedChatbot : c))
@@ -361,6 +374,22 @@ export default function ChatEmbedUIPage() {
                             ) : (
                                 <span className="text-amber-600 text-xs font-medium">Draft</span>
                             )}
+                            {/* Version History button - icon only */}
+                            <VersionDrawer
+                                versions={selectedChatbot?.versions || editorFormData.versions || []}
+                                currentVersion={editorFormData.currentVersion || selectedChatbot?.currentVersion}
+                                onRestore={(version) => {
+                                    setEditorFormData(prev => ({
+                                        ...prev,
+                                        ...version.config,
+                                        currentVersion: version.version,
+                                        isPublished: false
+                                    }))
+                                    toast.success(`Loaded configuration from v${version.version}`)
+                                }}
+                                chatbot={editorFormData}
+                                iconOnly={true}
+                            />
                         </div>
                         <div className="w-px h-6 bg-border" />
                         {/* Enable/Disable Toggle */}
@@ -375,6 +404,11 @@ export default function ChatEmbedUIPage() {
                             </span>
                         </div>
                         <div className="w-px h-6 bg-border" />
+                        {/* Deployment button */}
+                        <Button variant="outline" onClick={() => setDeploymentDrawerOpen(true)}>
+                            <Rocket className="h-4 w-4 mr-2" />
+                            Deployment
+                        </Button>
                         {/* Save Draft - always saves as draft with incremented version */}
                         <Button variant="outline" onClick={() => handleSave()}>
                             Save Draft
@@ -412,6 +446,17 @@ export default function ChatEmbedUIPage() {
                         />
                     </div>
                 </div>
+
+                {/* Deployment Drawer */}
+                <DeploymentDrawer
+                    open={deploymentDrawerOpen}
+                    onOpenChange={setDeploymentDrawerOpen}
+                    formData={editorFormData}
+                    setFormData={setEditorFormData}
+                    selectedChatbot={selectedChatbot}
+                    onGenerateEmbedCode={generateEmbedCode}
+                    onSave={handleSave}
+                />
             </div>
         )
     }

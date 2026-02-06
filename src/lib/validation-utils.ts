@@ -32,6 +32,27 @@ export function validateUuid(uuid: string): boolean {
 }
 
 /**
+ * Normalize space_id by stripping any colon suffix (e.g., "uuid:1" -> "uuid")
+ * This handles cases where space_id may have versioning or indexing suffixes
+ */
+export function normalizeSpaceId(spaceId: string | null | undefined): string | null {
+  if (!spaceId) return null
+  return spaceId.split(':')[0]
+}
+
+/**
+ * Normalize and validate space_id
+ * Returns the normalized UUID or null if invalid
+ */
+export function normalizeAndValidateSpaceId(spaceId: string | null | undefined): string | null {
+  const normalized = normalizeSpaceId(spaceId)
+  if (!normalized || !validateUuid(normalized)) {
+    return null
+  }
+  return normalized
+}
+
+/**
  * Validate required field
  */
 export function validateRequired(value: any, fieldName: string): string | null {

@@ -66,7 +66,13 @@ export function AccordionSectionGroup({
     }, [defaultOpen, id, context])
 
     return (
-        <AccordionItem value={id} className="border rounded-lg px-4 bg-card">
+        <AccordionItem 
+            value={id} 
+            className="border rounded-lg px-4 bg-card"
+            style={{
+                borderColor: 'hsl(var(--border))',
+            }}
+        >
             <AccordionTrigger className="hover:no-underline py-3">
                 <div className="flex items-center gap-2">
                     {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}

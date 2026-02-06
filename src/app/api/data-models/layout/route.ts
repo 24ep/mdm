@@ -9,10 +9,19 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('space_id')
+  const rawSpaceId = searchParams.get('space_id')
 
-  if (!spaceId) {
+  if (!rawSpaceId) {
     return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+  }
+  
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const spaceId = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(spaceId)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
   }
 
   // Get layout data for models in the space
@@ -68,10 +77,19 @@ async function postHandler(request: NextRequest) {
   const { session } = authResult
 
   const body = await request.json()
-  const { models, relationships, space_id } = body
+  const { models, relationships, space_id: rawSpaceId } = body
 
-  if (!space_id) {
+  if (!rawSpaceId) {
     return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
+  }
+  
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const space_id = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(space_id)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
   }
 
     // Update model positions

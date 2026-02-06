@@ -77,9 +77,15 @@ export function ChatWidgetButton({
         }
         
         // For circle and square styles, use widgetButtonStyle (which has all the styling)
+        // Ensure border radius and background are explicitly set from widgetButtonStyle
         return {
             ...popoverPositionStyle,
             ...widgetButtonStyle,
+            // Force border radius and background to be applied (in case of CSS overrides)
+            borderRadius: widgetButtonStyle.borderRadius || '50%',
+            backgroundColor: widgetButtonStyle.backgroundColor || widgetButtonStyle.background || config.backgroundColor || '#3b82f6',
+            background: widgetButtonStyle.background || undefined,
+            backgroundImage: widgetButtonStyle.backgroundImage || undefined,
         }
     }, [isOpen, config, popoverPositionStyle, widgetButtonStyle])
 
@@ -90,6 +96,7 @@ export function ChatWidgetButton({
             onClick={onClick}
             style={containerStyle}
             className="transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center relative"
+            data-widget-button="true"
         >
             {isOpen ? (
                 <X className="h-6 w-6" style={{ color: config.avatarIconColor }} />

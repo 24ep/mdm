@@ -75,7 +75,14 @@ export function WidgetChatContainer({
     const isFullPage = effectiveDeploymentType === 'fullpage' || isMobileFullpageFromWidget
 
     // Default config values
-    const entryType = chatbot.widgetAnimationEntry || (isFullPage ? 'slide-up' : 'scale')
+    // Map old widgetAnimation to widgetAnimationEntry for backward compatibility
+    const legacyEntryType = chatbot.widgetAnimation
+    const mappedEntryType = legacyEntryType === 'slide' ? 'slide-up' 
+      : legacyEntryType === 'bounce' ? 'scale'
+      : legacyEntryType === 'none' ? 'fade'
+      : legacyEntryType || undefined
+    
+    const entryType = chatbot.widgetAnimationEntry || mappedEntryType || (isFullPage ? 'slide-up' : 'scale')
     const exitType = chatbot.widgetAnimationExit || (isFullPage ? 'slide-down' : 'scale')
     const duration = chatbot.widgetAnimationDuration || 0.3
     const animType = chatbot.widgetAnimationType || 'spring'
@@ -84,10 +91,17 @@ export function WidgetChatContainer({
     const getVariant = (type: string, state: 'initial' | 'animate' | 'exit') => {
         switch (type) {
             case 'slide-up':
+                // Slides up from bottom (y: 100%) to center (y: 0)
                 return state === 'animate' ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 }
             case 'slide-down':
-                return state === 'animate' ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 }
+                // Slides down from top (y: -100%) to center (y: 0) when entering
+                // Slides down from center (y: 0) to bottom (y: 100%) when exiting
+                if (state === 'exit') {
+                    return { y: '100%', opacity: 0 }
+                }
+                return state === 'animate' ? { y: 0, opacity: 1 } : { y: '-100%', opacity: 0 }
             case 'slide-side':
+                // Slides in from right (x: 100%) to center (x: 0)
                 return state === 'animate' ? { x: 0, opacity: 1 } : { x: '100%', opacity: 0 }
             case 'scale':
                 return state === 'animate' ? { scale: 1, opacity: 1, y: 0 } : { scale: 0.95, opacity: 0, y: 10 }
@@ -102,11 +116,14 @@ export function WidgetChatContainer({
         initial: getVariant(entryType, 'initial'),
         animate: getVariant(entryType, 'animate'),
         exit: getVariant(exitType, 'exit'),
-        transition: {
-            type: animType,
+        transition: animType === 'spring' ? {
+            type: 'spring',
             duration: duration,
             damping: 25,
             stiffness: 200,
+        } : {
+            type: 'tween',
+            duration: duration,
             ease: "easeOut" as const
         }
     }

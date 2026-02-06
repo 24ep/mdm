@@ -214,7 +214,17 @@ export function getWidgetConfig(chatbot: ChatbotConfig, theme?: any): WidgetConf
         showBadge: c.showNotificationBadge || false,
         badgeColor: c.notificationBadgeColor || '#ef4444',
 
-        animation: c.widgetAnimation || 'fade',
+        // Map widgetAnimation to widgetAnimationEntry for backward compatibility
+        animation: (() => {
+          if (c.widgetAnimationEntry) {
+            return c.widgetAnimationEntry
+          }
+          // Map old widgetAnimation values to new ones
+          if (c.widgetAnimation === 'slide') return 'slide-up'
+          if (c.widgetAnimation === 'bounce') return 'scale'
+          if (c.widgetAnimation === 'none') return 'fade' // 'none' not supported, use fade
+          return c.widgetAnimation || 'fade'
+        })(),
 
         overlayEnabled: c.overlayEnabled !== undefined ? c.overlayEnabled : false,
         overlayColor: c.overlayColor || '#000000',

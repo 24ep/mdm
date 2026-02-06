@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react'
 import { Chatbot } from '../types'
 import toast from 'react-hot-toast'
 import { OpenAIAgentSDKConfig } from './OpenAIAgentSDKConfig'
+import { FormRow, FormSection } from '../style/components/FormRow'
 
 interface AIModel {
   id: string
@@ -65,133 +66,126 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
 
   return (
     <div className="space-y-4 pt-4">
-      <div className="space-y-2">
-        <Label>Name *</Label>
-        <Input
-          value={formData.name || ''}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="Chatbot Name"
-        />
-      </div>
+      <FormSection>
+        <FormRow label="Name" description="Name of your chatbot">
+          <Input
+            value={formData.name || ''}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Chatbot Name"
+          />
+        </FormRow>
 
-      <div className="space-y-2">
-        <Label>Website *</Label>
-        <Input
-          value={formData.website || ''}
-          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-          placeholder="https://example.com"
-        />
-      </div>
+        <FormRow label="Website" description="Website URL where the chatbot will be embedded">
+          <Input
+            value={formData.website || ''}
+            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+            placeholder="https://example.com"
+          />
+        </FormRow>
 
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Textarea
-          value={formData.description || ''}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Description of the chatbot"
-          rows={3}
-        />
-      </div>
+        <FormRow label="Description" description="Brief description of the chatbot's purpose">
+          <Textarea
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Description of the chatbot"
+            rows={3}
+          />
+        </FormRow>
 
-      <div className="space-y-2">
-        <Label>Engine Type *</Label>
-        <Select
-          value={engineType}
-          onValueChange={(v: string) => {
-            const engineTypeValue = v as 'custom' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
-            setFormData({
-              ...formData,
-              engineType: engineTypeValue,
-              selectedModelId: undefined,
-              selectedEngineId: undefined,
-              apiEndpoint: engineTypeValue === 'custom' ? formData.apiEndpoint : ''
-            })
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="custom">Custom API Endpoint</SelectItem>
-            <SelectItem value="openai">OpenAI Platform</SelectItem>
-            <SelectItem value="chatkit">OpenAI ChatKit</SelectItem>
-            <SelectItem value="openai-agent-sdk">OpenAI Agent SDK</SelectItem>
-            <SelectItem value="dify">Dify v2</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {engineType === 'openai' && (
-        <div className="space-y-2">
-          <Label>OpenAI Model *</Label>
+        <FormRow label="Engine Type" description="Select the AI engine provider for this chatbot">
           <Select
-            value={formData.selectedModelId || ''}
-            onValueChange={(v) => setFormData({ ...formData, selectedModelId: v })}
+            value={engineType}
+            onValueChange={(v: string) => {
+              const engineTypeValue = v as 'custom' | 'openai' | 'chatkit' | 'dify' | 'openai-agent-sdk'
+              setFormData({
+                ...formData,
+                engineType: engineTypeValue,
+                selectedModelId: undefined,
+                selectedEngineId: undefined,
+                apiEndpoint: engineTypeValue === 'custom' ? formData.apiEndpoint : ''
+              })
+            }}
           >
-            <SelectTrigger disabled={isLoadingModels}>
-              <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select OpenAI model"} />
+            <SelectTrigger>
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {isLoadingModels ? (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Loading models...
-                </div>
-              ) : availableModels.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground text-center">
-                  No OpenAI models available. Please configure OpenAI in API Configuration.
-                </div>
-              ) : (
-                availableModels.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{model.name}</span>
-                      {model.description && (
-                        <span className="text-xs text-muted-foreground">{model.description}</span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))
-              )}
+              <SelectItem value="custom">Custom API Endpoint</SelectItem>
+              <SelectItem value="openai">OpenAI Platform</SelectItem>
+              <SelectItem value="chatkit">OpenAI ChatKit</SelectItem>
+              <SelectItem value="openai-agent-sdk">OpenAI Agent SDK</SelectItem>
+              <SelectItem value="dify">Dify v2</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
-            Select an OpenAI model to use for this chatbot. Make sure OpenAI is configured in API Configuration.
-          </p>
-        </div>
+        </FormRow>
+      </FormSection>
+
+      {engineType === 'openai' && (
+        <FormSection>
+          <FormRow 
+            label="OpenAI Model" 
+            description="Select an OpenAI model to use for this chatbot. Make sure OpenAI is configured in API Configuration."
+          >
+            <Select
+              value={formData.selectedModelId || ''}
+              onValueChange={(v) => setFormData({ ...formData, selectedModelId: v })}
+            >
+              <SelectTrigger disabled={isLoadingModels}>
+                <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select OpenAI model"} />
+              </SelectTrigger>
+              <SelectContent>
+                {isLoadingModels ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Loading models...
+                  </div>
+                ) : availableModels.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    No OpenAI models available. Please configure OpenAI in API Configuration.
+                  </div>
+                ) : (
+                  availableModels.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{model.name}</span>
+                        {model.description && (
+                          <span className="text-xs text-muted-foreground">{model.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </FormRow>
+        </FormSection>
       )}
 
       {engineType === 'chatkit' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Agent Builder Agent ID *</Label>
+        <FormSection>
+          <FormRow 
+            label="Agent Builder Agent ID" 
+            description="Enter your Agent Builder agent ID. This connects ChatKit to your agent."
+          >
             <Input
               value={formData.chatkitAgentId || ''}
               onChange={(e) => setFormData({ ...formData, chatkitAgentId: e.target.value })}
               placeholder="agent_abc123..."
             />
-            <p className="text-xs text-muted-foreground">
-              Enter your Agent Builder agent ID. This connects ChatKit to your agent.
-            </p>
-          </div>
+          </FormRow>
 
-          <div className="space-y-2">
-            <Label>OpenAI API Key *</Label>
+          <FormRow 
+            label="OpenAI API Key" 
+            description="Your OpenAI API key for ChatKit authentication. You can also configure it globally in Admin → API Configuration."
+          >
             <Input
               type="password"
               value={formData.chatkitApiKey || ''}
               onChange={(e) => setFormData({ ...formData, chatkitApiKey: e.target.value } as any)}
               placeholder="sk-..."
             />
-            <p className="text-xs text-muted-foreground">
-              Your OpenAI API key for ChatKit authentication. You can also configure it globally in <strong>Admin → API Configuration</strong>.
-            </p>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            Configure theme and style in the Style tab.
-          </p>
-        </div>
+          </FormRow>
+        </FormSection>
       )}
 
       {engineType === 'openai-agent-sdk' && (
@@ -204,9 +198,11 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
       )}
 
       {engineType === 'dify' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Dify API Base URL *</Label>
+        <FormSection>
+          <FormRow 
+            label="Dify API Base URL" 
+            description="Base URL of your Dify instance (e.g., http://ncc-dify.qsncc.com)"
+          >
             <Input
               value={formData.difyOptions?.apiBaseUrl || ''}
               onChange={(e) => setFormData({
@@ -218,71 +214,65 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
               } as any)}
               placeholder="http://ncc-dify.qsncc.com"
             />
-            <p className="text-xs text-muted-foreground">
-              Base URL of your Dify instance (e.g., http://ncc-dify.qsncc.com)
-            </p>
-          </div>
+          </FormRow>
 
-          <div className="space-y-2">
-            <Label>Dify API Key *</Label>
+          <FormRow 
+            label="Dify API Key" 
+            description="Your Dify API key. Found in your Dify app settings."
+          >
             <Input
               type="password"
               value={formData.difyApiKey || ''}
               onChange={(e) => setFormData({ ...formData, difyApiKey: e.target.value } as any)}
               placeholder="app-AAAAAAAAAAAAAAAAAAa"
             />
-            <p className="text-xs text-muted-foreground">
-              Your Dify API key. Found in your Dify app settings.
-            </p>
-          </div>
+          </FormRow>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Response Mode</Label>
-              <Select
-                value={formData.difyOptions?.responseMode || 'streaming'}
-                onValueChange={(v: string) => setFormData({
-                  ...formData,
-                  difyOptions: {
-                    ...formData.difyOptions,
-                    responseMode: v as 'streaming' | 'blocking'
-                  }
-                } as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="streaming">Streaming</SelectItem>
-                  <SelectItem value="blocking">Blocking</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Choose streaming for real-time responses or blocking for complete responses
-              </p>
-            </div>
+          <FormRow 
+            label="Response Mode" 
+            description="Choose streaming for real-time responses or blocking for complete responses"
+          >
+            <Select
+              value={formData.difyOptions?.responseMode || 'streaming'}
+              onValueChange={(v: string) => setFormData({
+                ...formData,
+                difyOptions: {
+                  ...formData.difyOptions,
+                  responseMode: v as 'streaming' | 'blocking'
+                }
+              } as any)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="streaming">Streaming</SelectItem>
+                <SelectItem value="blocking">Blocking</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormRow>
 
-            <div className="space-y-2">
-              <Label>User Identifier (optional)</Label>
-              <Input
-                value={formData.difyOptions?.user || ''}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  difyOptions: {
-                    ...formData.difyOptions,
-                    user: e.target.value
-                  }
-                } as any)}
-                placeholder="abc-123"
-              />
-              <p className="text-xs text-muted-foreground">
-                Unique identifier for the user (for conversation tracking)
-              </p>
-            </div>
-          </div>
+          <FormRow 
+            label="User Identifier" 
+            description="Unique identifier for the user (for conversation tracking)"
+          >
+            <Input
+              value={formData.difyOptions?.user || ''}
+              onChange={(e) => setFormData({
+                ...formData,
+                difyOptions: {
+                  ...formData.difyOptions,
+                  user: e.target.value
+                }
+              } as any)}
+              placeholder="abc-123"
+            />
+          </FormRow>
 
-          <div className="space-y-2">
-            <Label>Input Variables (optional)</Label>
+          <FormRow 
+            label="Input Variables" 
+            description="JSON object with input variables for your Dify workflow/app. Leave empty object { } if not needed."
+          >
             <Textarea
               value={JSON.stringify(formData.difyOptions?.inputs || {}, null, 2)}
               onChange={(e) => {
@@ -303,55 +293,57 @@ export function EngineConfig({ formData, setFormData }: EngineConfigProps) {
               rows={4}
               className="font-mono text-xs"
             />
-            <p className="text-xs text-muted-foreground">
-              JSON object with input variables for your Dify workflow/app. Leave empty object { } if not needed.
-            </p>
-          </div>
-        </div>
+          </FormRow>
+        </FormSection>
       )}
 
       {engineType === 'custom' && (
-        <>
-          <div className="space-y-2">
-            <Label>API Endpoint *</Label>
+        <FormSection>
+          <FormRow 
+            label="API Endpoint" 
+            description="URL endpoint for your custom API (e.g., https://api.example.com/chat)"
+          >
             <Input
               value={formData.apiEndpoint || ''}
               onChange={(e) => setFormData({ ...formData, apiEndpoint: e.target.value })}
               placeholder="https://api.example.com/chat"
             />
-          </div>
+          </FormRow>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>API Authentication Type</Label>
-              <Select
-                value={formData.apiAuthType || 'none'}
-                onValueChange={(v: any) => setFormData({ ...formData, apiAuthType: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="bearer">Bearer Token</SelectItem>
-                  <SelectItem value="api_key">API Key</SelectItem>
-                  <SelectItem value="custom">Custom Header</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {formData.apiAuthType !== 'none' && (
-              <div className="space-y-2">
-                <Label>Authentication Value</Label>
-                <Input
-                  type="password"
-                  value={formData.apiAuthValue || ''}
-                  onChange={(e) => setFormData({ ...formData, apiAuthValue: e.target.value })}
-                  placeholder="Enter auth value"
-                />
-              </div>
-            )}
-          </div>
-        </>
+          <FormRow 
+            label="API Authentication Type" 
+            description="Select the authentication method for your API"
+          >
+            <Select
+              value={formData.apiAuthType || 'none'}
+              onValueChange={(v: any) => setFormData({ ...formData, apiAuthType: v })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                <SelectItem value="bearer">Bearer Token</SelectItem>
+                <SelectItem value="api_key">API Key</SelectItem>
+                <SelectItem value="custom">Custom Header</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormRow>
+
+          {formData.apiAuthType !== 'none' && (
+            <FormRow 
+              label="Authentication Value" 
+              description="Enter your API authentication token or key"
+            >
+              <Input
+                type="password"
+                value={formData.apiAuthValue || ''}
+                onChange={(e) => setFormData({ ...formData, apiAuthValue: e.target.value })}
+                placeholder="Enter auth value"
+              />
+            </FormRow>
+          )}
+        </FormSection>
       )}
     </div>
   )

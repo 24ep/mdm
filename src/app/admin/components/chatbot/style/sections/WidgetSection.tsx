@@ -118,17 +118,24 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
             <FormSection className="pt-2 pb-4">
               <FormRow label="Entrance Animation" description="Animation when widget appears">
                 <Select
-                  value={formData.widgetAnimation || 'fade'}
-                  onValueChange={(v: any) => setFormData({ ...formData, widgetAnimation: v })}
+                  value={formData.widgetAnimationEntry || (formData.widgetAnimation === 'none' ? undefined : formData.widgetAnimation === 'slide' ? 'slide-up' : formData.widgetAnimation === 'bounce' ? 'scale' : formData.widgetAnimation || 'fade') || 'fade'}
+                  onValueChange={(v: any) => {
+                    const updates: any = { widgetAnimationEntry: v }
+                    // Clear old widgetAnimation field if it exists
+                    if (formData.widgetAnimation) {
+                      updates.widgetAnimation = undefined
+                    }
+                    setFormData({ ...formData, ...updates })
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
                     <SelectItem value="fade">Fade</SelectItem>
-                    <SelectItem value="slide">Slide</SelectItem>
-                    <SelectItem value="bounce">Bounce</SelectItem>
+                    <SelectItem value="slide-up">Slide Up</SelectItem>
+                    <SelectItem value="slide-side">Slide Side</SelectItem>
+                    <SelectItem value="scale">Scale (Pop)</SelectItem>
                   </SelectContent>
                 </Select>
               </FormRow>

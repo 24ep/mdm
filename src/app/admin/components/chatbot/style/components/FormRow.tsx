@@ -35,8 +35,17 @@ export function FormRow({ label, description, children, className = '' }: FormRo
  */
 export function FormSection({ children, className = '' }: { children: React.ReactNode, className?: string }) {
   return (
-    <div className={`divide-y divide-border ${className}`}>
-      {children}
-    </div>
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .form-section-divider > * + * {
+            border-top: 1px solid hsl(var(--border)) !important;
+          }
+        `
+      }} />
+      <div className={`form-section-divider divide-y divide-border ${className}`}>
+        {children}
+      </div>
+    </>
   )
 }

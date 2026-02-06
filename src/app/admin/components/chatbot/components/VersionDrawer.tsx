@@ -20,15 +20,23 @@ interface VersionDrawerProps {
   currentVersion?: string
   onRestore: (version: ChatbotVersion) => void
   chatbot?: Partial<Chatbot>
+  iconOnly?: boolean // If true, show only icon without label
+  open?: boolean // Controlled open state
+  onOpenChange?: (open: boolean) => void // Controlled open change handler
 }
 
 export function VersionDrawer({
   versions,
   currentVersion,
   onRestore,
-  chatbot
+  chatbot,
+  iconOnly = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange
 }: VersionDrawerProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const setIsOpen = controlledOnOpenChange || setInternalOpen
   const [restoringId, setRestoringId] = useState<string | null>(null)
 
   const handleRestore = async (version: ChatbotVersion) => {
@@ -65,15 +73,21 @@ export function VersionDrawer({
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <History className="h-4 w-4" />
-          Version History
-          {versions.length > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
-              {versions.length}
-            </Badge>
-          )}
-        </Button>
+        {iconOnly ? (
+          <Button variant="ghost" size="icon" className="h-6 w-6 p-0 hover:bg-muted">
+            <History className="h-3.5 w-3.5" />
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="gap-2">
+            <History className="h-4 w-4" />
+            Version History
+            {versions.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {versions.length}
+              </Badge>
+            )}
+          </Button>
+        )}
       </DrawerTrigger>
 
       <DrawerContent widthClassName="w-[400px]">

@@ -12,8 +12,17 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('space_id')
-  if (!spaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
+  const rawSpaceId = searchParams.get('space_id')
+  if (!rawSpaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
+  
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const spaceId = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(spaceId)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
+  }
 
   // Check access
   const { rows: access } = await query(
@@ -38,14 +47,23 @@ async function postHandler(request: NextRequest) {
 
   const body = await request.json()
   const { 
-    space_id, name, connection_type = 'database', db_type, host, port, database, username, password, options, is_active,
+    space_id: rawSpaceId, name, connection_type = 'database', db_type, host, port, database, username, password, options, is_active,
     // API fields
     api_url, api_method, api_headers, api_auth_type, api_auth_token, api_auth_username, api_auth_password,
     api_auth_apikey_name, api_auth_apikey_value, api_body, api_response_path, api_pagination_type, api_pagination_config
   } = body
 
-  if (!space_id || !name) {
+  if (!rawSpaceId || !name) {
     return NextResponse.json({ error: 'space_id and name are required' }, { status: 400 })
+  }
+  
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const space_id = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(space_id)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
   }
 
   // Validate based on connection type
@@ -228,8 +246,17 @@ async function putHandler(request: NextRequest) {
   const { session } = authResult
 
   const body = await request.json()
-  const { id, space_id, ...updates } = body
-  if (!id || !space_id) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
+  const { id, space_id: rawSpaceId, ...updates } = body
+  if (!id || !rawSpaceId) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
+
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const space_id = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(space_id)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
+  }
 
   const { rows: access } = await query(
     'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
@@ -341,8 +368,17 @@ async function deleteHandler(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
-  const spaceId = searchParams.get('space_id')
-  if (!id || !spaceId) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
+  const rawSpaceId = searchParams.get('space_id')
+  if (!id || !rawSpaceId) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
+  
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const spaceId = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(spaceId)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
+  }
 
   const { rows: access } = await query(
     'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',

@@ -156,7 +156,7 @@ async function getHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
   const { session } = authResult
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('space_id')
+  const rawSpaceId = searchParams.get('space_id')
   const dbType = searchParams.get('db_type')
   const host = searchParams.get('host')
   const port = searchParams.get('port') ? Number(searchParams.get('port')) : undefined
@@ -166,8 +166,17 @@ async function getHandler(request: NextRequest) {
   const schema = searchParams.get('schema') || undefined
   const table = searchParams.get('table') || undefined
 
-  if (!spaceId || !dbType || !host || !schema || !table) {
+  if (!rawSpaceId || !dbType || !host || !schema || !table) {
     return NextResponse.json({ error: 'space_id, db_type, host, schema, table required' }, { status: 400 })
+  }
+  
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const spaceId = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(spaceId)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
   }
 
   const { rows: access } = await query('SELECT 1 FROM space_members WHERE space_id = $1 AND user_id = $2', [spaceId, session.user.id])

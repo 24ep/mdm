@@ -15,9 +15,10 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   // Validate query parameters
+  // Note: space_id may have colon suffix (e.g., "uuid:1"), so we normalize it
   const queryValidation = validateQuery(request, z.object({
     source: z.string().optional(),
-    space_id: commonSchemas.id.optional(),
+    space_id: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()),
     search: z.string().optional().default(''),
     category_id: commonSchemas.id.optional(),
     status: z.string().optional(),

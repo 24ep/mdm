@@ -88,7 +88,11 @@ export function MessageBubble({
       const IconComponent = (Icons as any)[IconName] || Bot
       const iconColor = chatbot.avatarIconColor || '#ffffff'
       const chatKitAccent = (chatbot as any).chatkitOptions?.theme?.color?.accent?.primary
-      const bgColor = chatbot.avatarBackgroundColor || chatKitAccent || chatbot.primaryColor || '#3b82f6'
+      // Ensure bgColor is never empty
+      let bgColor = chatbot.avatarBackgroundColor || chatKitAccent || chatbot.primaryColor || '#3b82f6'
+      if (!bgColor || bgColor.trim() === '') {
+        bgColor = '#3b82f6'
+      }
       return (
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
@@ -197,7 +201,7 @@ export function MessageBubble({
               fontWeight: (chatbot as any).conversationOpenerFontWeight || '400',
               lineHeight: (chatbot as any).conversationOpenerLineHeight || '1.5',
               textAlign: (chatbot as any).conversationOpenerAlignment || 'left',
-              backgroundColor: (chatbot as any).conversationOpenerBackgroundColor || chatbot.botMessageBackgroundColor || '#f3f4f6',
+              backgroundColor: (chatbot as any).conversationOpenerBackgroundColor || chatbot.botMessageBackgroundColor || '#f3f4f6' || '#ffffff',
               padding: (chatbot as any).conversationOpenerPadding || (chatbot as any).botBubblePadding || (chatbot as any).bubblePadding || '12px',
               borderRadius: (chatbot as any).conversationOpenerBorderRadius || chatbot.bubbleBorderRadius || chatbot.borderRadius,
             } : {}),
@@ -229,7 +233,7 @@ export function MessageBubble({
                 )
               }),
             backgroundColor: message.role === 'user'
-              ? (chatbot.userMessageBackgroundColor || chatbot.primaryColor)
+              ? (chatbot.userMessageBackgroundColor || chatbot.primaryColor || '#3b82f6')
               : (chatbot.botMessageBackgroundColor || '#f3f4f6'),
             color: message.role === 'user'
               ? (chatbot.userMessageFontColor || 'white')

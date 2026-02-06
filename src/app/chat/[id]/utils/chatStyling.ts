@@ -107,7 +107,12 @@ export function getContainerStyle(
     }
     */
 
-    const bgValue = theme.color?.background || theme.backgroundColor || chatbot.messageBoxColor || '#ffffff'
+    // Get background value with proper fallback - ensure it's never empty
+    let bgValue = theme.color?.background || theme.backgroundColor || chatbot.messageBoxColor || '#ffffff'
+    if (!bgValue || bgValue.trim() === '') {
+      bgValue = '#ffffff'
+    }
+    
     const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
 
     // Check if it's an image URL
@@ -131,20 +136,20 @@ export function getContainerStyle(
         }
     }
 
-    // It's a color value
-    const bgColor = bgValue
+    // It's a color value - ensure we always set a valid background color
+    const bgColor = bgValue || '#ffffff'
     if (opacity < 100) {
       // Check if it's already rgba/rgb
-      if (bgColor.startsWith('rgba') || bgColor.startsWith('rgb')) {
+      if (bgColor && (bgColor.startsWith('rgba') || bgColor.startsWith('rgb'))) {
         const rgbMatch = bgColor.match(/(\d+),\s*(\d+),\s*(\d+)/)
         if (rgbMatch) {
           return { backgroundColor: `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity / 100})` }
         }
       }
       // Convert hex to rgba
-      return { backgroundColor: `rgba(${hexToRgb(bgColor)}, ${opacity / 100})` }
+      return { backgroundColor: bgColor ? `rgba(${hexToRgb(bgColor)}, ${opacity / 100})` : '#ffffff' }
     }
-    return { backgroundColor: bgColor }
+    return { backgroundColor: bgColor || '#ffffff' }
   }
 
   if (previewDeploymentType === 'popover') {
@@ -403,7 +408,13 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
   const options = (chatbot as any).chatkitOptions || {}
   const theme = options.theme || {}
 
-  const widgetBgValue = (chatbot as any).widgetBackgroundColor || theme.color?.accent?.primary || theme.primaryColor || chatbot.primaryColor || '#3b82f6'
+  // Get widget background color with proper fallback
+  let widgetBgValue = (chatbot as any).widgetBackgroundColor || theme.color?.accent?.primary || theme.primaryColor || chatbot.primaryColor || '#3b82f6'
+  // Ensure we have a valid color value (not empty string)
+  if (!widgetBgValue || widgetBgValue.trim() === '') {
+    widgetBgValue = '#3b82f6'
+  }
+  
   const blurAmount = (chatbot as any).widgetBackgroundBlur || 0
   const opacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
 
@@ -418,7 +429,7 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
     ? `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowSpread}px ${shadowColor}`
     : undefined
 
-  // Determine border radius based on avatar style
+  // Determine border radius based on avatar style - CRITICAL: must respect widgetAvatarStyle
   const widgetAvatarStyle = (chatbot as any).widgetAvatarStyle || 'circle'
   let borderRadius: string
   if (widgetAvatarStyle === 'circle') {
@@ -452,7 +463,7 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
   }
 
   // Check if it's an image URL (starts with url(, http://, https://, or /)
-  if (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')) {
+  if (widgetBgValue && (widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/'))) {
     const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
     baseStyle.backgroundImage = imageUrl
     baseStyle.backgroundSize = 'cover'
@@ -462,25 +473,26 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
     if (opacity < 100) {
       baseStyle.backgroundColor = `rgba(255, 255, 255, ${opacity / 100})` // Fallback color with opacity
     }
-  } else if (widgetBgValue.includes('gradient')) {
+  } else if (widgetBgValue && widgetBgValue.includes('gradient')) {
     // Apply gradient to background property
     baseStyle.background = widgetBgValue
     // Gradients don't support simple opacity modifiers easily without parsing
   } else {
-    // It's a color value - apply opacity
+    // It's a color value - ensure we always set a background color
     if (opacity < 100) {
-      if (widgetBgValue.startsWith('rgba') || widgetBgValue.startsWith('rgb')) {
+      if (widgetBgValue && (widgetBgValue.startsWith('rgba') || widgetBgValue.startsWith('rgb'))) {
         const rgbMatch = widgetBgValue.match(/(\d+),\s*(\d+),\s*(\d+)/)
         if (rgbMatch) {
           baseStyle.backgroundColor = `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity / 100})`
         } else {
-          baseStyle.backgroundColor = widgetBgValue
+          baseStyle.backgroundColor = widgetBgValue || '#3b82f6'
         }
       } else {
-        baseStyle.backgroundColor = `rgba(${hexToRgb(widgetBgValue)}, ${opacity / 100})`
+        baseStyle.backgroundColor = widgetBgValue ? `rgba(${hexToRgb(widgetBgValue)}, ${opacity / 100})` : '#3b82f6'
       }
     } else {
-      baseStyle.backgroundColor = widgetBgValue
+      // Always set background color, even if opacity is 100%
+      baseStyle.backgroundColor = widgetBgValue || '#3b82f6'
     }
   }
 

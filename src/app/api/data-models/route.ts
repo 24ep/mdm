@@ -14,11 +14,12 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   // Validate query parameters
+  // Note: space_id may have colon suffix (e.g., "uuid:1"), so we normalize it
   const queryValidation = validateQuery(request, z.object({
     page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
     limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
     search: z.string().optional().default(''),
-    space_id: commonSchemas.id.optional(),
+    space_id: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()),
   }))
 
   if (!queryValidation.success) {

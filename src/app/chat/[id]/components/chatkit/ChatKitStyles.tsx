@@ -238,7 +238,12 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
 
 export const getContainerStyle = (deploymentType: string, chatbot: ChatbotConfig): React.CSSProperties => {
   if (deploymentType === 'popover' || deploymentType === 'popup-center') {
-    const bgValue = chatbot.messageBoxColor || '#ffffff'
+    // Get background value with proper fallback - ensure it's never empty
+    let bgValue = chatbot.messageBoxColor || '#ffffff'
+    if (!bgValue || bgValue.trim() === '') {
+      bgValue = '#ffffff'
+    }
+    
     const blurAmount = (chatbot as any).chatWindowBackgroundBlur || 0
     const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
 
@@ -263,8 +268,8 @@ export const getContainerStyle = (deploymentType: string, chatbot: ChatbotConfig
     }
 
     // Check if it's an image URL or Gradient
-    const isGradient = bgValue.includes('gradient')
-    const isUrl = bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/')
+    const isGradient = bgValue && bgValue.includes('gradient')
+    const isUrl = bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))
 
     if (isUrl) {
       const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
@@ -278,20 +283,20 @@ export const getContainerStyle = (deploymentType: string, chatbot: ChatbotConfig
       style.background = bgValue
       // If opacity is set, we can't easily modify the gradient string so we rely on the gradient definition
     } else {
-      // It's a color value - apply opacity
+      // It's a color value - ensure we always set a valid background color
       if (opacity < 100) {
-        if (bgValue.startsWith('rgba') || bgValue.startsWith('rgb')) {
+        if (bgValue && (bgValue.startsWith('rgba') || bgValue.startsWith('rgb'))) {
           const rgbMatch = bgValue.match(/(\d+),\s*(\d+),\s*(\d+)/)
           if (rgbMatch) {
             style.backgroundColor = `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity / 100})`
           } else {
-            style.backgroundColor = bgValue
+            style.backgroundColor = bgValue || '#ffffff'
           }
         } else {
-          style.backgroundColor = `rgba(${hexToRgb(bgValue)}, ${opacity / 100})`
+          style.backgroundColor = bgValue ? `rgba(${hexToRgb(bgValue)}, ${opacity / 100})` : '#ffffff'
         }
       } else {
-        style.backgroundColor = bgValue
+        style.backgroundColor = bgValue || '#ffffff'
       }
     }
 

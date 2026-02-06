@@ -9,10 +9,19 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('space_id')
+  const rawSpaceId = searchParams.get('space_id')
   const dataModelId = searchParams.get('data_model_id')
 
-  if (!spaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
+  if (!rawSpaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
+  
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const spaceId = rawSpaceId.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(spaceId)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
+  }
 
   // Check access
   const { rows: access } = await query(
@@ -93,10 +102,19 @@ async function postHandler(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+    const normalizedSpaceId = space_id.split(':')[0]
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(normalizedSpaceId)) {
+      return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
+    }
+
     // Check access
     const { rows: access } = await query(
       'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [space_id, session.user.id]
+      [normalizedSpaceId, session.user.id]
     )
     if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -114,7 +132,7 @@ async function postHandler(request: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
        RETURNING *`,
       [
-        space_id, data_model_id, external_connection_id, name, description,
+        normalizedSpaceId, data_model_id, external_connection_id, name, description,
         schedule_type, schedule_config ? JSON.stringify(schedule_config) : null, sync_strategy,
         incremental_key || null, incremental_timestamp_column || null,
         clear_existing_data, source_query || null,

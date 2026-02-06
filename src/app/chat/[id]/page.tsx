@@ -528,7 +528,11 @@ export default function ChatPage() {
   const containerStyle = getContainerStyle(chatbot, effectiveDeploymentType, emulatorConfig, isMobile, isEmbed, isDesktopPreview)
   const overlayStyle = getOverlayStyle(effectiveDeploymentType, chatbot, isOpen)
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
-  const widgetButtonStyle = getWidgetButtonStyle(chatbot)
+  // Memoize widget button style to ensure it recomputes when chatbot config changes
+  const widgetButtonStyle = useMemo(() => {
+    if (!chatbot) return {}
+    return getWidgetButtonStyle(chatbot)
+  }, [chatbot])
 
   // Render ChatKit only if engine type is chatkit or openai-agent-sdk with agent ID
   // In DESKTOP preview mode, don't force regular style on mobile - allow widget preview
@@ -754,10 +758,10 @@ export default function ChatPage() {
         </div>
       )}
       {/* Chat container */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {shouldShowContainer && (
           <WidgetChatContainer
-            key="chat-container"
+            key={`chat-container-${isOpen}`}
             chatbot={chatbot}
             containerStyle={containerStyle}
             chatStyle={chatStyle}

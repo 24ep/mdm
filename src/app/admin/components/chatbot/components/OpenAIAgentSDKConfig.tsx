@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Rocket, Loader2 } from 'lucide-react'
 import { Chatbot } from '../types'
 import toast from 'react-hot-toast'
+import { FormRow, FormSection } from '../style/components/FormRow'
 
 // Workflow File Selector Component
 function WorkflowFileSelectorComponent({
@@ -47,36 +48,36 @@ function WorkflowFileSelectorComponent({
   const selectedWorkflow = (formData as any).openaiAgentSdkWorkflowFile || 'qsncc-workflow'
 
   return (
-    <div className="space-y-2 pt-2 border-t">
-      <Label>Workflow File *</Label>
-      <Select
-        value={selectedWorkflow}
-        onValueChange={(value) => {
-          setFormData({ ...formData, openaiAgentSdkWorkflowFile: value } as any)
-        }}
+    <FormSection className="pt-2 border-t">
+      <FormRow 
+        label="Workflow File" 
+        description="Select the workflow file from src/lib/workflows to use for this chatbot. The workflow file must export a runWorkflow function."
       >
-        <SelectTrigger disabled={isLoadingWorkflows}>
-          <SelectValue placeholder="Select a workflow file" />
-        </SelectTrigger>
-        <SelectContent>
-          {isLoadingWorkflows ? (
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading workflows...</div>
-          ) : availableWorkflows.length === 0 ? (
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">No workflows found</div>
-          ) : (
-            availableWorkflows.map((workflow) => (
-              <SelectItem key={workflow.name} value={workflow.name}>
-                {workflow.name}
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
-      <p className="text-xs text-muted-foreground">
-        Select the workflow file from <code className="bg-muted px-1 rounded">src/lib/workflows</code> to use for this chatbot.
-        The workflow file must export a <code className="bg-muted px-1 rounded">runWorkflow</code> function.
-      </p>
-    </div>
+        <Select
+          value={selectedWorkflow}
+          onValueChange={(value) => {
+            setFormData({ ...formData, openaiAgentSdkWorkflowFile: value } as any)
+          }}
+        >
+          <SelectTrigger disabled={isLoadingWorkflows}>
+            <SelectValue placeholder="Select a workflow file" />
+          </SelectTrigger>
+          <SelectContent>
+            {isLoadingWorkflows ? (
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading workflows...</div>
+            ) : availableWorkflows.length === 0 ? (
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">No workflows found</div>
+            ) : (
+              availableWorkflows.map((workflow) => (
+                <SelectItem key={workflow.name} value={workflow.name}>
+                  {workflow.name}
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+      </FormRow>
+    </FormSection>
   )
 }
 
@@ -272,94 +273,95 @@ export function OpenAIAgentSDKConfig({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Agent/Workflow ID *</Label>
-        <Input
-          value={agentId}
-          onChange={(e) => {
-            const newAgentId = e.target.value
-            const isNewWorkflow = newAgentId.startsWith('wf_')
-            // Auto-enable workflow config for workflows (background mode)
-            if (isNewWorkflow) {
-              setFormData({ 
-                ...formData, 
-                openaiAgentSdkAgentId: newAgentId, 
-                // Workflow config is always used automatically for workflows
-              } as any)
-            } else {
-              setFormData({ ...formData, openaiAgentSdkAgentId: newAgentId } as any)
-            }
-          }}
-          placeholder="asst_abc123... or wf_abc123..."
-        />
-        <p className="text-xs text-muted-foreground">
-          Enter your OpenAI Assistant ID (<code className="bg-muted px-1 rounded">asst_</code>) or Workflow ID (<code className="bg-muted px-1 rounded">wf_</code>). 
-          Workflows use the OpenAI Agents SDK, while Assistants use the Assistants API.
-        </p>
-        {isWorkflow && (
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-            ✓ For workflows, only the Workflow ID and API Key are required. The system will automatically use the workflow's configuration. All other settings are optional overrides.
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label>OpenAI API Key *</Label>
-        <Input
-          type="password"
-          value={formData.openaiAgentSdkApiKey || ''}
-          onChange={(e) => setFormData({ ...formData, openaiAgentSdkApiKey: e.target.value } as any)}
-          placeholder="sk-..."
-        />
-        <div className="space-y-1">
-        <p className="text-xs text-muted-foreground">
-            Your OpenAI API key for Agent SDK authentication. <strong>2-way sync enabled:</strong> Keys saved here sync to API Key Management, and you can load keys from API Key Management.
-          </p>
-          {globalApiKeyExists && !formData.openaiAgentSdkApiKey && (
-            <div className="space-y-2">
-              <p className="text-xs text-blue-600 dark:text-blue-400">
-                ℹ️ A global OpenAI API key is configured. You can use it or enter a chatbot-specific key.
+      <FormSection>
+        <FormRow 
+          label="Agent/Workflow ID" 
+          description="Enter your OpenAI Assistant ID (asst_) or Workflow ID (wf_). Workflows use the OpenAI Agents SDK, while Assistants use the Assistants API."
+        >
+          <div className="space-y-2">
+            <Input
+              value={agentId}
+              onChange={(e) => {
+                const newAgentId = e.target.value
+                const isNewWorkflow = newAgentId.startsWith('wf_')
+                // Auto-enable workflow config for workflows (background mode)
+                if (isNewWorkflow) {
+                  setFormData({ 
+                    ...formData, 
+                    openaiAgentSdkAgentId: newAgentId, 
+                    // Workflow config is always used automatically for workflows
+                  } as any)
+                } else {
+                  setFormData({ ...formData, openaiAgentSdkAgentId: newAgentId } as any)
+                }
+              }}
+              placeholder="asst_abc123... or wf_abc123..."
+            />
+            {isWorkflow && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                ✓ For workflows, only the Workflow ID and API Key are required. The system will automatically use the workflow's configuration. All other settings are optional overrides.
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/admin/ai-providers')
-                    if (response.ok) {
-                      const data = await response.json()
-                      const openaiProvider = data.providers?.find((p: any) => p.provider === 'openai')
-                      if (openaiProvider?.isConfigured) {
-                        // Get the actual API key from the backend (it will decrypt it)
-                        const keyResponse = await fetch(`/api/admin/ai-providers/${openaiProvider.id}/key`)
-                        if (keyResponse.ok) {
-                          const keyData = await keyResponse.json()
-                          if (keyData.apiKey) {
-                            setFormData({ ...formData, openaiAgentSdkApiKey: keyData.apiKey } as any)
-                            toast.success('Global API key loaded')
+            )}
+          </div>
+        </FormRow>
+
+        <FormRow 
+          label="OpenAI API Key" 
+          description="Your OpenAI API key for Agent SDK authentication. 2-way sync enabled: Keys saved here sync to API Key Management, and you can load keys from API Key Management."
+        >
+          <div className="space-y-2">
+            <Input
+              type="password"
+              value={formData.openaiAgentSdkApiKey || ''}
+              onChange={(e) => setFormData({ ...formData, openaiAgentSdkApiKey: e.target.value } as any)}
+              placeholder="sk-..."
+            />
+            {globalApiKeyExists && !formData.openaiAgentSdkApiKey && (
+              <div className="space-y-2">
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  ℹ️ A global OpenAI API key is configured. You can use it or enter a chatbot-specific key.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/admin/ai-providers')
+                      if (response.ok) {
+                        const data = await response.json()
+                        const openaiProvider = data.providers?.find((p: any) => p.provider === 'openai')
+                        if (openaiProvider?.isConfigured) {
+                          // Get the actual API key from the backend (it will decrypt it)
+                          const keyResponse = await fetch(`/api/admin/ai-providers/${openaiProvider.id}/key`)
+                          if (keyResponse.ok) {
+                            const keyData = await keyResponse.json()
+                            if (keyData.apiKey) {
+                              setFormData({ ...formData, openaiAgentSdkApiKey: keyData.apiKey } as any)
+                              toast.success('Global API key loaded')
+                            }
                           }
                         }
                       }
+                    } catch (error) {
+                      console.error('Error loading global API key:', error)
+                      toast.error('Failed to load global API key')
                     }
-                  } catch (error) {
-                    console.error('Error loading global API key:', error)
-                    toast.error('Failed to load global API key')
-                  }
-                }}
-                className="h-7 text-xs"
-              >
-                Use Global API Key
-              </Button>
-            </div>
-          )}
-          {formData.openaiAgentSdkApiKey && (
-            <p className="text-xs text-green-600 dark:text-green-400">
-              ✓ This API key will be synced to the global API Key Management page (2-way sync enabled).
-        </p>
-          )}
-        </div>
-      </div>
+                  }}
+                  className="h-7 text-xs"
+                >
+                  Use Global API Key
+                </Button>
+              </div>
+            )}
+            {formData.openaiAgentSdkApiKey && (
+              <p className="text-xs text-green-600 dark:text-green-400">
+                ✓ This API key will be synced to the global API Key Management page (2-way sync enabled).
+              </p>
+            )}
+          </div>
+        </FormRow>
+      </FormSection>
 
       {/* Workflow File Selection (for workflows only) */}
       {isWorkflow && (
@@ -478,34 +480,34 @@ export function OpenAIAgentSDKConfig({
       )}
 
       {(!useWorkflowConfig || !isWorkflow) && (
-        <>
-          <div className="space-y-2">
-            <Label>Model {useWorkflowConfig ? '(Workflow Override)' : '(Optional)'}</Label>
+        <FormSection>
+          <FormRow 
+            label="Model" 
+            description={useWorkflowConfig ? "Model to use for the agent (workflow override). If not specified, defaults to gpt-4o." : "Model to use for the agent. If not specified, defaults to gpt-4o."}
+          >
             <Input
               value={formData.openaiAgentSdkModel || ''}
               onChange={(e) => setFormData({ ...formData, openaiAgentSdkModel: e.target.value } as any)}
               placeholder="gpt-4o, gpt-5, etc."
             />
-            <p className="text-xs text-muted-foreground">
-              Model to use for the agent. If not specified, defaults to gpt-4o. For workflows, this may be overridden by the workflow configuration.
-            </p>
-          </div>
+          </FormRow>
 
-          <div className="space-y-2">
-            <Label>Agent Instructions (Optional Override)</Label>
+          <FormRow 
+            label="Agent Instructions" 
+            description="Instructions for the agent. If not specified, uses default instructions. For workflows, this may be overridden by the workflow configuration."
+          >
             <Textarea
               value={formData.openaiAgentSdkInstructions || ''}
               onChange={(e) => setFormData({ ...formData, openaiAgentSdkInstructions: e.target.value } as any)}
               placeholder="You are a helpful assistant..."
               className="min-h-[80px]"
             />
-            <p className="text-xs text-muted-foreground">
-              Instructions for the agent. If not specified, uses default instructions. For workflows, this may be overridden by the workflow configuration.
-            </p>
-          </div>
+          </FormRow>
 
-          <div className="space-y-2">
-            <Label>Reasoning Effort (Optional Override)</Label>
+          <FormRow 
+            label="Reasoning Effort" 
+            description="Reasoning effort for gpt-5 models. Controls how much the model reasons before responding."
+          >
             <Select
               value={formData.openaiAgentSdkReasoningEffort || 'default'}
               onValueChange={(value) => setFormData({ ...formData, openaiAgentSdkReasoningEffort: value === 'default' ? undefined : value as 'low' | 'medium' | 'high' } as any)}
@@ -520,81 +522,74 @@ export function OpenAIAgentSDKConfig({
                 <SelectItem value="high">High</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              Reasoning effort for gpt-5 models. Controls how much the model reasons before responding.
-            </p>
-          </div>
+          </FormRow>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Store Reasoning Traces</Label>
-              <p className="text-xs text-muted-foreground">Whether to store reasoning traces for analysis</p>
-            </div>
+          <FormRow 
+            label="Store Reasoning Traces" 
+            description="Whether to store reasoning traces for analysis"
+          >
             <Switch
               checked={formData.openaiAgentSdkStore || false}
               onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkStore: checked } as any)}
             />
-          </div>
+          </FormRow>
 
-          <div className="space-y-2">
-            <Label>Vector Store ID (Optional Override)</Label>
+          <FormRow 
+            label="Vector Store ID" 
+            description="Vector store ID for file search tool. If provided, enables file search capability for the agent."
+          >
             <Input
               value={formData.openaiAgentSdkVectorStoreId || ''}
               onChange={(e) => setFormData({ ...formData, openaiAgentSdkVectorStoreId: e.target.value } as any)}
               placeholder="vs_abc123..."
             />
-            <p className="text-xs text-muted-foreground">
-              Vector store ID for file search tool. If provided, enables file search capability for the agent.
-            </p>
-          </div>
+          </FormRow>
 
-          <div className="space-y-3 pt-2 border-t">
-            <h5 className="text-sm font-medium">Tools</h5>
+          <FormSection className="pt-2 border-t">
+            <div className="mb-4">
+              <h5 className="text-sm font-medium">Tools</h5>
+            </div>
             
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Web Search</Label>
-                <p className="text-xs text-muted-foreground">Allow the agent to search the internet for real-time information</p>
-              </div>
+            <FormRow 
+              label="Web Search" 
+              description="Allow the agent to search the internet for real-time information"
+            >
               <Switch
                 checked={formData.openaiAgentSdkEnableWebSearch || false}
                 onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableWebSearch: checked } as any)}
               />
-            </div>
+            </FormRow>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Code Interpreter</Label>
-                <p className="text-xs text-muted-foreground">Enable code execution in a sandboxed environment for data analysis and computation</p>
-              </div>
+            <FormRow 
+              label="Code Interpreter" 
+              description="Enable code execution in a sandboxed environment for data analysis and computation"
+            >
               <Switch
                 checked={formData.openaiAgentSdkEnableCodeInterpreter || false}
                 onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableCodeInterpreter: checked } as any)}
               />
-            </div>
+            </FormRow>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Computer Use</Label>
-                <p className="text-xs text-muted-foreground">Enable automated interactions with graphical user interfaces</p>
-              </div>
+            <FormRow 
+              label="Computer Use" 
+              description="Enable automated interactions with graphical user interfaces"
+            >
               <Switch
                 checked={formData.openaiAgentSdkEnableComputerUse || false}
                 onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableComputerUse: checked } as any)}
               />
-            </div>
+            </FormRow>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Image Generation</Label>
-                <p className="text-xs text-muted-foreground">Enable image creation based on textual prompts</p>
-              </div>
+            <FormRow 
+              label="Image Generation" 
+              description="Enable image creation based on textual prompts"
+            >
               <Switch
                 checked={formData.openaiAgentSdkEnableImageGeneration || false}
                 onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableImageGeneration: checked } as any)}
               />
-            </div>
-          </div>
+            </FormRow>
+          </FormSection>
         </>
       )}
 
