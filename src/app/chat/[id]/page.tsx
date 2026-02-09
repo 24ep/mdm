@@ -421,38 +421,49 @@ export default function ChatPage() {
   
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      const data = event.data
-      if (!data || typeof data !== 'object') return
-      if (data.type === 'chatbot-preview-mode') {
-        const val = data.value
-        if (val === 'popover' || val === 'fullpage' || val === 'popup-center') {
-          // Only reset isOpen state when preview mode ACTUALLY changes
-          const modeChanged = prevPreviewModeRef.current !== val
-          prevPreviewModeRef.current = val
-          
-          setPreviewDeploymentType(val)
-          
-          if (modeChanged) {
-            // Reset isOpen state when preview mode changes to show widget button
-            if (val === 'popover' || val === 'popup-center') {
-              setIsOpen(false)
-            } else {
-              setIsOpen(true)
+      try {
+        const data = event.data
+        if (!data || typeof data !== 'object') return
+        
+        // Debug logging for chat-related messages
+        if (data.type && (data.type.startsWith('chatbot-') || data.type.includes('chat'))) {
+           // console.log('[ChatPage] Received message:', data.type, data)
+        }
+
+        if (data.type === 'chatbot-preview-mode') {
+          const val = data.value
+          if (val === 'popover' || val === 'fullpage' || val === 'popup-center') {
+            // Only reset isOpen state when preview mode ACTUALLY changes
+            const modeChanged = prevPreviewModeRef.current !== val
+            prevPreviewModeRef.current = val
+            
+            setPreviewDeploymentType(val)
+            
+            if (modeChanged) {
+              // Reset isOpen state when preview mode changes to show widget button
+              if (val === 'popover' || val === 'popup-center') {
+                setIsOpen(false)
+              } else {
+                setIsOpen(true)
+              }
             }
           }
         }
-      }
-      if (data.type === 'clear-session') {
-        setMessages([])
-      }
-      // Handle external control commands from parent window (embed script)
-      if (data.type === 'open-chat') {
-        setIsOpen(true)
-      }
-      if (data.type === 'close-chat') {
-        setIsOpen(false)
+        if (data.type === 'clear-session') {
+          setMessages([])
+        }
+        // Handle external control commands from parent window (embed script)
+        if (data.type === 'open-chat') {
+          setIsOpen(true)
+        }
+        if (data.type === 'close-chat') {
+          setIsOpen(false)
+        }
+      } catch (err) {
+        console.error('[ChatPage] Error processing message:', err)
       }
     }
+    
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
   }, [])
@@ -472,6 +483,29 @@ export default function ChatPage() {
       clearAttachments()
     }
   }
+
+  // Determine deployment type - force fullpage on mobile/tablet for popover modes
+  // BUT: In preview/emulator mode with desktop device, preserve the selected deployment type so users can preview widget behavior
+  // For mobile/tablet preview, still apply fullpage conversion to match production mobile behavior
+  const previewDevice = searchParams.get('previewDevice') // 'desktop' | 'tablet' | 'mobile'
+  const isDesktopPreview = isPreview && previewDevice === 'desktop'
+  const baseDeploymentType = (isEmbed && searchParams.get('type'))
+    ? (searchParams.get('type') as 'popover' | 'fullpage' | 'popup-center')
+    : (isEmbed ? 'fullpage' : previewDeploymentType)
+
+  // On mobile/tablet, auto-switch popover/popup-center to fullpage for better UX
+  // EXCEPT: In DESKTOP preview mode (emulator), preserve the selected deployment type
+  // EXCEPT: In EMBED mode, the iframe size determines "mobile" state. If the iframe is small (closed),
+  // we do NOT want to switch to fullpage, because fullpage forces isOpen=true, which expands the iframe, creating a loop.
+  const effectiveDeploymentType = (isMobile && !isEmbed && !isDesktopPreview && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
+    ? 'fullpage'
+    : baseDeploymentType
+
+  // Memoize widget button style to ensure it recomputes when chatbot config changes
+  const widgetButtonStyle = useMemo(() => {
+    if (!chatbot) return {}
+    return getWidgetButtonStyle(chatbot)
+  }, [chatbot])
 
   if (!chatbot) {
     return <div className="h-screen w-screen bg-transparent" />
@@ -507,32 +541,10 @@ export default function ChatPage() {
     )
   }
 
-  // Determine deployment type - force fullpage on mobile/tablet for popover modes
-  // BUT: In preview/emulator mode with desktop device, preserve the selected deployment type so users can preview widget behavior
-  // For mobile/tablet preview, still apply fullpage conversion to match production mobile behavior
-  const previewDevice = searchParams.get('previewDevice') // 'desktop' | 'tablet' | 'mobile'
-  const isDesktopPreview = isPreview && previewDevice === 'desktop'
-  const baseDeploymentType = (isEmbed && searchParams.get('type'))
-    ? (searchParams.get('type') as 'popover' | 'fullpage' | 'popup-center')
-    : (isEmbed ? 'fullpage' : previewDeploymentType)
-
-  // On mobile/tablet, auto-switch popover/popup-center to fullpage for better UX
-  // EXCEPT: In DESKTOP preview mode (emulator), preserve the selected deployment type
-  // EXCEPT: In EMBED mode, the iframe size determines "mobile" state. If the iframe is small (closed),
-  // we do NOT want to switch to fullpage, because fullpage forces isOpen=true, which expands the iframe, creating a loop.
-  const effectiveDeploymentType = (isMobile && !isEmbed && !isDesktopPreview && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
-    ? 'fullpage'
-    : baseDeploymentType
-
   const chatStyle = getChatStyle(chatbot)
   const containerStyle = getContainerStyle(chatbot, effectiveDeploymentType, emulatorConfig, isMobile, isEmbed, isDesktopPreview)
   const overlayStyle = getOverlayStyle(effectiveDeploymentType, chatbot, isOpen)
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
-  // Memoize widget button style to ensure it recomputes when chatbot config changes
-  const widgetButtonStyle = useMemo(() => {
-    if (!chatbot) return {}
-    return getWidgetButtonStyle(chatbot)
-  }, [chatbot])
 
   // Render ChatKit only if engine type is chatkit or openai-agent-sdk with agent ID
   // In DESKTOP preview mode, don't force regular style on mobile - allow widget preview
