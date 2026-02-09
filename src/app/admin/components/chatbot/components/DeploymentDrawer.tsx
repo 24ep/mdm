@@ -29,7 +29,7 @@ export function DeploymentDrawer({
       onOpenChange={onOpenChange}
       title="Deployment"
       description="Configure deployment settings and embed code"
-      width="w-[800px]"
+      width="w-[40%]"
     >
       <div className="flex-1 overflow-y-auto p-6">
         <DeploymentTab

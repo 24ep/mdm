@@ -7,15 +7,15 @@ import { StyleTab } from '../StyleTab'
 import { Chatbot } from './types'
 import { EngineConfig } from './components/EngineConfig'
 import { ConfigTab } from './components/ConfigTab'
-import { DeploymentTab } from './components/DeploymentTab'
+
 import { PerformanceTab } from './components/PerformanceTab'
 
 interface ChatbotEditorProps {
   formData: Partial<Chatbot>
   setFormData: React.Dispatch<React.SetStateAction<Partial<Chatbot>>>
   selectedChatbot: Chatbot | null
-  activeTab: 'engine' | 'style' | 'config' | 'deployment' | 'performance' | 'pwa'
-  onTabChange: (tab: 'engine' | 'style' | 'config' | 'deployment' | 'performance' | 'pwa') => void
+  activeTab: 'engine' | 'style' | 'config' | 'performance' | 'pwa'
+  onTabChange: (tab: 'engine' | 'style' | 'config' | 'performance' | 'pwa') => void
   onGenerateEmbedCode: (chatbot: Chatbot) => string
   hideTabsList?: boolean
   onSave?: () => Promise<Chatbot | null>
@@ -49,17 +49,7 @@ export function ChatbotEditor({
       return <ConfigTab formData={formData} setFormData={setFormData} />
     }
 
-    if (activeTab === 'deployment') {
-      return (
-        <DeploymentTab
-          formData={formData}
-          setFormData={setFormData}
-          selectedChatbot={selectedChatbot}
-          onGenerateEmbedCode={onGenerateEmbedCode}
-          onSave={onSave}
-        />
-      )
-    }
+
 
     if (activeTab === 'performance') {
       return <PerformanceTab chatbot={selectedChatbot} />
@@ -94,10 +84,7 @@ export function ChatbotEditor({
             <Layout className="h-4 w-4 mr-2" />
             Config
           </TabsTrigger>
-          <TabsTrigger value="deployment">
-            <Rocket className="h-4 w-4 mr-2" />
-            Deployment
-          </TabsTrigger>
+
           <TabsTrigger value="performance">
             <TrendingUp className="h-4 w-4 mr-2" />
             Performance
@@ -120,15 +107,7 @@ export function ChatbotEditor({
           <ConfigTab formData={formData} setFormData={setFormData} />
         </TabsContent>
 
-        <TabsContent value="deployment" className="space-y-4 pt-4">
-          <DeploymentTab
-            formData={formData}
-            setFormData={setFormData}
-            selectedChatbot={selectedChatbot}
-            onGenerateEmbedCode={onGenerateEmbedCode}
-            onSave={onSave}
-          />
-        </TabsContent>
+
 
         <TabsContent value="performance" className="space-y-4 pt-4">
           <PerformanceTab chatbot={selectedChatbot} />
