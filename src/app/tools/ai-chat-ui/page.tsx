@@ -21,7 +21,7 @@ export default function ChatEmbedUIPage() {
     const [selectedChatbot, setSelectedChatbot] = useState<Chatbot | null>(null)
     const [isEditing, setIsEditing] = useState(false)
     const [editorFormData, setEditorFormData] = useState<Partial<Chatbot>>({})
-    const [activeTab, setActiveTab] = useState<'engine' | 'style' | 'config' | 'deployment' | 'performance' | 'pwa'>('engine')
+    const [activeTab, setActiveTab] = useState<'engine' | 'style' | 'config' | 'performance' | 'pwa'>('engine')
     const [previewMode, setPreviewMode] = useState<'popover' | 'fullpage' | 'popup-center'>('popover')
     const [deploymentDrawerOpen, setDeploymentDrawerOpen] = useState(false)
 
