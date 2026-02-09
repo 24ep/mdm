@@ -181,7 +181,7 @@ export const commonSchemas = {
   idOrSlug: z.string().min(1),
   pagination: z.object({
     page: z.string().transform(Number).pipe(z.number().int().positive()).optional(),
-    limit: z.string().transform(Number).pipe(z.number().int().positive().max(100)).optional(),
+    limit: z.string().transform(Number).pipe(z.number().int().positive().max(1000)).optional(),
     offset: z.string().transform(Number).pipe(z.number().int().nonnegative()).optional(),
   }),
   sort: z.object({

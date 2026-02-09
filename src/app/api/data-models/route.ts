@@ -17,7 +17,7 @@ async function getHandler(request: NextRequest) {
   // Note: space_id may have colon suffix (e.g., "uuid:1"), so we normalize it
   const queryValidation = validateQuery(request, z.object({
     page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
-    limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
+    limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(1000)).optional().default(10),
     search: z.string().optional().default(''),
     space_id: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()),
   }))
@@ -31,14 +31,20 @@ async function getHandler(request: NextRequest) {
 
   if (!spaceId) {
     // Fallback to user's default space
-    const { rows: defaultSpace } = await query(
-      `SELECT s.id FROM public.spaces s 
-         JOIN public.space_members sm ON sm.space_id = s.id AND sm.user_id::text = $1
-         WHERE s.is_default = true AND s.deleted_at IS NULL
-         ORDER BY s.created_at DESC LIMIT 1`,
-      [session.user.id]
-    )
-    spaceId = defaultSpace[0]?.id || null
+    try {
+      const { rows: defaultSpace } = await query(
+        `SELECT s.id FROM public.spaces s 
+           JOIN public.space_members sm ON sm.space_id = s.id AND sm.user_id::text = $1
+           WHERE s.is_default = true AND s.deleted_at IS NULL
+           ORDER BY s.created_at DESC LIMIT 1`,
+        [session.user.id]
+      )
+      spaceId = defaultSpace[0]?.id || null
+    } catch (error: any) {
+      logger.error('Failed to fetch default space', error, { userId: session.user.id })
+      // Continue execution, we'll check if spaceId is null below
+    }
+
     if (!spaceId) {
       logger.warn('Space ID is required', { userId: session.user.id })
       return NextResponse.json({ error: 'Space ID is required' }, { status: 400 })
@@ -80,18 +86,28 @@ async function getHandler(request: NextRequest) {
       ${where}
     `
 
-  const [{ rows: dataModels }, { rows: totalRows }] = await Promise.all([
-    query(listSql, params),
-    query(countSql, params),
-  ])
+  try {
+    const [{ rows: dataModels }, { rows: totalRows }] = await Promise.all([
+      query(listSql, params),
+      query(countSql, params),
+    ])
 
-  const total = totalRows[0]?.total || 0
-  const duration = Date.now() - startTime
-  logger.apiResponse('GET', '/api/data-models', 200, duration, { total })
-  return NextResponse.json({
-    dataModels: dataModels || [],
-    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-  })
+    const total = totalRows[0]?.total || 0
+    const duration = Date.now() - startTime
+    logger.apiResponse('GET', '/api/data-models', 200, duration, { total })
+    return NextResponse.json({
+      dataModels: dataModels || [],
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    })
+  } catch (error: any) {
+    logger.error('Failed to fetch data models', error, {
+      userId: session.user.id,
+      spaceId,
+      query: listSql,
+      params
+    })
+    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 })
+  }
 }
 
 export const GET = withErrorHandling(getHandler, 'GET /api/data-models')
