@@ -590,7 +590,7 @@ export function OpenAIAgentSDKConfig({
               />
             </FormRow>
           </FormSection>
-        </>
+        </FormSection>
       )}
 
     </div>
