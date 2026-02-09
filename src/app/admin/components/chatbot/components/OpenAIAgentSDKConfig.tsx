@@ -545,7 +545,7 @@ export function OpenAIAgentSDKConfig({
             />
           </FormRow>
 
-          <FormSection className="pt-2 border-t">
+          <div className="pt-2 border-t space-y-4">
             <div className="mb-4">
               <h5 className="text-sm font-medium">Tools</h5>
             </div>
@@ -589,7 +589,7 @@ export function OpenAIAgentSDKConfig({
                 onCheckedChange={(checked) => setFormData({ ...formData, openaiAgentSdkEnableImageGeneration: checked } as any)}
               />
             </FormRow>
-          </FormSection>
+          </div>
         </FormSection>
       )}
 
