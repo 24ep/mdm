@@ -82,8 +82,8 @@ export function ChatWidgetButton({
             ...popoverPositionStyle,
             ...widgetButtonStyle,
             // Force border radius and background to be applied (in case of CSS overrides)
-            borderRadius: widgetButtonStyle.borderRadius || '50%',
-            backgroundColor: widgetButtonStyle.backgroundColor || widgetButtonStyle.background || config.backgroundColor || '#3b82f6',
+            borderRadius: widgetButtonStyle.borderRadius || config.borderRadius || '50%',
+            backgroundColor: widgetButtonStyle.backgroundColor || undefined,
             background: widgetButtonStyle.background || undefined,
             backgroundImage: widgetButtonStyle.backgroundImage || undefined,
         }

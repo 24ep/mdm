@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id                                                      String                        @id @default(uuid()) @db.Uuid
+  id                                                      String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email                                                   String                        @unique
   name                                                    String
   password                                                String
@@ -95,7 +95,7 @@ model User {
 }
 
 model UserGroup {
-  id          String            @id @default(uuid()) @db.Uuid
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   parentId    String?           @map("parent_id") @db.Uuid
@@ -112,7 +112,7 @@ model UserGroup {
 }
 
 model UserGroupMember {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   groupId   String    @map("group_id") @db.Uuid
   userId    String    @map("user_id") @db.Uuid
   role      String    @default("MEMBER")
@@ -125,7 +125,7 @@ model UserGroupMember {
 }
 
 model Space {
-  id                      String                   @id @default(uuid()) @db.Uuid
+  id                      String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                    String
   description             String?
   slug                    String                   @unique
@@ -173,7 +173,7 @@ model Space {
 }
 
 model SpaceMember {
-  id      String @id @default(uuid()) @db.Uuid
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   spaceId String @map("space_id") @db.Uuid
   userId  String @map("user_id") @db.Uuid
   role    String @default("MEMBER")
@@ -185,7 +185,7 @@ model SpaceMember {
 }
 
 model EntityType {
-  id                   String                 @id @default(uuid()) @db.Uuid
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                 String                 @unique
   displayName          String                 @map("display_name")
   description          String?
@@ -210,7 +210,7 @@ model EntityType {
 }
 
 model AttributeGroup {
-  id            String         @id @default(uuid()) @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String
   displayName   String         @map("display_name")
   description   String?
@@ -227,7 +227,7 @@ model AttributeGroup {
 }
 
 model EavAttribute {
-  id                        String                 @id @default(uuid()) @db.Uuid
+  id                        String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                      String
   displayName               String                 @map("display_name")
   description               String?
@@ -277,7 +277,7 @@ model EavAttribute {
 }
 
 model EavEntity {
-  id           String     @id @default(uuid()) @db.Uuid
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   entityTypeId String     @map("entity_type_id") @db.Uuid
   externalId   String?    @map("external_id")
   isActive     Boolean    @default(true) @map("is_active")
@@ -295,7 +295,7 @@ model EavEntity {
 }
 
 model EavValue {
-  id            String       @id @default(uuid()) @db.Uuid
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   entityId      String       @map("entity_id") @db.Uuid
   attributeId   String       @map("attribute_id") @db.Uuid
   textValue     String?      @map("text_value")
@@ -315,7 +315,7 @@ model EavValue {
 }
 
 model AttributeDependency {
-  id                   String       @id @default(uuid()) @db.Uuid
+  id                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   dependentAttributeId String       @map("dependent_attribute_id") @db.Uuid
   dependsOnAttributeId String       @map("depends_on_attribute_id") @db.Uuid
   conditionType        String       @map("condition_type")
@@ -329,7 +329,7 @@ model AttributeDependency {
 }
 
 model AttributeInheritance {
-  id                 String       @id @default(uuid()) @db.Uuid
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   childEntityTypeId  String       @map("child_entity_type_id") @db.Uuid
   parentEntityTypeId String       @map("parent_entity_type_id") @db.Uuid
   attributeId        String       @map("attribute_id") @db.Uuid
@@ -345,7 +345,7 @@ model AttributeInheritance {
 }
 
 model EavValueHistory {
-  id               String    @id @default(uuid()) @db.Uuid
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   entityId         String    @map("entity_id") @db.Uuid
   attributeId      String    @map("attribute_id") @db.Uuid
   oldTextValue     String?   @map("old_text_value")
@@ -370,7 +370,7 @@ model EavValueHistory {
 }
 
 model DataModel {
-  id                  String               @id @default(uuid()) @db.Uuid
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                String
   description         String?
   sortOrder           Int                  @default(0) @map("sort_order")
@@ -389,7 +389,7 @@ model DataModel {
 }
 
 model DataModelSpace {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   dataModelId String    @map("data_model_id") @db.Uuid
   spaceId     String    @map("space_id") @db.Uuid
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -402,7 +402,7 @@ model DataModelSpace {
 }
 
 model Attribute {
-  id                        String            @id @default(uuid()) @db.Uuid
+  id                        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                      String
   displayName               String            @map("display_name")
   type                      String
@@ -436,7 +436,7 @@ model Attribute {
 }
 
 model ExternalConnection {
-  id         String      @id @default(uuid()) @db.Uuid
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   spaceId    String      @map("space_id") @db.Uuid
   name       String
   dbType     String      @map("db_type")
@@ -457,7 +457,7 @@ model ExternalConnection {
 }
 
 model Team {
-  id          String           @id @default(uuid()) @db.Uuid
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   isActive    Boolean          @default(true) @map("is_active")
@@ -471,7 +471,7 @@ model Team {
 }
 
 model TeamMember {
-  id     String @id @default(uuid()) @db.Uuid
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   teamId String @map("team_id") @db.Uuid
   userId String @map("user_id") @db.Uuid
   role   String @default("member")
@@ -483,7 +483,7 @@ model TeamMember {
 }
 
 model Permission {
-  id              String           @id @default(uuid()) @db.Uuid
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String           @unique
   description     String?
   resource        String
@@ -495,7 +495,7 @@ model Permission {
 }
 
 model TeamPermission {
-  id           String     @id @default(uuid()) @db.Uuid
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   teamId       String     @map("team_id") @db.Uuid
   permissionId String     @map("permission_id") @db.Uuid
   permission   Permission @relation("PermissionTeamPermissions", fields: [permissionId], references: [id], onDelete: Cascade)
@@ -506,7 +506,7 @@ model TeamPermission {
 }
 
 model Role {
-  id                 String             @id @default(uuid()) @db.Uuid
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name               String             @unique
   description        String?
   level              String             @default("space")
@@ -518,7 +518,7 @@ model Role {
 }
 
 model RolePermission {
-  id           String     @id @default(uuid()) @db.Uuid
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   roleId       String     @map("role_id") @db.Uuid
   permissionId String     @map("permission_id") @db.Uuid
   permission   Permission @relation("PermissionRolePermissions", fields: [permissionId], references: [id], onDelete: Cascade)
@@ -529,7 +529,7 @@ model RolePermission {
 }
 
 model DataRecord {
-  id          String            @id @default(uuid()) @db.Uuid
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   dataModelId String            @map("data_model_id") @db.Uuid
   createdBy   String            @map("created_by") @db.Uuid
   createdAt   DateTime          @default(now()) @map("created_at")
@@ -543,7 +543,7 @@ model DataRecord {
 }
 
 model DataRecordValue {
-  id           String     @id @default(uuid()) @db.Uuid
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   dataRecordId String     @map("data_record_id") @db.Uuid
   attributeId  String     @map("attribute_id") @db.Uuid
   value        String?
@@ -557,7 +557,7 @@ model DataRecordValue {
 }
 
 model Notification {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId      String    @map("user_id") @db.Uuid
   type        String
   title       String
@@ -577,7 +577,7 @@ model Notification {
 }
 
 model SystemSetting {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   key       String   @unique
   value     String
   createdAt DateTime @default(now()) @map("created_at")
@@ -606,7 +606,7 @@ model PlatformIntegration {
 }
 
 model SpaceAttachmentStorage {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   spaceId   String   @map("space_id") @db.Uuid
   fileName  String   @map("file_name")
   filePath  String   @map("file_path")
@@ -619,7 +619,7 @@ model SpaceAttachmentStorage {
 }
 
 model AttachmentFile {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   fileName  String   @map("file_name")
   filePath  String   @map("file_path")
   fileSize  Int      @map("file_size")
@@ -630,7 +630,7 @@ model AttachmentFile {
 }
 
 model CacheInstance {
-  id            String       @id @default(uuid()) @db.Uuid
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String
   type          String
   host          String
@@ -648,7 +648,7 @@ model CacheInstance {
 }
 
 model KongInstance {
-  id            String    @id @default(uuid()) @db.Uuid
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String
   adminUrl      String    @map("admin_url")
   adminApiKey   String?   @map("admin_api_key")
@@ -664,7 +664,7 @@ model KongInstance {
 }
 
 model CacheKey {
-  id           String        @id @default(uuid()) @db.Uuid
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   instanceId   String        @map("instance_id") @db.Uuid
   key          String
   value        String
@@ -683,7 +683,7 @@ model CacheKey {
 }
 
 model CacheStats {
-  id                String        @id @default(uuid()) @db.Uuid
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   instanceId        String        @map("instance_id") @db.Uuid
   totalKeys         Int           @default(0) @map("total_keys")
   memoryUsage       BigInt        @default(0) @map("memory_usage")
@@ -704,7 +704,7 @@ model CacheStats {
 }
 
 model CacheConfig {
-  id             String   @id @default(uuid()) @db.Uuid
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   instanceId     String   @unique @map("instance_id") @db.Uuid
   maxMemory      String   @map("max_memory")
   evictionPolicy String   @map("eviction_policy")
@@ -719,7 +719,7 @@ model CacheConfig {
 }
 
 model Notebook {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   content     Json?     @default("{}")
@@ -737,7 +737,7 @@ model Notebook {
 }
 
 model AIProviderConfig {
-  id            String    @id @default(uuid()) @db.Uuid
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   provider      String    @unique
   name          String
   description   String?
@@ -759,7 +759,7 @@ model AIProviderConfig {
 }
 
 model AIModel {
-  id           String        @id @default(uuid()) @db.Uuid
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String
   provider     String
   type         String
@@ -776,7 +776,7 @@ model AIModel {
 }
 
 model ChatSession {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title       String
   description String?
   isPrivate   Boolean   @default(false) @map("is_private")
@@ -795,7 +795,7 @@ model ChatSession {
 }
 
 model AuditLog {
-  id         String   @id @default(uuid()) @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   action     String
   entityType String   @map("entity_type")
   entityId   String   @map("entity_id") @db.Uuid
@@ -811,7 +811,7 @@ model AuditLog {
 }
 
 model Project {
-  id          String      @id @default(uuid()) @db.Uuid
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   status      String      @default("PLANNING")
@@ -835,7 +835,7 @@ model Project {
 }
 
 model Milestone {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId   String    @map("project_id") @db.Uuid
   name        String
   description String?
@@ -857,7 +857,7 @@ model Milestone {
 }
 
 model Release {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId   String    @map("project_id") @db.Uuid
   name        String
   version     String?
@@ -879,7 +879,7 @@ model Release {
 }
 
 model Module {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId   String    @map("project_id") @db.Uuid
   name        String
   description String?
@@ -903,7 +903,7 @@ model Module {
 }
 
 model Cycle {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   projectId   String    @map("project_id") @db.Uuid
   name        String
   description String?
@@ -924,7 +924,7 @@ model Cycle {
 }
 
 model Ticket {
-  id           String             @id @default(uuid()) @db.Uuid
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title        String
   description  String?
   status       String             @default("BACKLOG")
@@ -968,7 +968,7 @@ model Ticket {
 }
 
 model TicketSpace {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId  String   @map("ticket_id") @db.Uuid
   spaceId   String   @map("space_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
@@ -980,7 +980,7 @@ model TicketSpace {
 }
 
 model TicketAssignee {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId  String   @map("ticket_id") @db.Uuid
   userId    String   @map("user_id") @db.Uuid
   role      String   @default("ASSIGNEE")
@@ -993,7 +993,7 @@ model TicketAssignee {
 }
 
 model TicketTag {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId  String   @map("ticket_id") @db.Uuid
   name      String
   color     String?
@@ -1005,7 +1005,7 @@ model TicketTag {
 }
 
 model TicketAttribute {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId    String   @map("ticket_id") @db.Uuid
   name        String
   displayName String   @map("display_name")
@@ -1023,7 +1023,7 @@ model TicketAttribute {
 }
 
 model TicketComment {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId  String    @map("ticket_id") @db.Uuid
   userId    String    @map("user_id") @db.Uuid
   content   String
@@ -1038,7 +1038,7 @@ model TicketComment {
 }
 
 model TicketAttachment {
-  id         String   @id @default(uuid()) @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId   String   @map("ticket_id") @db.Uuid
   fileName   String   @map("file_name")
   filePath   String   @map("file_path")
@@ -1052,7 +1052,7 @@ model TicketAttachment {
 }
 
 model TicketTimeLog {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId    String   @map("ticket_id") @db.Uuid
   userId      String   @map("user_id") @db.Uuid
   description String?
@@ -1067,7 +1067,7 @@ model TicketTimeLog {
 }
 
 model TicketDependency {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ticketId    String   @map("ticket_id") @db.Uuid
   dependsOnId String   @map("depends_on_id") @db.Uuid
   type        String   @default("BLOCKS")
@@ -1081,7 +1081,7 @@ model TicketDependency {
 }
 
 model KanbanConfig {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   spaceId     String   @map("space_id") @db.Uuid
   name        String
   description String?
@@ -1095,7 +1095,7 @@ model KanbanConfig {
 }
 
 model IntakeForm {
-  id          String             @id @default(uuid()) @db.Uuid
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   spaceId     String             @map("space_id") @db.Uuid
   name        String
   description String?
@@ -1111,7 +1111,7 @@ model IntakeForm {
 }
 
 model IntakeSubmission {
-  id        String     @id @default(uuid()) @db.Uuid
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   formId    String     @map("form_id") @db.Uuid
   userId    String?    @map("user_id") @db.Uuid
   data      Json
@@ -1126,7 +1126,7 @@ model IntakeSubmission {
 }
 
 model ImportProfile {
-  id          String      @id @default(uuid()) @db.Uuid
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   dataModelId String      @map("data_model_id") @db.Uuid
@@ -1145,7 +1145,7 @@ model ImportProfile {
 }
 
 model ImportJob {
-  id            String         @id @default(uuid()) @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   profileId     String?        @map("profile_id") @db.Uuid
   dataModelId   String         @map("data_model_id") @db.Uuid
   fileName      String         @map("file_name")
@@ -1172,7 +1172,7 @@ model ImportJob {
 }
 
 model ExportProfile {
-  id          String      @id @default(uuid()) @db.Uuid
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   type        String      @default("STUDIO")
@@ -1190,7 +1190,7 @@ model ExportProfile {
 }
 
 model ExportJob {
-  id            String         @id @default(uuid()) @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   dataModelId   String         @map("data_model_id") @db.Uuid
   profileId     String?        @map("profile_id") @db.Uuid
   name          String?
@@ -1221,7 +1221,7 @@ model ExportJob {
 }
 
 model Chatbot {
-  id                    String                     @id @default(uuid()) @db.Uuid
+  id                    String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                  String
   website               String?
   description           String?
@@ -1276,7 +1276,7 @@ model Chatbot {
 }
 
 model ChatbotVersion {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId   String   @map("chatbot_id") @db.Uuid
   version     String
   config      Json     @default("{}")
@@ -1290,7 +1290,7 @@ model ChatbotVersion {
 }
 
 model OpenAIAgentThread {
-  id            String    @id @default(uuid()) @db.Uuid
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   threadId      String    @unique @map("thread_id")
   chatbotId     String    @map("chatbot_id") @db.Uuid
   userId        String?   @map("user_id") @db.Uuid
@@ -1312,7 +1312,7 @@ model OpenAIAgentThread {
 }
 
 model ChatbotRateLimit {
-  id                   String   @id @default(uuid()) @db.Uuid
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId            String   @unique @map("chatbot_id") @db.Uuid
   enabled              Boolean  @default(true)
   maxRequestsPerMinute Int?     @map("max_requests_per_minute")
@@ -1330,7 +1330,7 @@ model ChatbotRateLimit {
 }
 
 model ChatbotCacheConfig {
-  id             String   @id @default(uuid()) @db.Uuid
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId      String   @unique @map("chatbot_id") @db.Uuid
   enabled        Boolean  @default(true)
   ttl            Int      @default(3600)
@@ -1346,7 +1346,7 @@ model ChatbotCacheConfig {
 }
 
 model ChatbotRetryConfig {
-  id                   String   @id @default(uuid()) @db.Uuid
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId            String   @unique @map("chatbot_id") @db.Uuid
   enabled              Boolean  @default(true)
   maxRetries           Int      @default(3) @map("max_retries")
@@ -1363,7 +1363,7 @@ model ChatbotRetryConfig {
 }
 
 model ChatbotCostBudget {
-  id             String   @id @default(uuid()) @db.Uuid
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId      String   @unique @map("chatbot_id") @db.Uuid
   enabled        Boolean  @default(true)
   monthlyBudget  Decimal? @map("monthly_budget") @db.Decimal(10, 2)
@@ -1380,7 +1380,7 @@ model ChatbotCostBudget {
 }
 
 model ChatbotCostRecord {
-  id           String   @id @default(uuid()) @db.Uuid
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId    String   @map("chatbot_id") @db.Uuid
   userId       String?  @map("user_id") @db.Uuid
   threadId     String?  @map("thread_id")
@@ -1402,7 +1402,7 @@ model ChatbotCostRecord {
 }
 
 model ChatbotWebhook {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId String   @map("chatbot_id") @db.Uuid
   url       String
   secret    String?
@@ -1417,7 +1417,7 @@ model ChatbotWebhook {
 }
 
 model ChatbotPerformanceMetric {
-  id         String   @id @default(uuid()) @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId  String   @map("chatbot_id") @db.Uuid
   metricType String   @map("metric_type")
   value      Decimal  @db.Decimal(10, 4)
@@ -1431,7 +1431,7 @@ model ChatbotPerformanceMetric {
 }
 
 model ChatbotCustomFunction {
-  id            String   @id @default(uuid()) @db.Uuid
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId     String   @map("chatbot_id") @db.Uuid
   name          String
   description   String
@@ -1450,7 +1450,7 @@ model ChatbotCustomFunction {
 }
 
 model ChatbotMultiAgentConfig {
-  id                   String   @id @default(uuid()) @db.Uuid
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId            String   @unique @map("chatbot_id") @db.Uuid
   enabled              Boolean  @default(false)
   agents               Json
@@ -1465,7 +1465,7 @@ model ChatbotMultiAgentConfig {
 }
 
 model ChatbotLifecycleHook {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId   String   @map("chatbot_id") @db.Uuid
   hookType    String   @map("hook_type")
   enabled     Boolean  @default(true)
@@ -1482,7 +1482,7 @@ model ChatbotLifecycleHook {
 }
 
 model ChatbotConnector {
-  id            String   @id @default(uuid()) @db.Uuid
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId     String   @map("chatbot_id") @db.Uuid
   connectorType String   @map("connector_type")
   enabled       Boolean  @default(true)
@@ -1498,7 +1498,7 @@ model ChatbotConnector {
 }
 
 model ChatbotAgentLoopConfig {
-  id                String   @id @default(uuid()) @db.Uuid
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   chatbotId         String   @unique @map("chatbot_id") @db.Uuid
   maxIterations     Int?     @map("max_iterations")
   stopConditions    Json?    @default("{}") @map("stop_conditions")
@@ -1514,7 +1514,7 @@ model ChatbotAgentLoopConfig {
 }
 
 model Language {
-  id            String         @id @default(uuid()) @db.Uuid
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code          String         @unique
   name          String
   nativeName    String         @map("native_name")
@@ -1530,7 +1530,7 @@ model Language {
 }
 
 model AssetType {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code        String    @unique
   name        String
   description String?
@@ -1548,7 +1548,7 @@ model AssetType {
 }
 
 model Asset {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   assetTypeId String    @map("asset_type_id") @db.Uuid
   code        String
   name        String
@@ -1570,7 +1570,7 @@ model Asset {
 }
 
 model Localization {
-  id         String   @id @default(uuid()) @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   languageId String   @map("language_id") @db.Uuid
   entityType String   @map("entity_type")
   entityId   String   @map("entity_id") @db.Uuid
@@ -1586,7 +1586,7 @@ model Localization {
 }
 
 model StorageConnection {
-  id          String    @id @default(uuid()) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   type        String
   config      Json
@@ -1602,7 +1602,7 @@ model StorageConnection {
 }
 
 model ServiceRegistry {
-  id                    String                        @id @default(uuid()) @db.Uuid
+  id                    String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                  String
   slug                  String                        @unique
   description           String?
@@ -1647,7 +1647,7 @@ model ServiceRegistry {
 }
 
 model ServiceInstallation {
-  id              String               @id @default(uuid()) @db.Uuid
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   serviceId       String               @map("service_id") @db.Uuid
   spaceId         String?              @map("space_id") @db.Uuid
   installedBy     String?              @map("installed_by") @db.Uuid
@@ -1675,7 +1675,7 @@ model ServiceInstallation {
 }
 
 model ServiceUIComponent {
-  id                  String               @id @default(uuid()) @db.Uuid
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   serviceId           String               @map("service_id") @db.Uuid
   installationId      String?              @map("installation_id") @db.Uuid
   componentType       String?              @map("component_type")
@@ -1697,7 +1697,7 @@ model ServiceUIComponent {
 }
 
 model ServiceAPIRoute {
-  id              String               @id @default(uuid()) @db.Uuid
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   serviceId       String               @map("service_id") @db.Uuid
   installationId  String?              @map("installation_id") @db.Uuid
   routePath       String               @map("route_path")
@@ -1720,7 +1720,7 @@ model ServiceAPIRoute {
 }
 
 model InfrastructureInstance {
-  id               String            @id @default(uuid()) @db.Uuid
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name             String
   type             String
   host             String
@@ -1751,7 +1751,7 @@ model InfrastructureInstance {
 }
 
 model InstanceService {
-  id                    String                        @id @default(uuid()) @db.Uuid
+  id                    String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   instanceId            String                        @map("instance_id") @db.Uuid
   name                  String
   type                  String
@@ -1777,7 +1777,7 @@ model InstanceService {
 }
 
 model ServiceManagementAssignment {
-  id                String          @id @default(uuid()) @db.Uuid
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   instanceServiceId String          @map("instance_service_id") @db.Uuid
   pluginId          String          @map("plugin_id") @db.Uuid
   assignedBy        String?         @map("assigned_by") @db.Uuid
@@ -1797,7 +1797,7 @@ model ServiceManagementAssignment {
 }
 
 model PluginReview {
-  id           String                @id @default(uuid()) @db.Uuid
+  id           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   serviceId    String                @map("service_id") @db.Uuid
   userId       String                @map("user_id") @db.Uuid
   spaceId      String?               @map("space_id") @db.Uuid
@@ -1823,7 +1823,7 @@ model PluginReview {
 }
 
 model PluginReviewHelpful {
-  id        String       @id @default(uuid()) @db.Uuid
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   reviewId  String       @map("review_id") @db.Uuid
   userId    String       @map("user_id") @db.Uuid
   createdAt DateTime     @default(now()) @map("created_at")
@@ -1837,7 +1837,7 @@ model PluginReviewHelpful {
 }
 
 model KnowledgeCollection {
-  id          String                      @id @default(uuid()) @db.Uuid
+  id          String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   icon        String?
@@ -1861,7 +1861,7 @@ model KnowledgeCollection {
 }
 
 model KnowledgeCollectionMember {
-  id           String              @id @default(uuid()) @db.Uuid
+  id           String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   collectionId String              @map("collection_id") @db.Uuid
   userId       String              @map("user_id") @db.Uuid
   role         String              @default("viewer")
@@ -1877,7 +1877,7 @@ model KnowledgeCollectionMember {
 }
 
 model KnowledgeDocument {
-  id           String                     @id @default(uuid()) @db.Uuid
+  id           String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   collectionId String                     @map("collection_id") @db.Uuid
   title        String
   content      String
@@ -1916,7 +1916,7 @@ model KnowledgeDocument {
 }
 
 model KnowledgeDocumentVersion {
-  id          String            @id @default(uuid()) @db.Uuid
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId  String            @map("document_id") @db.Uuid
   title       String
   content     String
@@ -1932,7 +1932,7 @@ model KnowledgeDocumentVersion {
 }
 
 model KnowledgeComment {
-  id          String             @id @default(uuid()) @db.Uuid
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId  String             @map("document_id") @db.Uuid
   parentId    String?            @map("parent_id") @db.Uuid
   content     String
@@ -1957,7 +1957,7 @@ model KnowledgeComment {
 }
 
 model KnowledgeShare {
-  id           String               @id @default(uuid()) @db.Uuid
+  id           String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId   String?              @map("document_id") @db.Uuid
   collectionId String?              @map("collection_id") @db.Uuid
   userId       String?              @map("user_id") @db.Uuid
@@ -1981,7 +1981,7 @@ model KnowledgeShare {
 }
 
 model KnowledgeStar {
-  id         String            @id @default(uuid()) @db.Uuid
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId String            @map("document_id") @db.Uuid
   userId     String            @map("user_id") @db.Uuid
   createdAt  DateTime          @default(now()) @map("created_at")
@@ -1995,7 +1995,7 @@ model KnowledgeStar {
 }
 
 model KnowledgeMention {
-  id         String            @id @default(uuid()) @db.Uuid
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId String            @map("document_id") @db.Uuid
   userId     String            @map("user_id") @db.Uuid
   createdBy  String            @map("created_by") @db.Uuid
@@ -2011,7 +2011,7 @@ model KnowledgeMention {
 }
 
 model KnowledgePresence {
-  id         String            @id @default(uuid()) @db.Uuid
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   documentId String            @map("document_id") @db.Uuid
   userId     String            @map("user_id") @db.Uuid
   cursor     Json?
@@ -2028,7 +2028,7 @@ model KnowledgePresence {
 }
 
 model ApiWorkspace {
-  id           String           @id @default(uuid()) @db.Uuid
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String
   description  String?
   isPersonal   Boolean          @default(true) @map("is_personal")
@@ -2047,7 +2047,7 @@ model ApiWorkspace {
 }
 
 model ApiCollection {
-  id          String          @id @default(uuid()) @db.Uuid
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   workspaceId String          @map("workspace_id") @db.Uuid
   parentId    String?         @map("parent_id") @db.Uuid
   name        String
@@ -2069,7 +2069,7 @@ model ApiCollection {
 }
 
 model ApiRequest {
-  id               String              @id @default(uuid()) @db.Uuid
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   collectionId     String?             @map("collection_id") @db.Uuid
   name             String
   method           String              @default("GET")
@@ -2099,7 +2099,7 @@ model ApiRequest {
 }
 
 model ApiEnvironment {
-  id          String       @id @default(uuid()) @db.Uuid
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   workspaceId String       @map("workspace_id") @db.Uuid
   name        String
   variables   Json         @default("[]")
@@ -2116,7 +2116,7 @@ model ApiEnvironment {
 }
 
 model ApiRequestHistory {
-  id              String      @id @default(uuid()) @db.Uuid
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   requestId       String?     @map("request_id") @db.Uuid
   method          String
   url             String
@@ -2140,7 +2140,7 @@ model ApiRequestHistory {
 }
 
 model Theme {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
   description String?
   themeMode   String   @default("light") @map("theme_mode")
@@ -2159,7 +2159,7 @@ model Theme {
 }
 
 model WebsitePWA {
-  id                  String              @id @default(uuid()) @db.Uuid
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                String
   description         String?
   url                 String
@@ -2193,7 +2193,7 @@ model WebsitePWA {
 }
 
 model WebsitePWAVersion {
-  id          String     @id @default(uuid()) @db.Uuid
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   pwaId       String     @map("pwa_id") @db.Uuid
   version     String
   config      Json
@@ -2209,7 +2209,7 @@ model WebsitePWAVersion {
 }
 
 model MenuGroup {
-  id        String     @id @default(uuid()) @db.Uuid
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug      String     @unique
   name      String
   icon      String
@@ -2223,7 +2223,7 @@ model MenuGroup {
 }
 
 model MenuItem {
-  id             String           @id @default(uuid()) @db.Uuid
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   groupId        String           @map("group_id") @db.Uuid
   slug           String           @unique
   name           String
@@ -2356,7 +2356,7 @@ model ReportPermission {
 }
 
 model MemberPermission {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId      String   @map("user_id") @db.Uuid
   spaceId     String   @map("space_id") @db.Uuid
   permissions String[]

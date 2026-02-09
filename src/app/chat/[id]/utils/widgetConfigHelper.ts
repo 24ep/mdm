@@ -120,11 +120,18 @@ export function getWidgetConfig(chatbot: ChatbotConfig, theme?: any): WidgetConf
     let borderRadius: string
     if (avatarStyle === 'circle') {
         borderRadius = '50%' // Always circular for circle style
-    } else if (avatarStyle === 'square') {
-        borderRadius = c.widgetBorderRadius || '8px' // Default square radius if not set
     } else {
-        // circle-with-label uses labelBorderRadius, but button itself can be circular
-        borderRadius = c.widgetBorderRadius || '50%'
+        // Check for individual corner properties which are saved by the admin UI
+        const tl = c.widgetBorderRadiusTopLeft
+        const tr = c.widgetBorderRadiusTopRight
+        const br = c.widgetBorderRadiusBottomRight
+        const bl = c.widgetBorderRadiusBottomLeft
+
+        if (tl || tr || br || bl) {
+            borderRadius = `${tl || '0px'} ${tr || '0px'} ${br || '0px'} ${bl || '0px'}`
+        } else {
+            borderRadius = c.widgetBorderRadius || (avatarStyle === 'square' ? '8px' : '50%')
+        }
     }
 
     const labelBorderRadius = c.widgetLabelBorderRadius || borderRadius || '8px'

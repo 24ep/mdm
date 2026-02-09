@@ -260,7 +260,7 @@
 
 @layer base {
   * {
-    border-color: var(--brand-ui-border, hsl(var(--border)));
+    border-color: hsl(var(--brand-ui-border, var(--border)));
   }
 
   html {

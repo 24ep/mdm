@@ -64,8 +64,8 @@ async function getHandler(request: NextRequest) {
              ARRAY_AGG(s.slug) as space_slugs,
              ARRAY_AGG(s.name) as space_names
       FROM public.data_models dm
-      JOIN public.data_model_spaces dms ON dms.data_model_id::uuid = dm.id
-      JOIN public.spaces s ON s.id = dms.space_id::uuid
+      JOIN public.data_model_spaces dms ON dms.data_model_id = dm.id
+      JOIN public.spaces s ON s.id = dms.space_id
       ${where}
       GROUP BY dm.id, dm.name, dm.description, dm.created_at, dm.updated_at, dm.deleted_at,
                dm.is_active, dm.sort_order, dm.created_by
@@ -76,7 +76,7 @@ async function getHandler(request: NextRequest) {
   const countSql = `
       SELECT COUNT(DISTINCT dm.id)::int AS total 
       FROM public.data_models dm
-      JOIN public.data_model_spaces dms ON dms.data_model_id::uuid = dm.id
+      JOIN public.data_model_spaces dms ON dms.data_model_id = dm.id
       ${where}
     `
 
@@ -121,9 +121,9 @@ async function postHandler(request: NextRequest) {
   const accessResult = await requireAnySpaceAccess(space_ids, session.user.id!)
   if (!accessResult.success) return accessResult.response
 
-  // Create the data model
-  const insertSql = `INSERT INTO public.data_models (name, description, created_by, is_active, sort_order)
-                       VALUES ($1, $2, $3, $4, $5) RETURNING *`
+  // Create the data model with ID generation
+  const insertSql = `INSERT INTO public.data_models (id, name, description, created_by, is_active, sort_order)
+                       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING *`
   const { rows } = await query(insertSql, [
     name,
     description ?? null,
@@ -137,7 +137,7 @@ async function postHandler(request: NextRequest) {
   // Associate the data model with all specified spaces
   for (const spaceId of space_ids) {
     await query(
-      'INSERT INTO public.data_model_spaces (data_model_id, space_id, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())',
+      'INSERT INTO public.data_model_spaces (id, data_model_id, space_id, created_at, updated_at) VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())',
       [dataModel.id, spaceId]
     )
   }
