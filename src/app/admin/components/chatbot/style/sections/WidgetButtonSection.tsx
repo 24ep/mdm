@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Eye, Palette, Square, Sun, Tag, Settings } from 'lucide-react'
+import { Eye, Palette, Square, Sun, Tag, Settings, ChevronsUpDown, Upload } from 'lucide-react'
+import * as Icons from 'lucide-react'
 
 import { ColorInput } from '@/components/studio/layout-config/ColorInput'
 import type { Chatbot } from '../../types'
@@ -12,6 +13,10 @@ import { extractNumericValue, ensurePx } from '../styleUtils'
 import { AccordionSectionWrapper, AccordionSectionGroup } from '../components/AccordionSectionGroup'
 import { MultiSideInput } from '../components/MultiSideInput'
 import { FormRow, FormSection } from '../components/FormRow'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
+import { IconPicker } from '@/components/ui/icon-picker'
+
 
 interface WidgetButtonSectionProps {
   formData: Partial<Chatbot>
@@ -27,7 +32,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
       <AccordionSectionWrapper defaultValue="appearance">
         <AccordionSectionGroup id="appearance" title="Appearance" icon={Eye} defaultOpen>
           <FormSection>
-            <FormRow label="Avatar Style" description="Shape of the widget button">
+            <FormRow label="Avatar Style" description="Shape of the widget button container">
               <Select
                 value={formData.widgetAvatarStyle || 'circle'}
                 onValueChange={(v: any) => setFormData({ ...formData, widgetAvatarStyle: v })}
@@ -42,6 +47,87 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 </SelectContent>
               </Select>
             </FormRow>
+            <FormRow label="Avatar Type" description="Content of the widget button">
+              <Select
+                value={(formData as any).widgetAvatarType || formData.avatarType || 'icon'}
+                onValueChange={(v: any) => setFormData({ ...formData, widgetAvatarType: v } as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="icon">Icon</SelectItem>
+                  <SelectItem value="image">Image</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormRow>
+
+            {((formData as any).widgetAvatarType === 'image' || (!(formData as any).widgetAvatarType && formData.avatarType === 'image')) ? (
+              <FormRow label="Avatar Image" description="Upload a custom image for the widget button">
+                <div className="space-y-2">
+                  <Input
+                    value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
+                    placeholder="https://example.com/avatar.png"
+                  />
+                  <div className="grid gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      className="h-9 py-1.5"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        const reader = new FileReader()
+                        reader.onload = (ev) => {
+                          const url = ev.target?.result as string
+                          setFormData({ ...formData, widgetAvatarImageUrl: url } as any)
+                        }
+                        reader.readAsDataURL(file)
+                      }}
+                    />
+                  </div>
+                  {((formData as any).widgetAvatarImageUrl || formData.avatarImageUrl) && (
+                    <div className="mt-2 flex justify-center">
+                      <img
+                        src={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl}
+                        alt="Widget avatar preview"
+                        className="h-16 w-16 object-cover border rounded-full bg-white shadow-sm"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </FormRow>
+            ) : (
+              <FormRow label="Avatar Icon" description="Select bot avatar icon">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between h-8 text-xs">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const iconName = (formData as any).widgetAvatarIcon || formData.avatarIcon || 'Bot'
+                          const Icon = (Icons as any)[iconName] || Icons.Bot
+                          return <Icon className="h-4 w-4" />
+                        })()}
+                        <span>{(formData as any).widgetAvatarIcon || formData.avatarIcon || 'Bot'}</span>
+                      </div>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[500px] p-4" align="start">
+                    <IconPicker
+                      value={(formData as any).widgetAvatarIcon || formData.avatarIcon || 'Bot'}
+                      onChange={(v) => setFormData({ ...formData, widgetAvatarIcon: v } as any)}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FormRow>
+            )}
+
+
             <FormRow label="Widget Position" description="Where the widget appears on screen">
               <Select
                 value={formData.widgetPosition || 'bottom-right'}

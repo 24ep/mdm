@@ -130,11 +130,15 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
 
           /* ChatKit Override Styles */
           
-          /* Button styling override */
-          button[class*="button"],
-          button[class*="Button"] {
+          /* Button styling override - Neutralize all global styles for widget buttons */
+          button[class*="button"]:not([data-widget-button]):not([data-widget-container]),
+          button[class*="Button"]:not([data-widget-button]):not([data-widget-container]),
+          .button:not([data-widget-button]):not([data-widget-container]) {
             font-family: ${chatkitOptions?.theme?.typography?.fontFamily || (chatbot as any).fontFamily || 'inherit'} !important;
           }
+
+          /* ChatKit content specific overrides can go here */
+          /* Note: Widget button styling is now handled directly within ChatWidgetButton.tsx */
 
           /* Send Button styling */
           button[aria-label="Send message"],
@@ -236,82 +240,5 @@ export const ChatKitGlobalStyles = ({ chatbot, chatkitOptions }: ChatKitGlobalSt
   )
 }
 
-export const getContainerStyle = (deploymentType: string, chatbot: ChatbotConfig): React.CSSProperties => {
-  if (deploymentType === 'popover' || deploymentType === 'popup-center') {
-    // Get background value with proper fallback - ensure it's never empty
-    let bgValue = chatbot.messageBoxColor || '#ffffff'
-    if (!bgValue || bgValue.trim() === '') {
-      bgValue = '#ffffff'
-    }
-    
-    const blurAmount = (chatbot as any).chatWindowBackgroundBlur || 0
-    const opacity = (chatbot as any).chatWindowBackgroundOpacity !== undefined ? (chatbot as any).chatWindowBackgroundOpacity : 100
-
-    const style: React.CSSProperties = {
-      width: chatbot.chatWindowWidth || '380px',
-      height: chatbot.chatWindowHeight || '600px',
-      border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor}`,
-      borderRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
-      boxShadow: `0 0 ${chatbot.chatWindowShadowBlur || chatbot.shadowBlur} ${chatbot.chatWindowShadowColor || chatbot.shadowColor}`,
-      overflow: 'hidden',
-      paddingLeft: (chatbot as any).chatWindowPaddingX || '0px',
-      paddingRight: (chatbot as any).chatWindowPaddingX || '0px',
-      paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
-      paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
-      fontFamily: chatbot.chatkitOptions?.theme?.typography?.fontFamily || chatbot.fontFamily,
-    }
-
-    // Apply glassmorphism effect
-    if (blurAmount > 0) {
-      style.backdropFilter = `blur(${blurAmount}px)`
-      style.WebkitBackdropFilter = `blur(${blurAmount}px)`
-    }
-
-    // Check if it's an image URL or Gradient
-    const isGradient = bgValue && bgValue.includes('gradient')
-    const isUrl = bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))
-
-    if (isUrl) {
-      const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
-      style.backgroundImage = imageUrl
-      style.backgroundSize = 'cover'
-      style.backgroundPosition = 'center'
-      style.backgroundRepeat = 'no-repeat'
-      style.backgroundColor = opacity < 100 ? `rgba(255, 255, 255, ${opacity / 100})` : '#ffffff' // Fallback color with opacity
-    } else if (isGradient) {
-      // Apply gradient directly to background
-      style.background = bgValue
-      // If opacity is set, we can't easily modify the gradient string so we rely on the gradient definition
-    } else {
-      // It's a color value - ensure we always set a valid background color
-      if (opacity < 100) {
-        if (bgValue && (bgValue.startsWith('rgba') || bgValue.startsWith('rgb'))) {
-          const rgbMatch = bgValue.match(/(\d+),\s*(\d+),\s*(\d+)/)
-          if (rgbMatch) {
-            style.backgroundColor = `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${opacity / 100})`
-          } else {
-            style.backgroundColor = bgValue || '#ffffff'
-          }
-        } else {
-          style.backgroundColor = bgValue ? `rgba(${hexToRgb(bgValue)}, ${opacity / 100})` : '#ffffff'
-        }
-      } else {
-        style.backgroundColor = bgValue || '#ffffff'
-      }
-    }
-
-    return style
-  }
-  return {
-    width: '100%',
-    height: '100vh',
-    border: 'none',
-    borderRadius: '0',
-    boxShadow: 'none',
-    paddingLeft: (chatbot as any).chatWindowPaddingX || '0px',
-    paddingRight: (chatbot as any).chatWindowPaddingX || '0px',
-    paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
-    paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
-    fontFamily: chatbot.chatkitOptions?.theme?.typography?.fontFamily || chatbot.fontFamily,
-  } as React.CSSProperties
-}
+// getContainerStyle has been removed in favor of the shared implementation in ../../utils/chatStyling.ts
+// This file now focuses on injecting global CSS and providing ChatKit-specific overrides.

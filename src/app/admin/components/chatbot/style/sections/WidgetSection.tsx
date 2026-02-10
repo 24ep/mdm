@@ -246,13 +246,60 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                   </Popover>
                 </FormRow>
               ) : (
-                <FormRow label="Image URL" description="Custom widget avatar image URL">
-                  <Input
-                    value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
-                    onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
-                    placeholder="https://example.com/avatar.png"
-                  />
+                <FormRow label="Avatar Image" description="Custom widget avatar image">
+                  <div className="space-y-2">
+                    <Input
+                      value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
+                      onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
+                      placeholder="https://example.com/avatar.png"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-8 text-xs"
+                        onClick={() => {
+                          const input = document.getElementById('widget-avatar-upload') as HTMLInputElement
+                          input?.click()
+                        }}
+                      >
+                        <Icons.Upload className="h-3.5 w-3.5 mr-1.5" />
+                        Upload Image
+                      </Button>
+                      <input
+                        id="widget-avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          const reader = new FileReader()
+                          reader.onload = (ev) => {
+                            const url = ev.target?.result as string
+                            setFormData({ ...formData, widgetAvatarImageUrl: url } as any)
+                          }
+                          reader.readAsDataURL(file)
+                        }}
+                      />
+                    </div>
+                    {((formData as any).widgetAvatarImageUrl || formData.avatarImageUrl) && (
+                      <div className="mt-2 flex justify-center">
+                        <img
+                          src={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl}
+                          alt="Widget avatar preview"
+                          className="h-16 w-16 object-cover border rounded-full bg-white shadow-sm"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </FormRow>
+
+
               )}
             </FormSection>
           </AccordionContent>

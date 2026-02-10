@@ -474,6 +474,23 @@ export async function delPattern(pattern: string): Promise<void> {
 }
 
 /**
+ * Flush all data from Redis or memory store
+ */
+export async function flushAll(): Promise<void> {
+  if (redisAvailable && redisClient) {
+    try {
+      await redisClient.flushall()
+      return
+    } catch (error) {
+      console.warn('[Redis] FlushAll failed, falling back to memory:', error)
+      redisAvailable = false
+    }
+  }
+
+  memoryStore.clear()
+}
+
+/**
  * Increment value
  */
 export async function incr(key: string): Promise<number> {

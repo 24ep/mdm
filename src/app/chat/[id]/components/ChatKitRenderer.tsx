@@ -193,7 +193,7 @@ export function ChatKitRenderer({
     (previewDeploymentType === 'popover' || previewDeploymentType === 'popup-center')
 
   // Compute widget button styles for loading states
-  const widgetButtonStyle = getWidgetButtonStyle(chatbot)
+  const widgetButtonStyle = getWidgetButtonStyle(chatbot, (chatbot as any).chatkitOptions)
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
 
   // Helper to render widget button in loading/error states

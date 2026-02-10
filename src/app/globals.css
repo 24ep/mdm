@@ -232,19 +232,19 @@
 
 /* Base modifications for Branding */
 @layer base {
-  button:not([role="combobox"]):not([role="tab"]) {
+  button:not([role="combobox"]):not([role="tab"]):not([data-widget-button]):not([data-widget-container]) {
     background: var(--brand-button-bg) !important;
     color: var(--brand-button-text) !important;
     border-radius: var(--brand-button-radius) !important;
     transition: all 0.2s ease !important;
   }
 
-  button:not([role="combobox"]):not([role="tab"]):hover {
+  button:not([role="combobox"]):not([role="tab"]):not([data-widget-button]):not([data-widget-container]):hover {
     opacity: 0.9 !important;
     transform: translateY(-1px) !important;
   }
 
-  .card, [data-component="card"] {
+  .card:not([data-widget-container]), [data-component="card"]:not([data-widget-container]) {
     background: var(--brand-card-bg) !important;
     border: 1px solid var(--brand-card-border) !important;
     border-radius: var(--brand-card-radius) !important;

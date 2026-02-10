@@ -40,7 +40,7 @@ async function getHandler(request: NextRequest) {
   };
 
   // Build the query
-  let whereConditions = ['user_id = $1'];
+  let whereConditions = ['user_id = $1::uuid'];
   let queryParams: any[] = [session.user.id];
   let paramIndex = 2;
 
@@ -102,7 +102,7 @@ async function getHandler(request: NextRequest) {
   const unreadCountQuery = `
       SELECT COUNT(*) as unread
       FROM public.notifications 
-      WHERE user_id = $1 AND status = 'UNREAD' AND (expires_at IS NULL OR expires_at > NOW())
+      WHERE user_id = $1::uuid AND status = 'UNREAD' AND (expires_at IS NULL OR expires_at > NOW())
     `;
 
   const { rows: unreadRows } = await query(unreadCountQuery, [session.user.id]);

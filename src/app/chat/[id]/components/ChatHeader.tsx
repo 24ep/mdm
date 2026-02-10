@@ -96,8 +96,15 @@ export function ChatHeader({ chatbot, onClearSession, onClose, isMobile = false 
         // Font styling
         fontFamily: chatbot.headerFontFamily || chatbot.fontFamily,
         // Border radius (top corners only for header, none on mobile fullpage)
-        borderTopLeftRadius: isMobile ? 0 : (chatbot.chatWindowBorderRadius || chatbot.borderRadius),
-        borderTopRightRadius: isMobile ? 0 : (chatbot.chatWindowBorderRadius || chatbot.borderRadius),
+        // Use CSS variable from container if available, with config fallback
+        borderTopLeftRadius: isMobile ? 0 : `var(--container-border-radius, ${(() => {
+          const r = chatbot.chatWindowBorderRadius || chatbot.borderRadius || '12px'
+          return /^\d+$/.test(String(r)) ? `${r}px` : r
+        })()})`,
+        borderTopRightRadius: isMobile ? 0 : `var(--container-border-radius, ${(() => {
+          const r = chatbot.chatWindowBorderRadius || chatbot.borderRadius || '12px'
+          return /^\d+$/.test(String(r)) ? `${r}px` : r
+        })()})`,
         borderBottomLeftRadius: 0,
         borderBottomRightRadius: 0,
       }}

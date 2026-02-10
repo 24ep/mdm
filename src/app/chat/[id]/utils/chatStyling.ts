@@ -26,8 +26,8 @@ function hexToRgb(hex: string): string {
   return `${r}, ${g}, ${b}`
 }
 
-export function getChatStyle(chatbot: ChatbotConfig): React.CSSProperties {
-  const options = (chatbot as any).chatkitOptions
+export function getChatStyle(chatbot: ChatbotConfig, chatkitOptions?: any): React.CSSProperties {
+  const options = chatkitOptions || (chatbot as any).chatkitOptions
   const theme = options?.theme || {}
   const typography = theme.typography || {}
 
@@ -39,6 +39,13 @@ export function getChatStyle(chatbot: ChatbotConfig): React.CSSProperties {
   }
 }
 
+// Helper to ensure units
+export const ensureUnits = (val: string | number | undefined, defaultVal: string) => {
+  if (!val) return defaultVal
+  const strVal = String(val)
+  return /^\d+$/.test(strVal) ? `${strVal}px` : strVal
+}
+
 export function getPopoverPositionStyle(chatbot: ChatbotConfig): React.CSSProperties {
   const x = chatbot as any
   const options = x.chatkitOptions || {}
@@ -48,8 +55,8 @@ export function getPopoverPositionStyle(chatbot: ChatbotConfig): React.CSSProper
   // We'll check both if needed, but prioritizing root for now as usually widget position is a root setting in older code.
   // If WidgetSection saves to chatkitOptions.widget, we should check that too. Assuming root for now as per old code.
   const pos = (x.widgetPosition || 'bottom-right') as string
-  const offsetX = x.widgetOffsetX || '20px'
-  const offsetY = x.widgetOffsetY || '20px'
+  const offsetX = ensureUnits(x.widgetOffsetX, '20px')
+  const offsetY = ensureUnits(x.widgetOffsetY, '20px')
   const style: React.CSSProperties = { position: 'fixed' }
   if (pos.includes('bottom')) (style as any).bottom = offsetY
   else (style as any).top = offsetY
@@ -62,19 +69,31 @@ export function getPopoverPositionStyle(chatbot: ChatbotConfig): React.CSSProper
   return style
 }
 
+// ... (getContainerStyle is already updated)
+
+
+// Helper to determine if ChatKit styles should be applied (border removal)
+const isChatKit = (chatbot: ChatbotConfig) => {
+  return chatbot.engineType === 'chatkit' || 
+         chatbot.engineType === 'openai-agent-sdk' || 
+         (chatbot as any).useChatKitInRegularStyle === true
+}
+
 export function getContainerStyle(
   chatbot: ChatbotConfig,
   previewDeploymentType: 'popover' | 'fullpage' | 'popup-center',
   emulatorConfig: EmulatorConfig,
   isMobile: boolean = false,
   isEmbed: boolean = false,
-  isPreview: boolean = false
+  isPreview: boolean = false,
+  chatkitOptions?: any
 ): React.CSSProperties {
   const options = (chatbot as any).chatkitOptions || {}
   const theme = options.theme || {}
 
   const shadowColor = (chatbot as any).chatWindowShadowColor || chatbot.shadowColor || '#000000'
-  const shadowBlur = (chatbot as any).chatWindowShadowBlur || chatbot.shadowBlur || '4px'
+  const shadowBlurRaw = (chatbot as any).chatWindowShadowBlur || chatbot.shadowBlur || '4px'
+  const shadowBlur = `${extractNumericValue(shadowBlurRaw)}px`
 
   // Base background style from emulator config
   const backgroundStyle: React.CSSProperties = {}
@@ -87,6 +106,18 @@ export function getContainerStyle(
     backgroundStyle.backgroundPosition = 'center'
     backgroundStyle.backgroundRepeat = 'no-repeat'
   }
+
+  console.log('[chatStyling] getContainerStyle:', {
+    engineType: chatbot.engineType,
+    id: chatbot.id,
+    deploymentType: previewDeploymentType,
+    isChatKit: isChatKit(chatbot)
+  })
+
+
+    // Build box-shadow - Reverted to simple logic as per previous working version
+    // This ignores X/Y/Spread for now to ensure reliability matching the "working" state
+    const simpleShadow = `0 0 ${shadowBlur} ${shadowColor}`
 
     // Common background logic helper
     const getBackgroundStyle = () => {
@@ -108,8 +139,22 @@ export function getContainerStyle(
     */
 
     // Get background value with proper fallback - ensure it's never empty
-    let bgValue = theme.color?.background || theme.backgroundColor || chatbot.messageBoxColor || '#ffffff'
-    if (!bgValue || bgValue.trim() === '') {
+    // Fallback Priority:
+    // 1. Explicit chatkitOptions theme colors
+    // 2. Explicit legacy theme background/color (from theme.color.background or legacy theme.backgroundColor)
+    // 3. ChatKit surface background (often used for main container)
+    // 4. User configured page/message-box background
+    // 5. Default white
+    const theme = chatkitOptions?.theme || {}
+    let bgValue = theme.color?.background || 
+                 theme.backgroundColor || 
+                 theme.color?.surface?.background || 
+                 chatbot.openaiAgentSdkBackgroundColor || 
+                 chatbot.pageBackgroundColor || 
+                 chatbot.messageBoxColor || 
+                 '#ffffff'
+                 
+    if (!bgValue || (typeof bgValue === 'string' && bgValue.trim() === '')) {
       bgValue = '#ffffff'
     }
     
@@ -128,11 +173,12 @@ export function getContainerStyle(
     }
     
     // Check if it's a gradient
-    if (bgValue && bgValue.includes('gradient')) {
+    if (bgValue && bgValue.toLowerCase().includes('gradient')) {
         return {
-            background: bgValue,
-            // Gradients don't support simple opacity modifiers easily without parsing
-            // So we return as-is. User should define opacity in the gradient string.
+            backgroundImage: bgValue, // Use backgroundImage for gradients too
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
         }
     }
 
@@ -187,14 +233,25 @@ export function getContainerStyle(
     const popoverMarginPx = parseFloat(popoverMargin) || 10
     const popoverPos = (x.popoverPosition || 'top') as 'top' | 'left'
 
-    // Calculate popover position - place it to the right of the widget button
+    // Border logic: Mobile gets no border/radius by default unless specifically overridden? 
+    // User requested "border is setup differanace mobile and desktop"
+    // Usually mobile is full screen so no border/radius.
+    // But if isPreview is true on mobile device, we might want to see it?
+    // Let's assume on Mobile (even in preview if it simulates mobile view properly) we want:
+    // - No border (full width)
+    // - No radius (full width)
+    // - No shadow (full width)
+    // UNLESS it's a "floating" mobile window? Typically mobile chat is full screen.
+    
     const popoverStyle: React.CSSProperties = {
       position: 'fixed',
-      width: (chatbot as any).chatWindowWidth || '380px',
-      height: (chatbot as any).chatWindowHeight || '600px',
-      border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor}`,
-      borderRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
-      boxShadow: `0 0 ${shadowBlur} ${shadowColor}`,
+      width: ensureUnits((chatbot as any).chatWindowWidth, '380px'),
+      height: ensureUnits((chatbot as any).chatWindowHeight, '600px'),
+      // Remove duplicate height check
+      border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth || '1px'} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor || '#e2e8f0'}`,
+      borderRadius: ensureUnits(chatbot.chatWindowBorderRadius || chatbot.borderRadius, '12px'),
+      boxShadow: simpleShadow,
+      outline: undefined,
       zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidget,
       // Note: Emulator background should NOT be applied to popover - only to page background
       overflow: 'hidden',
@@ -209,6 +266,9 @@ export function getContainerStyle(
       paddingRight: (chatbot as any).chatWindowPaddingX || '0px',
       paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
       paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      // boxSizing removed to match old version
     }
 
     // Logic ported from embed/route.ts
@@ -292,13 +352,17 @@ export function getContainerStyle(
     }
 
     return {
-      width: '90%',
-      maxWidth: '640px',
-      maxHeight: '80vh',
-      height: '80vh',
-      border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor}`,
-      borderRadius: chatbot.chatWindowBorderRadius || chatbot.borderRadius,
-      boxShadow: `0 0 ${shadowBlur} ${shadowColor}`,
+      width: ensureUnits((chatbot as any).chatWindowWidth, '90%'),
+      // If user sets a custom width, that should be the max-width (or unconstrained). 
+      // If NO width is specified, default to 640px constraint.
+      maxWidth: (chatbot as any).chatWindowWidth ? '100vw' : '640px',
+      maxHeight: ensureUnits((chatbot as any).chatWindowHeight, '700px'),
+      height: ensureUnits((chatbot as any).chatWindowHeight, '700px'),
+      // Remove duplicate height check
+      border: `${chatbot.chatWindowBorderWidth || chatbot.borderWidth || '1px'} solid ${chatbot.chatWindowBorderColor || chatbot.borderColor || '#e2e8f0'}`,
+      borderRadius: ensureUnits(chatbot.chatWindowBorderRadius || chatbot.borderRadius, '12px'),
+      boxShadow: simpleShadow,
+      outline: undefined,
       zIndex: Z_INDEX.chatWidgetWindow,
       position: 'fixed',
       top: '50%',
@@ -313,6 +377,7 @@ export function getContainerStyle(
       paddingRight: (chatbot as any).chatWindowPaddingX || '0px',
       paddingTop: (chatbot as any).chatWindowPaddingY || '0px',
       paddingBottom: (chatbot as any).chatWindowPaddingY || '0px',
+      // boxSizing removed to match old version
     }
   }
 
@@ -338,7 +403,8 @@ export function getContainerStyle(
 export function getOverlayStyle(
   previewDeploymentType: 'popover' | 'fullpage' | 'popup-center',
   chatbot?: ChatbotConfig,
-  isOpen?: boolean
+  isOpen?: boolean,
+  chatkitOptions?: any
 ): React.CSSProperties | undefined {
   // For popup-center, always show overlay (legacy behavior)
   if (previewDeploymentType === 'popup-center') {
@@ -404,14 +470,23 @@ function extractNumericValue(value: string | undefined): string {
   return match ? match[1] : '0'
 }
 
-export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSProperties {
-  const options = (chatbot as any).chatkitOptions || {}
+export function getWidgetButtonStyle(chatbot: ChatbotConfig, chatkitOptions?: any): React.CSSProperties {
+  const options = chatkitOptions || (chatbot as any).chatkitOptions || {}
   const theme = options.theme || {}
 
   // Get widget background color with proper fallback
-  let widgetBgValue = (chatbot as any).widgetBackgroundColor || theme.color?.accent?.primary || theme.primaryColor || chatbot.primaryColor || '#3b82f6'
+  // Fallback order: widget background > theme background > theme accent > theme primary > default blue
+  let widgetBgValue = (chatbot as any).widgetBackgroundColor || 
+                     (chatbot as any).widgetBackground ||
+                     theme.color?.background || 
+                     theme.backgroundColor || 
+                     theme.color?.accent?.primary || 
+                     theme.primaryColor || 
+                     chatbot.primaryColor || 
+                     '#3b82f6'
+                     
   // Ensure we have a valid color value (not empty string)
-  if (!widgetBgValue || widgetBgValue.trim() === '') {
+  if (!widgetBgValue || (typeof widgetBgValue === 'string' && widgetBgValue.trim() === '')) {
     widgetBgValue = '#3b82f6'
   }
   
@@ -432,8 +507,9 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
   // Determine border radius based on avatar style - CRITICAL: must respect widgetAvatarStyle
   const widgetAvatarStyle = (chatbot as any).widgetAvatarStyle || 'circle'
   let borderRadius: string
+  
   if (widgetAvatarStyle === 'circle') {
-    borderRadius = '50%' // Always circular for circle style, ignore widgetBorderRadius
+    borderRadius = '50%' // Always circular for circle style, ignore widgetBorderRadius and corners
   } else {
     // Check for individual corner properties which are saved by the admin UI
     const tl = (chatbot as any).widgetBorderRadiusTopLeft
@@ -461,6 +537,7 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
+    overflow: 'hidden',
   }
 
   // Apply glassmorphism effect
@@ -480,9 +557,12 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig): React.CSSPropertie
     if (opacity < 100) {
       baseStyle.backgroundColor = `rgba(255, 255, 255, ${opacity / 100})` // Fallback color with opacity
     }
-  } else if (widgetBgValue && widgetBgValue.includes('gradient')) {
-    // Apply gradient to background property
-    baseStyle.background = widgetBgValue
+  } else if (widgetBgValue && widgetBgValue.toLowerCase().includes('gradient')) {
+    // Apply gradient to backgroundImage property to ensure it's picked up by ChatWidgetButton as a graphic
+    baseStyle.backgroundImage = widgetBgValue
+    baseStyle.backgroundSize = 'cover'
+    baseStyle.backgroundPosition = 'center'
+    baseStyle.backgroundRepeat = 'no-repeat'
     // Gradients don't support simple opacity modifiers easily without parsing
   } else {
     // It's a color value - ensure we always set a background color

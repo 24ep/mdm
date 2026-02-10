@@ -29,6 +29,8 @@ model User {
   apiEnvironments                                         ApiEnvironment[]              @relation("UserApiEnvironments")
   apiRequestHistory                                       ApiRequestHistory[]           @relation("UserApiRequestHistory")
   apiRequests                                             ApiRequest[]                  @relation("UserApiRequests")
+  dashboards                                              Dashboard[]                   @relation("UserDashboards")
+  dashboardPermissions                                    DashboardPermission[]         @relation("UserDashboardPermissions")
   apiWorkspaces                                           ApiWorkspace[]                @relation("UserApiWorkspaces")
   auditLogs                                               AuditLog[]                    @relation("UserAuditLogs")
   chatSessions                                            ChatSession[]                 @relation("UserChatSessions")
@@ -162,6 +164,7 @@ model Space {
   projects                Project[]                @relation("SpaceProjects")
   report_integrations     report_integrations[]
   reportSpaces            ReportSpace[]            @relation("SpaceReports")
+  dashboards              DashboardSpace[]         @relation("SpaceDashboards")
   serviceInstallations    ServiceInstallation[]    @relation("SpaceServiceInstallations")
   attachmentStorage       SpaceAttachmentStorage[] @relation("SpaceAttachments")
   members                 SpaceMember[]            @relation("SpaceMembers")
@@ -2485,4 +2488,77 @@ model query_performance {
   @@index([execution_time(sort: Desc)], map: "idx_query_performance_execution_time")
   @@index([query_hash], map: "idx_query_performance_query_hash")
   @@index([timestamp(sort: Desc)], map: "idx_query_performance_timestamp")
+}
+
+model Dashboard {
+  id              String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  description     String?
+  backgroundColor String                 @default("#ffffff") @map("background_color")
+  fontFamily      String                 @default("Inter") @map("font_family")
+  fontSize        Int                    @default(14) @map("font_size")
+  gridSize        Int                    @default(20) @map("grid_size")
+  elements        Json                   @default("[]")
+  filters         Json                   @default("[]")
+  refreshRate     Int                    @default(0) @map("refresh_rate")
+  isRealtime      Boolean                @default(false) @map("is_realtime")
+  isDefault       Boolean                @default(false) @map("is_default")
+  createdBy       String                 @map("created_by") @db.Uuid
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  deletedAt       DateTime?              @map("deleted_at")
+  
+  datasources     DashboardDatasource[]  @relation("DashboardDatasources")
+  permissions     DashboardPermission[]  @relation("DashboardPermissions")
+  spaces          DashboardSpace[]       @relation("DashboardSpaces")
+  creator         User                   @relation("UserDashboards", fields: [createdBy], references: [id])
+
+  @@map("dashboards")
+}
+
+model DashboardDatasource {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dashboardId String    @map("dashboard_id") @db.Uuid
+  name        String
+  sourceType  String    @map("source_type")
+  sourceId    String?   @map("source_id")
+  config      Json      @default("{}")
+  queryConfig Json      @default("{}") @map("query_config")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  dashboard   Dashboard @relation("DashboardDatasources", fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([dashboardId])
+  @@map("dashboard_datasources")
+}
+
+model DashboardPermission {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dashboardId String    @map("dashboard_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  role        String    @default("VIEWER")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  dashboard   Dashboard @relation("DashboardPermissions", fields: [dashboardId], references: [id], onDelete: Cascade)
+  user        User      @relation("UserDashboardPermissions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([dashboardId, userId])
+  @@index([userId])
+  @@map("dashboard_permissions")
+}
+
+model DashboardSpace {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dashboardId String    @map("dashboard_id") @db.Uuid
+  spaceId     String    @map("space_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  dashboard   Dashboard @relation("DashboardSpaces", fields: [dashboardId], references: [id], onDelete: Cascade)
+  space       Space     @relation("SpaceDashboards", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([dashboardId, spaceId])
+  @@index([spaceId])
+  @@map("dashboard_spaces")
 }

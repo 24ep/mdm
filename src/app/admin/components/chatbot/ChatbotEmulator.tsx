@@ -94,8 +94,13 @@ export function ChatbotEmulator({
 
     const sendPreviewMode = () => {
       try {
-        emulatorRef.current?.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, window.location.origin)
-      } catch { }
+        if (emulatorRef.current?.contentWindow) {
+          // console.log('[ChatbotEmulator] Sending preview mode:', previewMode)
+          emulatorRef.current.contentWindow.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, window.location.origin)
+        }
+      } catch (err) {
+        console.error('[ChatbotEmulator] Failed to send preview mode:', err)
+      }
     }
 
     // Small delay to ensure iframe is ready
@@ -111,11 +116,15 @@ export function ChatbotEmulator({
     const handleLoad = () => {
       setTimeout(() => {
         try {
+          if (!iframe.contentWindow) return
+          
           // Send preview mode
-          iframe.contentWindow?.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, window.location.origin)
+          // console.log('[ChatbotEmulator] Sending initial preview mode:', previewMode)
+          iframe.contentWindow.postMessage({ type: 'chatbot-preview-mode', value: previewMode }, window.location.origin)
           
           // Send emulator config (page background, etc.)
-          iframe.contentWindow?.postMessage(
+          // console.log('[ChatbotEmulator] Sending initial emulator config')
+          iframe.contentWindow.postMessage(
             {
               type: 'emulator-config-update',
               id: selectedChatbot.id,
@@ -131,7 +140,8 @@ export function ChatbotEmulator({
             ? (selectedChatbot.versions?.find(v => v.isPublished)?.config || selectedChatbot)
             : formData
           
-          iframe.contentWindow?.postMessage(
+          // console.log('[ChatbotEmulator] Sending initial chatbot config')
+          iframe.contentWindow.postMessage(
             {
               type: 'chatbot-config-update',
               id: selectedChatbot.id,
@@ -142,7 +152,9 @@ export function ChatbotEmulator({
             },
             window.location.origin
           )
-        } catch { }
+        } catch (err) {
+          console.error('[ChatbotEmulator] Failed to send initial messages:', err)
+        }
       }, 200)
     }
 
@@ -164,19 +176,21 @@ export function ChatbotEmulator({
       : formData
 
     try {
-      iframe.contentWindow?.postMessage(
-        {
-          type: 'chatbot-config-update',
-          id: selectedChatbot.id,
-          config: {
-            ...activeConfig,
+      if (iframe.contentWindow) {
+        iframe.contentWindow.postMessage(
+          {
+            type: 'chatbot-config-update',
             id: selectedChatbot.id,
+            config: {
+              ...activeConfig,
+              id: selectedChatbot.id,
+            },
           },
-        },
-        window.location.origin
-      )
+          window.location.origin
+        )
+      }
     } catch (e) {
-      // ignore
+      console.error('[ChatbotEmulator] Failed to send config update:', e)
     }
   }, [selectedChatbot?.id, formData, previewSource, selectedChatbot?.versions])
 
@@ -185,16 +199,19 @@ export function ChatbotEmulator({
     if (!selectedChatbot?.id || !emulatorRef.current) return
     const iframe = emulatorRef.current
     try {
-      iframe.contentWindow?.postMessage(
-        {
-          type: 'emulator-config-update',
-          id: selectedChatbot.id,
-          emulatorConfig: emulatorConfig,
-        },
-        window.location.origin
-      )
+      if (iframe.contentWindow) {
+        // console.log('[ChatbotEmulator] Sending emulator config update')
+        iframe.contentWindow.postMessage(
+          {
+            type: 'emulator-config-update',
+            id: selectedChatbot.id,
+            emulatorConfig: emulatorConfig,
+          },
+          window.location.origin
+        )
+      }
     } catch (e) {
-      // ignore
+      console.error('[ChatbotEmulator] Failed to send emulator config update:', e)
     }
   }, [selectedChatbot?.id, emulatorConfig])
 

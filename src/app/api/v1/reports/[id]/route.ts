@@ -18,6 +18,12 @@ async function getHandler(
     }
 
     const { id } = await params
+    
+    // Validate ID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json({ error: 'Invalid report ID' }, { status: 400 })
+    }
 
     const result = await query(
       `SELECT 

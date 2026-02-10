@@ -4,12 +4,13 @@ import React from 'react'
 import { X, Bot, Menu, Loader2, Paperclip } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ChatbotConfig } from '../types'
-import { getOverlayStyle } from '../utils/chatStyling'
+import { getOverlayStyle, getContainerStyle, getWidgetButtonStyle, getPopoverPositionStyle, ensureUnits } from '../utils/chatStyling'
 import { Z_INDEX } from '@/lib/z-index'
 import { extractNumericValue, convertToHex, isLightColor, hexToRgb } from './chatkit/themeUtils'
 import { buildChatKitTheme } from './chatkit/configBuilder'
 import { loadGoogleFont } from './chatkit/fontLoader'
-import { ChatKitGlobalStyles, getContainerStyle } from './chatkit/ChatKitStyles'
+import { ChatKitGlobalStyles } from './chatkit/ChatKitStyles'
+import { ChatWidgetButton } from './ChatWidgetButton'
 import { ChatKitStyleEnforcer } from './chatkit/ChatKitStyleEnforcer'
 import { PWAInstallBanner } from './PWAInstallBanner'
 
@@ -125,12 +126,12 @@ export function ChatKitWrapper({
         width = '120px'
         height = '120px'
       }
-    } else if (!isMobileRef.current) {
-      // Desktop popover open size (use ref to avoid dependency loop)
-      width = '450px'
-      height = '800px'
+    } else {
+      // Popover open size (desktop OR mobile preview)
+      // Respect configured dimensions if available
+      width = ensureUnits((chatbot as any).chatWindowWidth, '380px')
+      height = ensureUnits((chatbot as any).chatWindowHeight, '600px')
     }
-    // Mobile open popover remains 100%
 
 
     window.parent.postMessage({
@@ -231,30 +232,39 @@ export function ChatKitWrapper({
 
   // Force theme refresh when popover opens
   // This helps apply styles that may not have been ready during initial mount
+  // Force theme refresh when popover opens
+  // This helps apply styles that may not have been ready during initial mount
   React.useEffect(() => {
-    if (isOpen && chatkitControlRef.current && chatkitOptionsRef.current) {
+    if (isOpen) {
       // Delay the setOptions call to ensure ChatKit iframe is ready
       const refreshTheme = () => {
         try {
-          if (chatkitControlRef.current?.setOptions) {
-            chatkitControlRef.current.setOptions(chatkitOptionsRef.current)
+          // Check if control exists and supports setOptions
+          // Some engine types or initialization states might not support it
+          if (chatkitControlRef.current && typeof chatkitControlRef.current.setOptions === 'function') {
+            // Only update if we have options
+            if (chatkitOptionsRef.current) {
+                try {
+                    chatkitControlRef.current.setOptions(chatkitOptionsRef.current)
+                } catch (err: any) {
+                    // Suppress "Command onSetOptions not supported" as it is non-fatal usually
+                    if (err?.message?.includes('not supported')) return
+                    console.warn('[ChatKitWrapper] setOptions error:', err)
+                }
+            }
           }
         } catch (e) {
-          console.warn('[ChatKitWrapper] setOptions failed, likely not ready yet:', e)
+          console.warn('[ChatKitWrapper] setOptions failed:', e)
         }
       }
 
       // Try multiple times with increasing delays to catch the iframe becoming ready
-      const t1 = setTimeout(refreshTheme, 100)
-      const t2 = setTimeout(refreshTheme, 500)
-      const t3 = setTimeout(refreshTheme, 1000)
-      const t4 = setTimeout(refreshTheme, 2000)
+      const t1 = setTimeout(refreshTheme, 500) // Increased initial delay
+      const t2 = setTimeout(refreshTheme, 1500)
 
       return () => {
         clearTimeout(t1)
         clearTimeout(t2)
-        clearTimeout(t3)
-        clearTimeout(t4)
       }
     }
   }, [isOpen])
@@ -409,13 +419,17 @@ export function ChatKitWrapper({
           if (tool.id !== undefined && tool.id !== null && tool.id !== '') supportedTool.id = tool.id
           if (tool.label !== undefined && tool.label !== null && tool.label !== '') supportedTool.label = tool.label
           if (tool.shortLabel !== undefined && tool.shortLabel !== null && tool.shortLabel !== '') supportedTool.shortLabel = tool.shortLabel
-          if (tool.icon !== undefined && tool.icon !== null && tool.icon !== '') supportedTool.icon = tool.icon
+          
+          // Only include valid icon names
+          if (tool.icon !== undefined && tool.icon !== null && tool.icon !== '') {
+            supportedTool.icon = tool.icon
+          }
+          
           if (tool.pinned !== undefined) supportedTool.pinned = tool.pinned
-          if (tool.type !== undefined && tool.type !== null && tool.type !== '') supportedTool.type = tool.type
-          if (tool.accept !== undefined && tool.accept !== null && tool.accept !== '') supportedTool.accept = tool.accept
           if (tool.placeholderOverride !== undefined && tool.placeholderOverride !== null && tool.placeholderOverride !== '') supportedTool.placeholderOverride = tool.placeholderOverride
+          
           return supportedTool
-        }).filter((tool: any) => tool.id || tool.label)
+        }).filter((tool: any) => tool.id && tool.label)
         composerTools.push(...customTools)
       }
 
@@ -506,10 +520,12 @@ export function ChatKitWrapper({
 
       return Object.keys(supportedStartScreen).length > 0 ? supportedStartScreen : undefined
     })() : undefined,
-    entities: chatkitOptions.entities ? {
-      onTagSearch: chatkitOptions.entities.onTagSearch,
-      onRequestPreview: chatkitOptions.entities.onRequestPreview,
-    } : undefined,
+    entities: chatkitOptions.entities ? (() => {
+      const e: any = {}
+      if (chatkitOptions.entities.onTagSearch) e.onTagSearch = chatkitOptions.entities.onTagSearch
+      if (chatkitOptions.entities.onRequestPreview) e.onRequestPreview = chatkitOptions.entities.onRequestPreview
+      return Object.keys(e).length > 0 ? e : undefined
+    })() : undefined,
     disclaimer: chatkitOptions.disclaimer && chatkitOptions.disclaimer.text && chatkitOptions.disclaimer.text.trim() !== '' ? {
       text: chatkitOptions.disclaimer.text.trim(),
     } : undefined,
@@ -540,11 +556,8 @@ export function ChatKitWrapper({
   // Store control and options in refs for runtime updates
   React.useEffect(() => {
     chatkitControlRef.current = control
-    chatkitOptionsRef.current = {
-      theme: theme as any,
-      locale: chatkitOptions.locale,
-    }
-  }, [control, theme, chatkitOptions.locale])
+    chatkitOptionsRef.current = chatkitHookOptions
+  }, [control, chatkitHookOptions])
 
   // Report any initialization errors
   React.useEffect(() => {
@@ -578,24 +591,21 @@ export function ChatKitWrapper({
 
   const shouldShowContainer = deploymentType === 'fullpage' ? true : isOpen
 
-  const popoverPositionStyle = (): React.CSSProperties => {
-    const pos = (chatbot as any).widgetPosition || 'bottom-right'
-    const offsetX = (chatbot as any).widgetOffsetX || '20px'
-    const offsetY = (chatbot as any).widgetOffsetY || '20px'
-    const style: React.CSSProperties = { position: 'fixed' }
-    if (pos.includes('bottom')) (style as any).bottom = offsetY; else (style as any).top = offsetY
-    if (pos.includes('right')) (style as any).right = offsetX
-    if (pos.includes('left')) (style as any).left = offsetX
-    if (pos.includes('center')) {
-      (style as any).left = '50%'
-        ; (style as any).transform = 'translateX(-50%)'
-    }
-    return style
-  }
+  const chatkitOptionsArg = (chatbot as any).chatkitOptions
+  const containerStyle = getContainerStyle(
+    chatbot, 
+    deploymentType as any, 
+    {} as any, 
+    isMobile, 
+    isEmbed, 
+    isPreview, 
+    chatkitOptionsArg
+  )
 
-  const containerStyle = getContainerStyle(deploymentType, chatbot)
+  const overlayStyle = getOverlayStyle(deploymentType as any, chatbot, isOpen, chatkitOptionsArg)
 
-  const overlayStyle = getOverlayStyle(deploymentType, chatbot, isOpen)
+  const widgetButtonStyle = getWidgetButtonStyle(chatbot, chatkitOptionsArg)
+  const widgetPopoverPositionStyle = getPopoverPositionStyle(chatbot)
 
   // Handler for closing that also notifies parent
   const handleBackdropClose = (e: React.MouseEvent) => {
@@ -608,328 +618,8 @@ export function ChatKitWrapper({
     }
   }
 
-  const containerPositionStyle = (): React.CSSProperties => {
-    // If we're in embed mode (and not preview), the iframe is positioned by parent, 
-    // so we fill the iframe. The embedContainerOverride handles this.
-    if (isEmbed && !isPreview) return {};
-
-    // Fullpage deployment handles its own sizing/positioning (usually static/flow)
-    if (deploymentType === 'fullpage') return {};
-
-    // For mobile (unless we are previewing desktop on mobile device?), always full screen
-    // Note: isMobile here comes from User-Agent or prop. 
-    // If in emulator 'desktop' mode, isMobile is false.
-    if (isMobile) {
-      return {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100%',
-        height: '100%',
-        borderRadius: '0',
-        zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidgetWindow
-      }
-    }
-
-    if (deploymentType === 'popup-center') {
-      return {
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidgetWindow
-      }
-    }
-
-    // Popover positioning
-    const pos = (chatbot as any).widgetPosition || 'bottom-right'
-    const popoverPos = (chatbot as any).popoverPosition || 'left' // UI defaults to left
-    const offsetX = (chatbot as any).widgetOffsetX || '20px'
-    const offsetY = (chatbot as any).widgetOffsetY || '20px'
-    const widgetSizeVal = parseInt(extractNumericValue((chatbot as any).widgetSize || '60px'))
-    const spacing = 16 // Space between button and window
-
-    const style: React.CSSProperties = {
-      position: 'fixed',
-      zIndex: (chatbot as any).widgetZIndex || Z_INDEX.chatWidgetWindow
-    }
-
-    const offsetXVal = parseInt(extractNumericValue(offsetX))
-    const offsetYVal = parseInt(extractNumericValue(offsetY))
-
-    // Vertical Stack (Above/Below) - corresponds to 'top' setting (naming is confusing in UI, implies 'stacked')
-    if (popoverPos === 'top') {
-      const totalVerticalOffset = `${offsetYVal + widgetSizeVal + spacing}px`
-
-      if (pos.includes('bottom')) {
-        (style as any).bottom = totalVerticalOffset
-      } else {
-        (style as any).top = totalVerticalOffset
-      }
-
-      if (pos.includes('right')) (style as any).right = offsetX
-      if (pos.includes('left')) (style as any).left = offsetX
-      if (pos.includes('center')) {
-        (style as any).left = '50%';
-        (style as any).transform = 'translateX(-50%)'
-      }
-    }
-    // Horizontal Stack (Side) - corresponds to 'left' setting
-    else {
-      const totalSideOffset = `${offsetXVal + widgetSizeVal + spacing}px`
-
-      // Vertical alignment matches the widget
-      if (pos.includes('bottom')) (style as any).bottom = offsetY
-      else (style as any).top = offsetY
-
-      // Horizontal placement
-      if (pos.includes('right')) {
-        // Widget is on right, popover goes to its left
-        (style as any).right = totalSideOffset
-      } else if (pos.includes('left')) {
-        // Widget is on left, popover goes to its right
-        (style as any).left = totalSideOffset
-      } else if (pos.includes('center')) {
-        // Center widget: 'left' setting is ambiguous/tricky.
-        // Fallback to top behavior (centered above)
-        (style as any).left = '50%';
-        (style as any).transform = 'translateX(-50%)';
-        (style as any).bottom = `${offsetYVal + widgetSizeVal + spacing}px`;
-      }
-    }
-
-    return style
-  }
-
-  // Styles for embed mode to ensure it fills the iframe correctly without double borders/shadows
-  // BUT skip this override in preview mode to allow simulating the popover positioning inside the fixed-size emulator iframe
-  const embedContainerOverride: React.CSSProperties = (isEmbed && !isPreview) ? {
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    margin: 0,
-    padding: 0,
-    boxShadow: 'none',
-    border: 'none',
-    borderRadius: 0,
-    transform: 'none', // Prevent double transforms
-  } : {}
-
-  // Widget button styles
-  const widgetAvatarStyle = chatbot.widgetAvatarStyle || 'circle'
-  const widgetSize = (chatbot as any).widgetSize || '60px'
-
-  let borderRadius: string
-  if (widgetAvatarStyle === 'circle') {
-    borderRadius = '50%' // Always circular for circle style, ignore widgetBorderRadius
-  } else if (widgetAvatarStyle === 'square') {
-    borderRadius = (chatbot as any).widgetBorderRadius || '8px'
-  } else {
-    // circle-with-label: use widgetBorderRadius or default to 50%
-    borderRadius = (chatbot as any).widgetBorderRadius || '50%'
-  }
-
-  const widgetBgValue = (chatbot as any).widgetBackgroundColor || chatbot.primaryColor || '#3b82f6'
-  const defaultIconColor = isLightColor(widgetBgValue) ? '#000000' : '#ffffff'
-
-  // Render widget button content
-  const renderWidgetButtonContent = () => {
-    if (isOpen) {
-      return <X className="h-6 w-6" style={{ color: chatbot?.avatarIconColor || defaultIconColor }} />
-    }
-
-    const widgetAvatarType = (chatbot as any).widgetAvatarType || chatbot?.avatarType || 'icon'
-    const widgetAvatarImageUrl = (chatbot as any).widgetAvatarImageUrl || chatbot?.avatarImageUrl
-    const widgetAvatarIcon = (chatbot as any).widgetAvatarIcon || chatbot?.avatarIcon || 'Bot'
-
-    if (widgetAvatarType === 'image' && widgetAvatarImageUrl) {
-      return <img src={widgetAvatarImageUrl} alt="Chat" style={{ width: '60%', height: '60%', borderRadius: widgetAvatarStyle === 'square' ? '8px' : '50%', objectFit: 'cover' }} />
-    }
-
-    return <DynamicIcon iconName={widgetAvatarIcon} iconColor={chatbot?.avatarIconColor || defaultIconColor} size="h-6 w-6" />
-  }
-
-  // Build box-shadow with all properties (offsetX offsetY blur spread color)
-  const shadowX = extractNumericValue((chatbot as any).widgetShadowX || '0px')
-  const shadowY = extractNumericValue((chatbot as any).widgetShadowY || '0px')
-  const shadowBlur = extractNumericValue((chatbot as any).widgetShadowBlur || '0px')
-  const shadowSpread = extractNumericValue((chatbot as any).widgetShadowSpread || '0px')
-  const shadowColor = (chatbot as any).widgetShadowColor || 'rgba(0,0,0,0.2)'
-  const boxShadow = (shadowBlur !== '0' || shadowX !== '0' || shadowY !== '0' || shadowSpread !== '0')
-    ? `${shadowX}px ${shadowY}px ${shadowBlur}px ${shadowSpread}px ${shadowColor}`
-    : undefined
-
-  const widgetBlur = (chatbot as any).widgetBackgroundBlur || 0
-  const widgetOpacity = (chatbot as any).widgetBackgroundOpacity !== undefined ? (chatbot as any).widgetBackgroundOpacity : 100
-
-  const getWidgetBackground = (): React.CSSProperties => {
-    const style: React.CSSProperties = {}
-
-    // Check if it's an image URL or gradient
-    const isGradient = widgetBgValue.includes('gradient')
-    const isUrl = widgetBgValue.startsWith('url(') || widgetBgValue.startsWith('http://') || widgetBgValue.startsWith('https://') || widgetBgValue.startsWith('/')
-
-    if (isUrl) {
-      const imageUrl = widgetBgValue.startsWith('url(') ? widgetBgValue : `url(${widgetBgValue})`
-      style.backgroundImage = imageUrl
-      style.backgroundSize = 'cover'
-      style.backgroundPosition = 'center'
-      style.backgroundRepeat = 'no-repeat'
-      // Apply opacity to background image
-      if (widgetOpacity < 100) {
-        style.backgroundColor = `rgba(255, 255, 255, ${widgetOpacity / 100})` // Fallback color with opacity
-      }
-    } else if (isGradient) {
-      // Apply gradient directly to background
-      style.background = widgetBgValue
-    } else {
-      // It's a color value - apply opacity
-      if (widgetOpacity < 100) {
-        if (widgetBgValue.startsWith('rgba') || widgetBgValue.startsWith('rgb')) {
-          const rgbMatch = widgetBgValue.match(/(\d+),\s*(\d+),\s*(\d+)/)
-          if (rgbMatch) {
-            style.backgroundColor = `rgba(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]}, ${widgetOpacity / 100})`
-          } else {
-            style.backgroundColor = widgetBgValue
-          }
-        } else {
-          // Try to convert hex to rgb, fallback to original value if it fails (e.g. named color)
-          try {
-            const rgb = hexToRgb(widgetBgValue)
-            if (rgb) {
-              style.backgroundColor = `rgba(${rgb}, ${widgetOpacity / 100})`
-            } else {
-              style.backgroundColor = widgetBgValue
-            }
-          } catch (e) {
-            style.backgroundColor = widgetBgValue
-          }
-        }
-      } else {
-        style.backgroundColor = widgetBgValue
-      }
-    }
-
-    return style
-  }
-
-  // Render circle-with-label widget button
-  const renderCircleWithLabelButton = () => {
-    const widgetLabelText = (chatbot as any).widgetLabelText || 'Chat'
-    const defaultLabelColor = isLightColor(widgetBgValue) ? '#000000' : '#ffffff'
-    const widgetLabelColor = (chatbot as any).widgetLabelColor || defaultLabelColor
-    const widgetLabelFontSize = (chatbot as any).widgetLabelFontSize || '14px'
-    const widgetLabelShowIcon = (chatbot as any).widgetLabelShowIcon !== false
-    const widgetLabelIconPosition = (chatbot as any).widgetLabelIconPosition || 'left'
-
-    // Use widgetLabelBorderRadius for circle-with-label, fallback to general borderRadius or default
-    const labelBorderRadius = (chatbot as any).widgetLabelBorderRadius || borderRadius || '8px'
-
-    const buttonStyle: React.CSSProperties = {
-      ...popoverPositionStyle(),
-      ...getWidgetBackground(),
-      height: widgetSize,
-      borderRadius: labelBorderRadius,
-      border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
-      boxShadow: boxShadow,
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '8px',
-      cursor: 'pointer',
-      padding: '0 16px',
-      zIndex: Math.max(
-        ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget),
-        Z_INDEX.chatWidgetWindow + 10
-      ),
-      color: widgetLabelColor,
-      fontSize: widgetLabelFontSize,
-      fontWeight: 500,
-      whiteSpace: 'nowrap',
-    }
-
-    // Apply glassmorphism effect
-    if (widgetBlur > 0) {
-      buttonStyle.backdropFilter = `blur(${widgetBlur}px)`
-      buttonStyle.WebkitBackdropFilter = `blur(${widgetBlur}px)`
-    }
-
-    const widgetAvatarType = (chatbot as any).widgetAvatarType || chatbot?.avatarType || 'icon'
-    const widgetAvatarImageUrl = (chatbot as any).widgetAvatarImageUrl || chatbot?.avatarImageUrl
-    const widgetAvatarIcon = (chatbot as any).widgetAvatarIcon || chatbot?.avatarIcon || 'Bot'
-    const iconColor = chatbot?.avatarIconColor || widgetLabelColor
-
-    const renderIcon = () => {
-      if (widgetAvatarType === 'image' && widgetAvatarImageUrl) {
-        return <img src={widgetAvatarImageUrl} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
-      }
-      return <DynamicIcon iconName={widgetAvatarIcon} iconColor={iconColor} />
-    }
-
-    return (
-      <button
-        type="button"
-        aria-label={isOpen ? "Close chat" : "Open chat"}
-        onClick={() => setIsOpen(!isOpen)}
-        style={buttonStyle}
-      >
-        {isOpen ? (
-          <X className="h-5 w-5" style={{ color: widgetLabelColor }} />
-        ) : (
-          <>
-            {widgetLabelShowIcon && widgetLabelIconPosition === 'left' && renderIcon()}
-            <span>{widgetLabelText}</span>
-            {widgetLabelShowIcon && widgetLabelIconPosition === 'right' && renderIcon()}
-          </>
-        )}
-      </button>
-    )
-  }
-
-  // Render standard widget button
-  const renderStandardWidgetButton = () => {
-    const buttonStyle: React.CSSProperties = {
-      ...popoverPositionStyle(),
-      ...getWidgetBackground(),
-      width: widgetSize,
-      height: widgetSize,
-      borderRadius: borderRadius,
-      border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
-      boxShadow: boxShadow,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      zIndex: Math.max(
-        ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget),
-        Z_INDEX.chatWidgetWindow + 10
-      ),
-    }
-
-    // Apply glassmorphism effect
-    if (widgetBlur > 0) {
-      buttonStyle.backdropFilter = `blur(${widgetBlur}px)`
-      buttonStyle.WebkitBackdropFilter = `blur(${widgetBlur}px)`
-    }
-
-    return (
-      <button
-        type="button"
-        aria-label={isOpen ? "Close chat" : "Open chat"}
-        onClick={() => setIsOpen(!isOpen)}
-        style={buttonStyle}
-      >
-        {renderWidgetButtonContent()}
-      </button>
-    )
-  }
+  // No longer needed: re-implemented widget button logic removed in favor of shared ChatWidgetButton component.
+  // The styling is now handled by getWidgetButtonStyle and getPopoverPositionStyle from chatStyling.ts.
 
   return (
     <>
@@ -951,77 +641,133 @@ export function ChatKitWrapper({
         <div style={overlayStyle} onClick={handleBackdropClose} />
       )}
 
-      {(shouldShowWidgetButton && !useChatKitInRegularStyle) && (
-        widgetAvatarStyle === 'circle-with-label'
-          ? renderCircleWithLabelButton()
-          : renderStandardWidgetButton()
+      {shouldShowWidgetButton && !useChatKitInRegularStyle && (
+        <ChatWidgetButton
+          chatbot={chatbot}
+          isOpen={isOpen}
+          onClick={() => setIsOpen(!isOpen)}
+          widgetButtonStyle={widgetButtonStyle}
+          popoverPositionStyle={widgetPopoverPositionStyle}
+        />
       )}
 
       {shouldShowContainer && (
         <div
+          id="chatbot-native-container"
           ref={containerRef}
           className={`chatkit-embedded-container ${(deploymentType === 'popover' || deploymentType === 'popup-center') ? 'chatbot-popover-enter' : ''}`}
           style={{
             ...containerStyle,
-            ...containerPositionStyle(),
-            ...embedContainerOverride,
+            '--container-border-radius': useChatKitInRegularStyle ? '0px' : (containerStyle.borderRadius || '8px'),
+            '--container-border': useChatKitInRegularStyle ? 'none' : (containerStyle.border || 'none'),
+            '--container-outline': useChatKitInRegularStyle ? 'none' : (containerStyle.outline || 'none'),
+            '--container-width': useChatKitInRegularStyle ? '100%' : (containerStyle.width || 'auto'),
+            '--container-height': useChatKitInRegularStyle ? '100%' : (containerStyle.height || 'auto'),
+            '--container-max-height': useChatKitInRegularStyle ? 'none' : (containerStyle.maxHeight || 'none'),
+            '--container-max-width': useChatKitInRegularStyle ? 'none' : (containerStyle.maxWidth || 'none'),
+            '--container-min-height': useChatKitInRegularStyle ? '0' : (containerStyle.minHeight || '0'),
+            '--container-min-width': useChatKitInRegularStyle ? '0' : (containerStyle.minWidth || '0'),
+            '--container-box-shadow': useChatKitInRegularStyle ? 'none' : (containerStyle.boxShadow || 'none'),
             zIndex: (deploymentType === 'popover' || deploymentType === 'popup-center')
               ? (chatbot as any).widgetZIndex || Z_INDEX.chatWidgetWindow
               : undefined,
-          }}
+          } as any}
         >
-          <ChatKitGlobalStyles chatbot={chatbot} chatkitOptions={chatkitOptions} />
-          <ChatKitStyleEnforcer chatbot={chatbot} containerRef={containerRef} isOpen={isOpen} />
-
-          <ChatKit
-            control={control}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              flex: 1,
-              minHeight: 0,
-            }}
-          />
-
-          {/* CSS transitions for animations */}
           <style>{`
-            @keyframes chatbotPopoverFadeIn {
-              from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-              }
+            /* Use ID selector to achieve maximum specificity */
+            #chatbot-native-container {
+                border-radius: var(--container-border-radius) !important;
+                border: var(--container-border) !important;
+                outline: var(--container-outline) !important;
+                
+                width: var(--container-width) !important;
+                height: var(--container-height) !important;
+                max-height: var(--container-max-height) !important;
+                max-width: var(--container-max-width) !important;
+                min-height: var(--container-min-height) !important;
+                min-width: var(--container-min-width) !important;
+                box-shadow: var(--container-box-shadow) !important;
+                
+                /* Explicitly allow overflow so shadow is visible */
+                overflow: visible !important;
             }
 
-            @keyframes chatbotPopoverFadeOut {
-              from {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-              }
-              to {
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-              }
+            /* Inner container handles clipping */
+            #chatbot-native-inner {
+                width: 100%;
+                height: 100%;
+                /* Explicitly use the variable instead of inherit to ensure it works */
+                border-radius: var(--container-border-radius) !important;
+                overflow: hidden !important;
+                transform: translateZ(0) !important;
+                -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
+                display: flex;
+                flex-direction: column;
             }
-
-            .chatbot-popover-container {
-              transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-            }
-
-            .chatbot-popover-enter {
-              animation: chatbotPopoverFadeIn 0.25s ease-out forwards;
-            }
-
-            .chatbot-popover-exit {
-              animation: chatbotPopoverFadeOut 0.2s ease-in forwards;
+            
+            /* Clean up iframes - remove any default borders */
+            #chatbot-native-inner iframe {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
             }
           `}</style>
+          
+          {/* Inner wrapper for strict clipping */}
+          <div id="chatbot-native-inner">
+            <ChatKitGlobalStyles chatbot={chatbot} chatkitOptions={chatkitOptions} />
+            <ChatKitStyleEnforcer chatbot={chatbot} containerRef={containerRef} isOpen={isOpen} />
+
+            <ChatKit
+                control={control}
+                style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
+                minHeight: 0,
+                }}
+            />
+
+            {/* CSS transitions for animations */}
+            <style>{`
+                @keyframes chatbotPopoverFadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                }
+
+                @keyframes chatbotPopoverFadeOut {
+                from {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                }
+
+                .chatbot-popover-container {
+                transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+                }
+
+                .chatbot-popover-enter {
+                animation: chatbotPopoverFadeIn 0.25s ease-out forwards;
+                }
+
+                .chatbot-popover-exit {
+                animation: chatbotPopoverFadeOut 0.2s ease-in forwards;
+                }
+            `}</style>
+          </div>
         </div>
       )}
 

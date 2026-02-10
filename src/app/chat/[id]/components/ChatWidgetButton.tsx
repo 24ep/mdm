@@ -24,80 +24,136 @@ export function ChatWidgetButton({
     const config = useMemo(() => {
         // Theme is needed for accent color fallback
         const theme = buildChatKitTheme(chatbot)
-        return getWidgetConfig(chatbot, theme)
+        const computed = getWidgetConfig(chatbot, theme)
+        return computed
     }, [chatbot])
 
     const containerStyle = useMemo(() => {
-        // Helper to get background styles
-        const getBackgroundStyles = (): React.CSSProperties => {
-            const bgValue = config.backgroundColor
-            // Check if it's an image URL
-            if (bgValue && (bgValue.startsWith('url(') || bgValue.startsWith('http://') || bgValue.startsWith('https://') || bgValue.startsWith('/'))) {
-                const imageUrl = bgValue.startsWith('url(') ? bgValue : `url(${bgValue})`
-                return {
-                    backgroundImage: imageUrl,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                }
-            }
-            // Check if it's a gradient
-            if (bgValue && bgValue.includes('gradient')) {
-                return { background: bgValue }
-            }
-            // It's a solid color
-            return { backgroundColor: bgValue }
+        // Calculate the "ideal" background pieces from the utility
+        // Strictly separate color from image/gradient to avoid shorthand issues
+        const bgColor = widgetButtonStyle.backgroundColor || 'transparent'
+        const bgImage = widgetButtonStyle.backgroundImage || widgetButtonStyle.background || 'none'
+        
+        // Final border radius calculation
+        const finalBorderRadius = config.avatarStyle === 'circle' ? '50%' : (config.borderRadius || (widgetButtonStyle as any).borderRadius || '50%');
+        const activeBorderRadius = (!isOpen && config.avatarStyle === 'circle-with-label') ? config.labelBorderRadius : finalBorderRadius;
+
+        // Extract border and shadow for granular enforcement
+        const borderParts = (widgetButtonStyle.border as string || '0px solid transparent').split(' ')
+        const borderWidth = borderParts[0] || '0px'
+        const borderColor = borderParts.slice(2).join(' ') || 'transparent'
+        const boxShadow = (widgetButtonStyle.boxShadow as string) || 'none'
+
+        // Determine avatar image/icon size
+        const avatarSize = config.avatarStyle === 'circle-with-label' ? '24px' : '60%'
+
+        // Base object - strictly avoid shorthand vs longhand conflicts here for React
+        const style: any = {
+            ...popoverPositionStyle,
+            // Fallback for non-important rules
+            borderRadius: activeBorderRadius,
+            // Use CSS variables for !important overrides in the <style> tag
+            '--widget-border-radius': activeBorderRadius,
+            '--widget-bg-color': bgColor,
+            '--widget-bg-image': bgImage,
+            '--widget-bg-size': widgetButtonStyle.backgroundSize || 'cover',
+            '--widget-bg-pos': widgetButtonStyle.backgroundPosition || 'center',
+            '--widget-bg-repeat': widgetButtonStyle.backgroundRepeat || 'no-repeat',
+            '--widget-border-width': borderWidth,
+            '--widget-border-color': borderColor,
+            '--widget-box-shadow': boxShadow,
+            '--avatar-size': avatarSize,
+            zIndex: config.zIndex,
+            cursor: 'pointer',
         }
 
+        // Apply shared layout props
         if (!isOpen && config.avatarStyle === 'circle-with-label') {
-            // Pill style - keep background, border, and shadow from config
-            // but adjust dimensions for pill shape
-            return {
-                ...popoverPositionStyle,
-                ...getBackgroundStyles(),
-                // Dimensions for pill shape
-                width: 'auto',
-                height: config.size,
-                borderRadius: config.labelBorderRadius,
-                paddingLeft: '16px',
-                paddingRight: '16px',
-                // Flex layout
+            style.width = 'auto'
+            style.height = config.size
+            style.paddingLeft = '16px'
+            style.paddingRight = '16px'
+            style.display = 'flex'
+            style.alignItems = 'center'
+            style.gap = '8px'
+            style.flexDirection = 'row'
+            style.justifyContent = 'center'
+            style.minWidth = config.size
+            style.boxShadow = config.boxShadow !== 'none' ? config.boxShadow : undefined
+        } else {
+            // Standard circle/square button layout
+            Object.assign(style, {
+                width: (chatbot as any).widgetSize || '60px',
+                height: (chatbot as any).widgetSize || '60px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                flexDirection: 'row',
                 justifyContent: 'center',
-                minWidth: config.size,
-                // Apply configured border and shadow
-                border: `${config.borderWidth} solid ${config.borderColor}`,
-                boxShadow: config.boxShadow !== 'none' ? config.boxShadow : undefined,
-                zIndex: config.zIndex,
-                cursor: 'pointer',
-            } as React.CSSProperties
+            })
         }
-        
-        // For circle and square styles, use widgetButtonStyle (which has all the styling)
-        // Ensure border radius and background are explicitly set from widgetButtonStyle
-        return {
-            ...popoverPositionStyle,
-            ...widgetButtonStyle,
-            // Force border radius and background to be applied (in case of CSS overrides)
-            borderRadius: widgetButtonStyle.borderRadius || config.borderRadius || '50%',
-            backgroundColor: widgetButtonStyle.backgroundColor || undefined,
-            background: widgetButtonStyle.background || undefined,
-            backgroundImage: widgetButtonStyle.backgroundImage || undefined,
-        }
-    }, [isOpen, config, popoverPositionStyle, widgetButtonStyle])
+
+        return style as React.CSSProperties
+    }, [isOpen, config, popoverPositionStyle, widgetButtonStyle, chatbot])
 
     return (
-        <button
-            type="button"
-            aria-label={isOpen ? 'Close chat' : 'Open chat'}
-            onClick={onClick}
-            style={containerStyle}
-            className="transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center relative"
-            data-widget-button="true"
-        >
+        <>
+            <style>{`
+                /* Use ID selector to achieve maximum specificity (1, 0, 0) and beat global styles */
+                #chatbot-widget-button,
+                button#chatbot-widget-button.transition-all {
+                    border-radius: var(--widget-border-radius) !important;
+                    /* Use longhand properties to avoid shorthand reset bugs */
+                    background-color: var(--widget-bg-color) !important;
+                    background-image: var(--widget-bg-image) !important;
+                    background-size: var(--widget-bg-size) !important;
+                    background-position: var(--widget-bg-pos) !important;
+                    background-repeat: var(--widget-bg-repeat) !important;
+                    
+                    /* Border and Shadow Enforcement */
+                    border-width: var(--widget-border-width) !important;
+                    border-color: var(--widget-border-color) !important;
+                    border-style: solid !important;
+                    box-shadow: var(--widget-box-shadow) !important;
+
+                    overflow: hidden !important;
+                    box-sizing: border-box !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    min-width: 0 !important;
+                    min-height: 0 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    outline: none !important;
+                    appearance: none !important;
+                    -webkit-appearance: none !important;
+                    text-transform: none !important;
+                    text-decoration: none !important;
+                }
+                
+                #chatbot-widget-button img {
+                    border-radius: var(--widget-border-radius) !important;
+                    width: var(--avatar-size) !important;
+                    height: var(--avatar-size) !important;
+                    object-fit: cover !important;
+                    /* Ensure image doesn't have a background/border of its own that conflicts */
+                    background: transparent !important;
+                    border: none !important;
+                }
+                
+                #chatbot-widget-button svg {
+                    width: var(--avatar-size) !important;
+                    height: var(--avatar-size) !important;
+                }
+            `}</style>
+            <button
+                id="chatbot-widget-button"
+                type="button"
+                aria-label={isOpen ? 'Close chat' : 'Open chat'}
+                onClick={onClick}
+                style={containerStyle}
+                className="transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center relative"
+                data-widget-button="true"
+            >
             {isOpen ? (
                 <X className="h-6 w-6" style={{ color: config.avatarIconColor }} />
             ) : (
@@ -108,19 +164,12 @@ export function ChatWidgetButton({
                                 <img
                                     src={config.avatarImageUrl}
                                     alt="Chat"
-                                    style={{
-                                        width: config.avatarStyle === 'circle-with-label' ? '24px' : '60%',
-                                        height: config.avatarStyle === 'circle-with-label' ? '24px' : '60%',
-                                        borderRadius: '50%', // Icons always circular inside button
-                                        objectFit: 'cover'
-                                    }}
                                 />
                             )
                         }
                         const IconName = config.avatarIcon as string
                         const IconComponent = (Icons as any)[IconName] || Bot
                         return <IconComponent
-                            className={config.avatarStyle === 'circle-with-label' ? "h-5 w-5" : "h-6 w-6"}
                             style={{ color: config.avatarIconColor }}
                         />
                     }
@@ -166,6 +215,7 @@ export function ChatWidgetButton({
                 </div>
             )}
         </button>
+        </>
     )
 }
 

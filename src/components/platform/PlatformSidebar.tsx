@@ -333,6 +333,15 @@ export function PlatformSidebar({
       return
     }
 
+    // For System and Tools, navigate to the grid view
+    if (groupName === 'system' || groupName === 'tools') {
+        if (onGroupSelect) {
+            onGroupSelect(groupName)
+        }
+        router.push(`/${groupName}`)
+        return
+    }
+
     if (onGroupSelect) {
       onGroupSelect(groupName)
     }

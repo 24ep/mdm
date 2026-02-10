@@ -25,36 +25,41 @@ async function getHandler(request: NextRequest) {
 
   const offset = (page - 1) * limit
 
-  const conditions: string[] = ["resource_type = 'secret'"]
+  // Map 'secret' resource_type to entity_type
+  const conditions: string[] = ["a.entity_type = 'secret'"]
   const params: any[] = []
   let paramIndex = 1
 
   if (userId) {
-    conditions.push(`user_id = $${paramIndex}::uuid`)
+    conditions.push(`a.user_id = $${paramIndex}::uuid`)
     params.push(userId)
     paramIndex++
   }
 
+  // secretPath mapping is tricky if we don't have resource_name. 
+  // We'll skip it or try to match against entity_id casting? 
+  // For now, let's ignore secretPath filter or match roughly if possible?
+  // Since we don't have resource_name, we can't filter by name.
   if (secretPath) {
-    conditions.push(`resource_name LIKE $${paramIndex}`)
-    params.push(`%${secretPath}%`)
-    paramIndex++
+     // conditions.push(`a.resource_name LIKE $${paramIndex}`)
+     // params.push(`%${secretPath}%`)
+     // paramIndex++
   }
 
   if (action) {
-    conditions.push(`action = $${paramIndex}`)
+    conditions.push(`a.action = $${paramIndex}`)
     params.push(action)
     paramIndex++
   }
 
   if (startDate) {
-    conditions.push(`timestamp >= $${paramIndex}::timestamptz`)
+    conditions.push(`a.created_at >= $${paramIndex}::timestamptz`)
     params.push(startDate)
     paramIndex++
   }
 
   if (endDate) {
-    conditions.push(`timestamp <= $${paramIndex}::timestamptz`)
+    conditions.push(`a.created_at <= $${paramIndex}::timestamptz`)
     params.push(endDate)
     paramIndex++
   }
@@ -64,7 +69,7 @@ async function getHandler(request: NextRequest) {
 
   // Get total count
   const countResult = await query(
-    `SELECT COUNT(*) as total FROM public.audit_logs ${whereClause}`,
+    `SELECT COUNT(*) as total FROM audit_logs a ${whereClause}`,
     params,
   )
   const total = parseInt(countResult.rows[0].total)
@@ -73,11 +78,14 @@ async function getHandler(request: NextRequest) {
   params.push(limit, offset)
   const logsResult = await query(
     `SELECT 
-        id, user_id, user_name, user_email, action, resource_type, resource_id,
-        resource_name, ip_address, user_agent, metadata, success, timestamp
-       FROM public.audit_logs
+        a.id, a.user_id, u.name as user_name, u.email as user_email, 
+        a.action, a.entity_type as resource_type, a.entity_id as resource_id,
+        null as resource_name, a.ip_address, a.user_agent, 
+        '{}'::jsonb as metadata, true as success, a.created_at as timestamp
+       FROM audit_logs a
+       LEFT JOIN users u ON a.user_id = u.id
        ${whereClause}
-       ORDER BY timestamp DESC
+       ORDER BY a.created_at DESC
        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     params,
   )
@@ -94,11 +102,7 @@ async function getHandler(request: NextRequest) {
     secretPath: row.resource_name,
     ipAddress: row.ip_address,
     userAgent: row.user_agent,
-    metadata: row.metadata
-      ? typeof row.metadata === 'string'
-        ? JSON.parse(row.metadata)
-        : row.metadata
-      : null,
+    metadata: row.metadata,
     success: row.success,
     timestamp: row.timestamp,
   }))

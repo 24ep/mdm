@@ -11,6 +11,12 @@ async function getHandler(
 
   const { id } = await params
   
+  // Validate ID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(id)) {
+    return NextResponse.json({ error: 'Invalid project ID' }, { status: 400 })
+  }
+  
   const project = await db.project.findUnique({
     where: { id, deletedAt: null },
     include: {

@@ -43,6 +43,10 @@ export default function SystemLayout({
   const [activeTab, setActiveTab] = useState('users')
 
   useEffect(() => {
+    if (pathname === '/system') {
+      setActiveTab('system')
+      return
+    }
     const tab = pathToTabMap[pathname || ''] || 'users'
     setActiveTab(tab)
   }, [pathname])

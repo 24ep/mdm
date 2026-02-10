@@ -27,6 +27,11 @@ export default function ToolsLayout({
   const [breadcrumbActions, setBreadcrumbActions] = useState<React.ReactNode>(null)
 
   useEffect(() => {
+    if (pathname === '/tools') {
+      setActiveTab('tools')
+      setBreadcrumbActions(null)
+      return
+    }
     const tab = pathToTabMap[pathname || ''] || 'bigquery'
     setActiveTab(tab)
     // Clear breadcrumb actions when tab changes

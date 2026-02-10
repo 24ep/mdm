@@ -6,6 +6,41 @@ interface ChatLayoutProps {
 }
 
 /**
+ * Generate viewport configuration for the chat page.
+ */
+export async function generateViewport({ params }: { params: Promise<{ id: string }> }): Promise<any> {
+  const { id: chatbotId } = await params
+
+  try {
+    const { db } = await import('@/lib/db')
+    const { mergeVersionConfig } = await import('@/lib/chatbot-helper')
+
+    const chatbot = await db.chatbot.findUnique({
+      where: { id: chatbotId },
+      include: {
+        versions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    })
+
+    if (!chatbot) {
+      return { themeColor: '#3b82f6' }
+    }
+
+    const cb = mergeVersionConfig(chatbot)
+    const themeColor = cb.pwaThemeColor || cb.primaryColor || '#3b82f6'
+
+    return {
+      themeColor: themeColor,
+    }
+  } catch (error) {
+    return { themeColor: '#3b82f6' }
+  }
+}
+
+/**
  * Generate dynamic metadata for the chat page based on chatbot configuration.
  * This enables PWA installation with chatbot-specific branding.
  */
@@ -59,7 +94,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       title: appName,
       description: description,
       manifest: `/api/chat/${chatbotId}/manifest.json`,
-      themeColor: themeColor,
       appleWebApp: {
         capable: true,
         statusBarStyle: 'default',

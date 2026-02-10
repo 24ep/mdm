@@ -8,10 +8,15 @@ export const convertToHex = (color: string): string | null => {
     if (!color || typeof color !== 'string') {
         return null
     }
-    const trimmed = color.trim()
+    let trimmed = color.trim()
 
-    // Already hex format
-    if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(trimmed)) {
+    // Handle hex string without #
+    if (/^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/.test(trimmed)) {
+        trimmed = '#' + trimmed
+    }
+
+    // Already hex format with #
+    if (/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(trimmed)) {
         // Expand 3-digit hex to 6-digit
         if (trimmed.length === 4) {
             const r = trimmed[1]
@@ -22,22 +27,20 @@ export const convertToHex = (color: string): string | null => {
         return trimmed
     }
 
-    // Convert rgb/rgba to hex (only if opacity > 0)
-    const rgbMatch = trimmed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(,\s*([\d.]+))?\)/)
+    // Convert rgb/rgba to hex
+    const rgbMatch = trimmed.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/i)
     if (rgbMatch) {
         const r = parseInt(rgbMatch[1])
         const g = parseInt(rgbMatch[2])
         const b = parseInt(rgbMatch[3])
-        const opacity = rgbMatch[5] ? parseFloat(rgbMatch[5]) : 1
-
-        // Only convert if opacity > 0
-        if (opacity > 0) {
-            const toHex = (n: number) => {
-                const hex = Math.round(n).toString(16)
-                return hex.length === 1 ? '0' + hex : hex
-            }
-            return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+        // We ignore alpha for hex conversion as ChatKit theme typically expects opaque hex
+        // unless it supports alpha hex which is rare for basic color inputs
+        
+        const toHex = (n: number) => {
+            const hex = Math.max(0, Math.min(255, n)).toString(16)
+            return hex.length === 1 ? '0' + hex : hex
         }
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`
     }
 
     return null

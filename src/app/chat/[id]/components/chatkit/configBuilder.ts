@@ -41,14 +41,14 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
         const accentPrimaryHex = convertToHex(accentPrimaryRaw) || '#3b82f6'
         const accentLevel = chatkitOptions.theme.color.accent?.level ?? 2
 
-        // Validate accent level (0-4)
-        const validLevel = typeof accentLevel === 'number' && accentLevel >= 0 && accentLevel <= 4
+        // Validate accent level (0-3) per ChatKit schema
+        const validLevel = typeof accentLevel === 'number' && accentLevel >= 0 && accentLevel <= 3
             ? accentLevel
             : 2
 
         colorObj.accent = {
             primary: accentPrimaryHex,
-            level: validLevel,
+            level: validLevel as 0 | 1 | 2 | 3,
         }
         hasColor = true
 
@@ -117,18 +117,32 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
         hasColor = true
     }
 
-    // Map flat properties if they exist and aren't already set in chatkitOptions
-    // Secondary Color
-    if (chatbot.secondaryColor && !((chatkitOptions.theme?.color as any)?.secondary)) {
-        const secondaryHex = convertToHex(chatbot.secondaryColor)
-        if (secondaryHex && !colorObj.secondary) colorObj.secondary = secondaryHex
+    // Map explicitly defined colors from chatkitOptions.theme.color if they exist
+    if (chatkitOptions.theme?.color) {
+        const c = chatkitOptions.theme.color
+        
+        // ChatKit typically only supports 'accent' and 'surface' in theme.color
+        // Map explicitly defined background to surface.background if it exists
+        if (c.background) {
+            const bg = convertToHex(c.background)
+            if (bg) {
+                if (!colorObj.surface) colorObj.surface = { background: bg, foreground: '#000000' }
+                else colorObj.surface.background = bg
+            }
+        }
+        
+        // Map foreground to surface.foreground if it exists
+        if ((c as any).foreground || (c as any).text) {
+            const fg = convertToHex((c as any).foreground || (c as any).text)
+            if (fg) {
+                if (!colorObj.surface) colorObj.surface = { background: '#ffffff', foreground: fg }
+                else colorObj.surface.foreground = fg
+            }
+        }
     }
 
-    // Border Color is tricky as ChatKit theme structure might not have a direct 'border' in color root
-    // But we can check if it supports it or map it to something else
-
     // Background & Text & Surface
-    // If surface is not already defined in the theme options (or was invalid), try to map from flat properties
+    // If surface is not already defined in the theme options (or was partially defined), try to map from flat properties
     if (!colorObj.surface && (chatbot.backgroundColor || chatbot.messageBoxColor)) {
         const bg = convertToHex(chatbot.backgroundColor || chatbot.messageBoxColor || '')
         // Use userMessageFontColor as primary text color fallback if fontColor is not set
@@ -144,57 +158,39 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
     }
 
 
-    // Only add color if it has at least accent
-    if (hasColor && colorObj.accent) {
+    // Final cleanup: Ensure required fields or valid literal types are used
+    if (colorObj.accent || colorObj.surface) {
         validTheme.color = colorObj
     }
 
-    // Add typography if present and valid
-    if (chatkitOptions.theme?.typography) {
+    // Add typography if present and valid - ChatKit schema is strict
+    if (chatkitOptions.theme?.typography || chatbot.fontFamily) {
         const typographyObj: any = {}
-        const typo = chatkitOptions.theme.typography
+        const typo = chatkitOptions.theme?.typography || {}
 
         // Include fontFamily
         if (typeof typo.fontFamily === 'string' && typo.fontFamily.trim() !== '') {
             typographyObj.fontFamily = typo.fontFamily.trim()
+        } else if (chatbot.fontFamily) {
+            typographyObj.fontFamily = chatbot.fontFamily
         }
 
-        // Include numeric typography properties with strictly parsed numbers
-        if (typo.fontSize !== undefined) {
-            const size = parseFloat(typo.fontSize)
-            if (!isNaN(size) && size > 0) typographyObj.fontSize = size
+        // ChatKit only supports baseSize (14-18), fontSources, fontFamily, fontFamilyMono
+        // Map fontSize to baseSize if it matches the range
+        const sizeVal = typo.baseSize || typo.fontSize
+        if (sizeVal !== undefined) {
+            const size = parseInt(sizeVal.toString())
+            if (size >= 14 && size <= 18) {
+                typographyObj.baseSize = size as 14 | 15 | 16 | 17 | 18
+            }
         }
 
-        if (typo.fontWeight !== undefined) {
-            const weight = parseInt(typo.fontWeight)
-            if (!isNaN(weight) && weight > 0) typographyObj.fontWeight = weight
-        }
+        // Removed potential unsupported keys: fontWeight, lineHeight, letterSpacing
 
-        if (typo.lineHeight !== undefined) {
-            const height = parseFloat(typo.lineHeight)
-            if (!isNaN(height) && height > 0) typographyObj.lineHeight = height
-        }
-
-        if (typo.letterSpacing !== undefined) {
-            const spacing = parseFloat(typo.letterSpacing)
-            if (!isNaN(spacing)) typographyObj.letterSpacing = spacing // Allow 0 or negative
-        }
-
-        // Only add typography if it has at least one property
+        // Only add typography if it has properties
         if (Object.keys(typographyObj).length > 0) {
             validTheme.typography = typographyObj
         }
-    }
-
-    // Check for fontFamily fallback if not already set
-    if (!validTheme.typography) validTheme.typography = {}
-    if (!validTheme.typography.fontFamily && chatbot.fontFamily) {
-        // Fallback: Use Platform UI font family if no specific ChatKit typography is set
-        validTheme.typography.fontFamily = chatbot.fontFamily
-    }
-    // Cleanup empty typography object
-    if (validTheme.typography && Object.keys(validTheme.typography).length === 0) {
-        delete validTheme.typography
     }
 
     // Determine default color scheme based on background color
@@ -209,7 +205,7 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
         const bgHex = convertToHex(chatbot.messageBoxColor)
         // Use fontColor for foreground or default to high-contrast color based on background brightness
         const defaultFg = isLightColor(chatbot.messageBoxColor) ? '#000000' : '#ffffff'
-        const fgHex = convertToHex(chatbot.fontColor) || defaultFg
+        const fgHex = convertToHex(chatbot.fontColor || '') || defaultFg
 
         if (bgHex && fgHex) {
             if (!validTheme.color) validTheme.color = {}
@@ -220,6 +216,25 @@ export const buildChatKitTheme = (chatbot: ChatbotConfig) => {
         }
     }
 
-    // Return undefined if theme is empty, otherwise return valid theme
-    return Object.keys(validTheme).length > 0 ? validTheme : undefined
+    // Radius & Density - must be specific literals
+    if (chatkitOptions.theme?.radius) {
+        const r = chatkitOptions.theme.radius
+        if (['pill', 'round', 'soft', 'sharp'].includes(r)) {
+            validTheme.radius = r as any
+        }
+    }
+    
+    if (chatkitOptions.theme?.density) {
+        const d = chatkitOptions.theme.density
+        if (['compact', 'normal', 'spacious'].includes(d)) {
+            validTheme.density = d as any
+        }
+    }
+
+    // Debug theme for invalid input error
+    if (Object.keys(validTheme).length > 0) {
+        console.log('[ChatKitTheme] Generated Theme:', JSON.stringify(validTheme, null, 2))
+        return validTheme
+    }
+    return undefined
 }

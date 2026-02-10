@@ -18,10 +18,11 @@ async function getHandler(request: NextRequest) {
     const spaceId = searchParams.get('spaceId') || 'all'
     const search = searchParams.get('search') || ''
     const type = searchParams.get('type') || 'all'
-    const provider = searchParams.get('provider') || 'all'
+    // const provider = searchParams.get('provider') || 'all' // storage_provider not supported in SpaceAttachmentStorage
 
     // Build the query with filters
-    let whereConditions = ['a.deleted_at IS NULL']
+    // Use space_attachment_storage table
+    let whereConditions = [] // DeletedAt not in schema
     let queryParams: any[] = []
     let paramIndex = 1
 
@@ -32,7 +33,7 @@ async function getHandler(request: NextRequest) {
     }
 
     if (search) {
-      whereConditions.push(`(a.name ILIKE $${paramIndex} OR a.original_name ILIKE $${paramIndex})`)
+      whereConditions.push(`a.file_name ILIKE $${paramIndex}`)
       queryParams.push(`%${search}%`)
       paramIndex++
     }
@@ -51,26 +52,32 @@ async function getHandler(request: NextRequest) {
       }
     }
 
-    if (provider !== 'all') {
-      whereConditions.push(`a.storage_provider = $${paramIndex}`)
-      queryParams.push(provider)
-      paramIndex++
-    }
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : ''
 
-    const whereClause = whereConditions.join(' AND ')
-
-    // Get attachments with space and user information
+    // Get attachments with space information
     const attachments = await query(`
       SELECT 
-        a.id, a.name, a.original_name, a.size, a.mime_type, a.url, a.thumbnail_url,
-        a.is_public, a.space_id, a.entity_id, a.entity_type, a.created_at, a.updated_at,
-        a.uploaded_by, a.storage_provider, a.metadata,
+        a.id, 
+        a.file_name as name, 
+        a.file_name as original_name, 
+        a.file_size as size, 
+        a.mime_type, 
+        a.file_path as url, 
+        null as thumbnail_url,
+        false as is_public, 
+        a.space_id, 
+        null as entity_id, 
+        null as entity_type, 
+        a.created_at, 
+        a.created_at as updated_at,
+        null as uploaded_by, 
+        'local' as storage_provider, 
+        '{}'::jsonb as metadata,
         s.name as space_name,
-        u.name as uploaded_by_name
-      FROM attachments a
+        null as uploaded_by_name
+      FROM space_attachment_storage a
       LEFT JOIN spaces s ON a.space_id = s.id
-      LEFT JOIN users u ON a.uploaded_by = u.id
-      WHERE ${whereClause}
+      ${whereClause}
       ORDER BY a.created_at DESC
       LIMIT 100
     `, queryParams)

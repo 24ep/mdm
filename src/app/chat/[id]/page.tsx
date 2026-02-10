@@ -26,6 +26,7 @@ import {
   getContainerStyle,
   getOverlayStyle,
   getWidgetButtonStyle,
+  ensureUnits,
 } from './utils/chatStyling'
 import { Z_INDEX } from '@/lib/z-index'
 import { ChatWidgetButton } from './components/ChatWidgetButton'
@@ -397,8 +398,9 @@ export default function ChatPage() {
           height = '120px'
         } else if (!isMobileRef.current) {
           // Desktop Popover - use ref to avoid dependency loop
-          width = '450px'
-          height = '800px'
+          // Respect configured dimensions if available
+          width = ensureUnits((chatbot as any).chatWindowWidth, '450px')
+          height = ensureUnits((chatbot as any).chatWindowHeight, '800px')
         }
         // Mobile Open Popover remains 100%
       }
@@ -497,14 +499,14 @@ export default function ChatPage() {
   // EXCEPT: In DESKTOP preview mode (emulator), preserve the selected deployment type
   // EXCEPT: In EMBED mode, the iframe size determines "mobile" state. If the iframe is small (closed),
   // we do NOT want to switch to fullpage, because fullpage forces isOpen=true, which expands the iframe, creating a loop.
-  const effectiveDeploymentType = (isMobile && !isEmbed && !isDesktopPreview && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
+  const effectiveDeploymentType = (isMobile && !isEmbed && !isPreview && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
     ? 'fullpage'
     : baseDeploymentType
 
   // Memoize widget button style to ensure it recomputes when chatbot config changes
   const widgetButtonStyle = useMemo(() => {
     if (!chatbot) return {}
-    return getWidgetButtonStyle(chatbot)
+    return getWidgetButtonStyle(chatbot, (chatbot as any).chatkitOptions)
   }, [chatbot])
 
   if (!chatbot) {
@@ -541,16 +543,24 @@ export default function ChatPage() {
     )
   }
 
-  const chatStyle = getChatStyle(chatbot)
-  const containerStyle = getContainerStyle(chatbot, effectiveDeploymentType, emulatorConfig, isMobile, isEmbed, isDesktopPreview)
-  const overlayStyle = getOverlayStyle(effectiveDeploymentType, chatbot, isOpen)
+  const chatStyle = getChatStyle(chatbot, (chatbot as any).chatkitOptions)
+  const containerStyle = getContainerStyle(
+    chatbot, 
+    effectiveDeploymentType, 
+    emulatorConfig, 
+    isMobile, 
+    isEmbed, 
+    isPreview, // Use generic isPreview flag so mobile preview respects popover config
+    (chatbot as any).chatkitOptions
+  )
+  const overlayStyle = getOverlayStyle(effectiveDeploymentType, chatbot, isOpen, (chatbot as any).chatkitOptions)
   const popoverPositionStyle = getPopoverPositionStyle(chatbot)
 
   // Render ChatKit only if engine type is chatkit or openai-agent-sdk with agent ID
   // In DESKTOP preview mode, don't force regular style on mobile - allow widget preview
   // Mobile/tablet preview still uses regular style on mobile to match production
   // In EMBED mode, do NOT force regular style just because iframe is small (mobile-sized).
-  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || (isMobile && !isEmbed && !isDesktopPreview)
+  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || (isMobile && !isEmbed && !isPreview)
   const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
   const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
   const shouldRenderChatKit =
@@ -622,7 +632,7 @@ export default function ChatPage() {
             flex: '1 1 auto',
             minHeight: 0,
             width: '100%',
-            height: '100dvh', // Ensure full dynamic viewport height for ChatKit on mobile/iframe
+            height: '100%', // Use 100% to respect parent container height
             display: 'flex',
             flexDirection: 'column',
           }}

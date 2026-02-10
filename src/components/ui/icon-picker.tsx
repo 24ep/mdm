@@ -64,7 +64,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
         key={name}
         type="button"
         onClick={() => onChange(name)}
-        className="p-2 rounded-md flex flex-col items-center space-y-1 transition-colors"
+        className="p-2 rounded-md flex items-center justify-center transition-colors"
         title={name}
       >
         <div
@@ -91,7 +91,6 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
             <Loader2 className="h-5 w-5 animate-spin" />
           )}
         </div>
-        <span className="text-[8px] text-center break-all leading-none">{name}</span>
       </button>
     )
   }
@@ -169,7 +168,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
                 if (!items || !Array.isArray(items)) return null
                 return (
                   <div key={category}>
-                    <div className="grid grid-cols-6 gap-2">
+                    <div className="grid grid-cols-6 gap-4">
                       {items?.map((name) => renderIconButton(name))}
                     </div>
                   </div>
@@ -178,7 +177,7 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-6 gap-2 max-h-72 overflow-auto border rounded-md p-2">
+        <div className="grid grid-cols-6 gap-4 max-h-72 overflow-auto border rounded-md p-2">
           {filtered?.map((name) => renderIconButton(name))}
         </div>
       )}

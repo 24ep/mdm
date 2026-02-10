@@ -53,8 +53,8 @@ const getGroupForTab = (tab: string): string | null => {
 
   const groupedTabs: Record<string, string[]> = {
     overview: ['overview', 'analytics', 'knowledge-base', 'projects'],
-    tools: ['bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'marketplace', 'bi', 'storage', 'data-governance'],
-    system: ['users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'integrations', 'api'],
+    tools: ['tools', 'bigquery', 'notebook', 'ai-analyst', 'ai-chat-ui', 'marketplace', 'bi', 'storage', 'data-governance'],
+    system: ['system', 'users', 'roles', 'permission-tester', 'space-layouts', 'space-settings', 'assets', 'data', 'attachments', 'kernels', 'logs', 'audit', 'database', 'change-requests', 'sql-linting', 'schema-migrations', 'data-masking', 'cache', 'backup', 'security', 'performance', 'settings', 'page-templates', 'notifications', 'themes', 'integrations', 'api'],
     'data-management': ['space-selection']
   }
 
@@ -256,6 +256,12 @@ export function PlatformLayout({
     if (hoveredGroup && hoveredGroup !== 'data-management') {
       return hoveredGroup
     }
+    
+    // If we are on the root page of a group (activeTab == currentGroup), hide the secondary sidebar
+    if (activeTab === currentGroup) {
+      return null
+    }
+
     if (selectedGroup && selectedGroup !== 'data-management') {
       return selectedGroup
     }
@@ -263,7 +269,7 @@ export function PlatformLayout({
       return currentGroup
     }
     return null
-  }, [hoveredGroup, selectedGroup, currentGroup, showSpaceSettingsSidebar])
+  }, [hoveredGroup, selectedGroup, currentGroup, showSpaceSettingsSidebar, activeTab])
 
   // Set selected group based on active tab when activeTab changes
   // Only update if the group was not manually selected by the user clicking on a group
@@ -671,6 +677,7 @@ export function PlatformLayout({
                   onCancel={() => {
                     setSelectedVm(null)
                     setSelectedVmId(null)
+                    setVmCredentials(null)
                   }}
                 />
               )
@@ -731,4 +738,3 @@ export function PlatformLayout({
     </div>
   )
 }
-
