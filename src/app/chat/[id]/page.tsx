@@ -499,7 +499,7 @@ export default function ChatPage() {
   // EXCEPT: In DESKTOP preview mode (emulator), preserve the selected deployment type
   // EXCEPT: In EMBED mode, the iframe size determines "mobile" state. If the iframe is small (closed),
   // we do NOT want to switch to fullpage, because fullpage forces isOpen=true, which expands the iframe, creating a loop.
-  const effectiveDeploymentType = (isMobile && !isEmbed && !isPreview && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
+  const effectiveDeploymentType = (isMobile && (baseDeploymentType === 'popover' || baseDeploymentType === 'popup-center'))
     ? 'fullpage'
     : baseDeploymentType
 
@@ -560,7 +560,7 @@ export default function ChatPage() {
   // In DESKTOP preview mode, don't force regular style on mobile - allow widget preview
   // Mobile/tablet preview still uses regular style on mobile to match production
   // In EMBED mode, do NOT force regular style just because iframe is small (mobile-sized).
-  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || (isMobile && !isEmbed && !isPreview)
+  const useChatKitInRegularStyle = (chatbot as any).useChatKitInRegularStyle === true || isMobile
   const isAgentSDK = chatbot.engineType === 'openai-agent-sdk'
   const agentId = isAgentSDK ? chatbot.openaiAgentSdkAgentId : chatbot.chatkitAgentId
   const shouldRenderChatKit =

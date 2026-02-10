@@ -201,8 +201,8 @@ export function getContainerStyle(
   if (previewDeploymentType === 'popover') {
     // On mobile only, popover becomes fullpage layout (fills the container/iframe)
     // Desktop embed should still show as popover with proper positioning
-    // EXCEPTION: In preview mode (emulator), always show as popover so users can preview the widget behavior
-    if (isMobile && !isPreview) {
+    // Mobile conversion
+    if (isMobile) {
       return {
         position: 'fixed',
         top: 0,
@@ -330,8 +330,8 @@ export function getContainerStyle(
     // Current embed script (route.ts) doesn't seem to handle 'popup-center' explicitly with a different container structure 
     // other than 'popover' logic or default. 
     // Let's assume for now isEmbed mainly affects popover/fullpage.
-    // EXCEPTION: In preview mode (emulator), always show as popup-center so users can preview the widget behavior
-    if (isMobile && !isPreview) {
+    // Mobile conversion
+    if (isMobile) {
       return {
         position: 'fixed',
         top: 0,
