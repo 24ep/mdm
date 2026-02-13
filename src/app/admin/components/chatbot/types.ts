@@ -360,6 +360,11 @@ export interface Chatbot {
   notificationBadgeColor: string
   popoverPosition?: 'top' | 'left' // Position of popover relative to widget: 'top' = above widget, 'left' = to the left of widget
   widgetPopoverMargin?: string // Margin/spacing between widget button and popover window
+  widgetPadding?: string // Padding of widget button
+  widgetPaddingTop?: string
+  widgetPaddingRight?: string
+  widgetPaddingBottom?: string
+  widgetPaddingLeft?: string
   // Chat window size
   chatWindowWidth: string
   chatWindowHeight: string

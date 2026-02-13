@@ -174,7 +174,6 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
             </FormRow>
           </FormSection>
         </AccordionSectionGroup>
-
         <AccordionSectionGroup id="size-colors" title="Size & Colors" icon={Palette}>
           <FormSection>
             <FormRow label="Widget Size" description="Size of the widget button">
@@ -226,6 +225,16 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
               </div>
+            </FormRow>
+            <FormRow label="Widget Padding" description="Internal spacing of the widget button">
+              <MultiSideInput
+                formData={formData}
+                setFormData={setFormData}
+                label=""
+                baseKey="widgetPadding"
+                defaultValue="0px"
+                type="sides"
+              />
             </FormRow>
           </FormSection>
         </AccordionSectionGroup>

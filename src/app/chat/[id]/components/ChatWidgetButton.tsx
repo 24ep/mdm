@@ -35,8 +35,18 @@ export function ChatWidgetButton({
         const bgImage = widgetButtonStyle.backgroundImage || widgetButtonStyle.background || 'none'
         
         // Final border radius calculation
-        const finalBorderRadius = config.avatarStyle === 'circle' ? '50%' : (config.borderRadius || (widgetButtonStyle as any).borderRadius || '50%');
-        const activeBorderRadius = (!isOpen && config.avatarStyle === 'circle-with-label') ? config.labelBorderRadius : finalBorderRadius;
+        // When circle-with-label is open, collapse to a circle (50%)
+        // When circle-with-label is closed, use the label's border radius (pill/rounded)
+        // For circle style, always 50%
+        // For square style, use configured border radius
+        let activeBorderRadius: string;
+        if (config.avatarStyle === 'circle-with-label') {
+            activeBorderRadius = isOpen ? '50%' : (config.labelBorderRadius || '50%');
+        } else if (config.avatarStyle === 'circle') {
+            activeBorderRadius = '50%';
+        } else {
+            activeBorderRadius = config.borderRadius || (widgetButtonStyle as any).borderRadius || '8px';
+        }
 
         // Extract border and shadow for granular enforcement
         const borderParts = (widgetButtonStyle.border as string || '0px solid transparent').split(' ')
@@ -63,6 +73,10 @@ export function ChatWidgetButton({
             '--widget-border-color': borderColor,
             '--widget-box-shadow': boxShadow,
             '--avatar-size': avatarSize,
+            '--widget-padding-top': config.paddingTop || config.paddingY || config.padding || '0px',
+            '--widget-padding-right': config.paddingRight || config.paddingX || config.padding || '0px',
+            '--widget-padding-bottom': config.paddingBottom || config.paddingY || config.padding || '0px',
+            '--widget-padding-left': config.paddingLeft || config.paddingX || config.padding || '0px',
             zIndex: config.zIndex,
             cursor: 'pointer',
         }
@@ -116,7 +130,10 @@ export function ChatWidgetButton({
 
                     overflow: hidden !important;
                     box-sizing: border-box !important;
-                    padding: 0 !important;
+                    padding-top: var(--widget-padding-top) !important;
+                    padding-right: var(--widget-padding-right) !important;
+                    padding-bottom: var(--widget-padding-bottom) !important;
+                    padding-left: var(--widget-padding-left) !important;
                     margin: 0 !important;
                     min-width: 0 !important;
                     min-height: 0 !important;

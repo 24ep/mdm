@@ -21,6 +21,13 @@ export interface WidgetConfig {
     borderColor: string
     borderWidth: string
     borderRadius: string
+    paddingX?: string
+    paddingY?: string
+    padding?: string
+    paddingTop?: string
+    paddingRight?: string
+    paddingBottom?: string
+    paddingLeft?: string
 
     // Shadow
     shadowColor: string
@@ -204,6 +211,13 @@ export function getWidgetConfig(chatbot: ChatbotConfig, theme?: any): WidgetConf
         borderColor: c.widgetBorderColor || '#ffffff',
         borderWidth: c.widgetBorderWidth || '2px',
         borderRadius,
+        padding: c.widgetPadding,
+        paddingX: c.widgetPaddingX,
+        paddingY: c.widgetPaddingY,
+        paddingTop: c.widgetPaddingTop,
+        paddingRight: c.widgetPaddingRight,
+        paddingBottom: c.widgetPaddingBottom,
+        paddingLeft: c.widgetPaddingLeft,
 
         shadowColor,
         shadowBlur,
