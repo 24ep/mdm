@@ -1,5 +1,7 @@
 'use client'
 
+import toast from 'react-hot-toast'
+
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -64,42 +66,93 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
 
             {((formData as any).widgetAvatarType === 'image' || (!(formData as any).widgetAvatarType && formData.avatarType === 'image')) ? (
               <FormRow label="Avatar Image" description="Upload a custom image for the widget button">
-                <div className="space-y-2">
-                  <Input
-                    value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
-                    onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
-                    placeholder="https://example.com/avatar.png"
-                  />
-                  <div className="grid gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      className="h-9 py-1.5"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (!file) return
-                        const reader = new FileReader()
-                        reader.onload = (ev) => {
-                          const url = ev.target?.result as string
-                          setFormData({ ...formData, widgetAvatarImageUrl: url } as any)
-                        }
-                        reader.readAsDataURL(file)
-                      }}
-                    />
-                  </div>
-                  {((formData as any).widgetAvatarImageUrl || formData.avatarImageUrl) && (
-                    <div className="mt-2 flex justify-center">
-                      <img
-                        src={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl}
-                        alt="Widget avatar preview"
-                        className="h-16 w-16 object-cover border rounded-full bg-white shadow-sm"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none'
-                        }}
-                      />
+                  <div className="space-y-4">
+                    <div className="flex gap-4 items-start">
+                      {((formData as any).widgetAvatarImageUrl || formData.avatarImageUrl) && (
+                        <div className="relative group">
+                          <img
+                            src={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl}
+                            alt="Widget avatar preview"
+                            className="h-20 w-20 object-cover border rounded-full bg-white shadow-sm"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, widgetAvatarImageUrl: '' } as any)}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Icons.X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
+                          onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
+                          placeholder="https://example.com/avatar.png"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            id="avatar-upload"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+
+                              // Show loading toast
+                              const loadingToast = toast.loading('Uploading avatar...')
+
+                              try {
+                                const formDataUpload = new FormData()
+                                formDataUpload.append('image', file)
+
+                                const response = await fetch('/api/upload/widget-avatar', {
+                                  method: 'POST',
+                                  body: formDataUpload,
+                                })
+
+                                if (!response.ok) {
+                                  throw new Error('Upload failed')
+                                }
+
+                                const data = await response.json()
+                                
+                                setFormData({ 
+                                  ...formData, 
+                                  widgetAvatarImageUrl: data.url 
+                                } as any)
+                                
+                                toast.success('Avatar uploaded successfully', { id: loadingToast })
+                              } catch (error) {
+                                console.error('Upload error:', error)
+                                toast.error('Failed to upload avatar', { id: loadingToast })
+                              } finally {
+                                // Reset input
+                                e.target.value = ''
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full"
+                            onClick={() => document.getElementById('avatar-upload')?.click()}
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload Image
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Recommended size: 256x256px. Max 5MB.
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
               </FormRow>
             ) : (
               <FormRow label="Avatar Icon" description="Select bot avatar icon">
