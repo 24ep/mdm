@@ -67,37 +67,33 @@ async function putHandler(
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
       first_name: z.string().optional(),
+      firstName: z.string().optional(),
       last_name: z.string().optional(),
+      lastName: z.string().optional(),
       email: z.string().email().optional(),
       phone: z.string().optional(),
       company_id: commonSchemas.id.optional(),
+      companyId: commonSchemas.id.optional(),
       source_id: commonSchemas.id.optional(),
+      sourceId: commonSchemas.id.optional(),
       industry_id: commonSchemas.id.optional(),
+      industryId: commonSchemas.id.optional(),
       event_id: commonSchemas.id.optional(),
+      eventId: commonSchemas.id.optional(),
       position_id: commonSchemas.id.optional(),
+      positionId: commonSchemas.id.optional(),
       business_profile_id: commonSchemas.id.optional(),
+      businessProfileId: commonSchemas.id.optional(),
       title_id: commonSchemas.id.optional(),
+      titleId: commonSchemas.id.optional(),
       call_workflow_status_id: commonSchemas.id.optional(),
+      callWorkflowStatusId: commonSchemas.id.optional(),
     }))
     
     if (!bodyValidation.success) {
       return bodyValidation.response
     }
     
-    const {
-      first_name,
-      last_name,
-      email,
-      phone,
-      company_id,
-      source_id,
-      industry_id,
-      event_id,
-      position_id,
-      business_profile_id,
-      title_id,
-      call_workflow_status_id,
-    } = bodyValidation.data
     logger.apiRequest('PUT', `/api/customers/${id}`, { userId: session.user.id })
 
     const { rows: currentRows } = await query(
@@ -110,10 +106,48 @@ async function putHandler(
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
-    if (email && email !== currentCustomer.email) {
+    const {
+      first_name,
+      firstName,
+      last_name,
+      lastName,
+      email,
+      phone,
+      company_id,
+      companyId,
+      source_id,
+      sourceId,
+      industry_id,
+      industryId,
+      event_id,
+      eventId,
+      position_id,
+      positionId,
+      business_profile_id,
+      businessProfileId,
+      title_id,
+      titleId,
+      call_workflow_status_id,
+      callWorkflowStatusId,
+    } = bodyValidation.data
+
+    const finalFirstName = first_name || firstName || currentCustomer.first_name
+    const finalLastName = last_name || lastName || currentCustomer.last_name
+    const finalEmail = email || currentCustomer.email
+    const finalPhone = phone !== undefined ? phone : currentCustomer.phone
+    const finalCompanyId = company_id || companyId || currentCustomer.company_id
+    const finalSourceId = source_id || sourceId || currentCustomer.source_id
+    const finalIndustryId = industry_id || industryId || currentCustomer.industry_id
+    const finalEventId = event_id || eventId || currentCustomer.event_id
+    const finalPositionId = position_id || positionId || currentCustomer.position_id
+    const finalBusinessProfileId = business_profile_id || businessProfileId || currentCustomer.business_profile_id
+    const finalTitleId = title_id || titleId || currentCustomer.title_id
+    const finalCallWorkflowStatusId = call_workflow_status_id || callWorkflowStatusId || currentCustomer.call_workflow_status_id
+
+    if (finalEmail && finalEmail !== currentCustomer.email) {
       const { rows: existing } = await query(
         'SELECT id FROM public.customers WHERE email = $1 AND deleted_at IS NULL AND id <> $2 LIMIT 1',
-        [email, id]
+        [finalEmail, id]
       )
       if (existing.length > 0) {
         logger.warn('Customer with this email already exists', { email, customerId: id })
@@ -144,18 +178,18 @@ async function putHandler(
     `
 
     const paramsArr = [
-      first_name,
-      last_name,
-      email,
-      phone,
-      company_id,
-      source_id,
-      industry_id,
-      event_id,
-      position_id,
-      business_profile_id,
-      title_id,
-      call_workflow_status_id,
+      finalFirstName,
+      finalLastName,
+      finalEmail,
+      finalPhone,
+      finalCompanyId,
+      finalSourceId,
+      finalIndustryId,
+      finalEventId,
+      finalPositionId,
+      finalBusinessProfileId,
+      finalTitleId,
+      finalCallWorkflowStatusId,
       id,
     ]
 

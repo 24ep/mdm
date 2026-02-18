@@ -76,7 +76,28 @@ async function putHandler(
     const values: any[] = []
     let idx = 1
 
-    for (const [key, value] of Object.entries(updates)) {
+    const fieldMapping: Record<string, string> = {
+      spaceId: 'space_id',
+      dataModelId: 'data_model_id',
+      externalConnectionId: 'external_connection_id',
+      scheduleType: 'schedule_type',
+      scheduleConfig: 'schedule_config',
+      syncStrategy: 'sync_strategy',
+      incrementalKey: 'incremental_key',
+      incrementalTimestampColumn: 'incremental_timestamp_column',
+      clearExistingData: 'clear_existing_data',
+      sourceQuery: 'source_query',
+      dataMapping: 'data_mapping',
+      maxRecordsPerSync: 'max_records_per_sync',
+      rateLimitPerMinute: 'rate_limit_per_minute',
+      isActive: 'is_active',
+      notifyOnSuccess: 'notify_on_success',
+      notifyOnFailure: 'notify_on_failure',
+      notificationEmails: 'notification_emails'
+    }
+
+    for (const [rawKey, value] of Object.entries(updates)) {
+      const key = fieldMapping[rawKey] || rawKey
       if (key === 'schedule_config' || key === 'data_mapping') {
         fields.push(`${key} = $${idx++}`)
         values.push(value ? JSON.stringify(value) : null)

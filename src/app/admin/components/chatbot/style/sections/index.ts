@@ -10,4 +10,5 @@ export { ThreadItemActionsSection } from './ThreadItemActionsSection'
 export { DisclaimerSection } from './DisclaimerSection'
 export { ModelPickerSection } from './ModelPickerSection'
 export { PersonaPickerSection } from './PersonaPickerSection'
+export { GetStartedSection } from './GetStartedSection'
 

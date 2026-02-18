@@ -14,8 +14,10 @@ async function getHandler(request: NextRequest) {
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
       data_model_id: commonSchemas.id.optional(),
+      dataModelId: commonSchemas.id.optional(),
       status: z.string().optional(),
       trigger_type: z.string().optional(),
+      triggerType: z.string().optional(),
       page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
       limit: z.string().optional().transform((val) => parseInt(val || '20')).pipe(z.number().int().positive().max(100)).optional().default(20),
     }))
@@ -24,7 +26,17 @@ async function getHandler(request: NextRequest) {
       return queryValidation.response
     }
     
-    const { data_model_id: dataModelId, status, trigger_type: triggerType, page, limit = 20 } = queryValidation.data
+    const { 
+      data_model_id, 
+      dataModelId: queryDataModelId, 
+      status, 
+      trigger_type, 
+      triggerType: queryTriggerType, 
+      page, 
+      limit = 20 
+    } = queryValidation.data
+    const dataModelId = data_model_id || queryDataModelId
+    const triggerType = trigger_type || queryTriggerType
     logger.apiRequest('GET', '/api/workflows', { userId: session.user.id, page, limit, dataModelId, status, triggerType })
 
     const offset = (page - 1) * limit
@@ -120,8 +132,10 @@ async function postHandler(request: NextRequest) {
     const bodyValidation = await validateBody(request, z.object({
       name: z.string().min(1, 'Name is required'),
       description: z.string().optional(),
-      data_model_id: commonSchemas.id,
-      trigger_type: z.enum(['SCHEDULED', 'EVENT_BASED', 'MANUAL']),
+      data_model_id: commonSchemas.id.optional(),
+      dataModelId: commonSchemas.id.optional(),
+      trigger_type: z.enum(['SCHEDULED', 'EVENT_BASED', 'MANUAL']).optional(),
+      triggerType: z.enum(['SCHEDULED', 'EVENT_BASED', 'MANUAL']).optional(),
       status: z.string().optional().default('ACTIVE'),
       conditions: z.array(z.any()).optional().default([]),
       actions: z.array(z.any()).optional().default([]),
@@ -136,20 +150,32 @@ async function postHandler(request: NextRequest) {
       name,
       description,
       data_model_id,
+      dataModelId: bodyDataModelId,
       trigger_type,
+      triggerType: bodyTriggerType,
       status = 'ACTIVE',
       conditions = [],
       actions = [],
       schedule = null
     } = bodyValidation.data
-    logger.apiRequest('POST', '/api/workflows', { userId: session.user.id, name, trigger_type })
+
+    const finalDataModelId = data_model_id || bodyDataModelId
+    const finalTriggerType = trigger_type || bodyTriggerType
+
+    if (!finalDataModelId) {
+      return NextResponse.json({ error: 'data_model_id is required' }, { status: 400 })
+    }
+    if (!finalTriggerType) {
+      return NextResponse.json({ error: 'trigger_type is required' }, { status: 400 })
+    }
+    logger.apiRequest('POST', '/api/workflows', { userId: session.user.id, name, trigger_type: finalTriggerType })
 
     // Create workflow
     const { rows: workflowRows } = await query(
       `INSERT INTO workflows (name, description, data_model_id, trigger_type, status, created_by)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [name, description, data_model_id, trigger_type, status, session.user.id]
+      [name, description, finalDataModelId, finalTriggerType, status, session.user.id]
     )
     const workflow = workflowRows[0]
 
@@ -195,7 +221,7 @@ async function postHandler(request: NextRequest) {
 
     // Create schedule if provided (for SCHEDULED workflows) or integration config (for EVENT_BASED)
     if (schedule) {
-      if (trigger_type === 'SCHEDULED') {
+      if (finalTriggerType === 'SCHEDULED') {
         // Scheduled workflow with time-based schedule
         await query(
           `INSERT INTO workflow_schedules 
@@ -210,7 +236,7 @@ async function postHandler(request: NextRequest) {
             schedule.timezone || 'UTC'
           ]
         )
-      } else if (trigger_type === 'EVENT_BASED' && schedule.schedule_config?.trigger_on_sync) {
+      } else if (finalTriggerType === 'EVENT_BASED' && schedule.schedule_config?.trigger_on_sync) {
         // Event-based workflow triggered by data syncs
         await query(
           `INSERT INTO workflow_schedules 

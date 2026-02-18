@@ -14,7 +14,7 @@ async function postHandler(
 
     const { id } = await params
     const body = await request.json()
-    const { pluginId, config, credentials } = body
+    const { pluginId = body.plugin_id, config, credentials } = body
 
     if (!pluginId) {
       return NextResponse.json(

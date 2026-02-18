@@ -3,9 +3,10 @@ import { Z_INDEX } from '@/lib/z-index'
 
 export interface WidgetConfig {
     // Appearance
-    avatarStyle: 'circle' | 'square' | 'circle-with-label'
-    avatarType: 'icon' | 'image'
+    avatarStyle: 'circle' | 'square' | 'circle-with-label' | 'custom'
+    avatarType: 'icon' | 'image' | 'none'
     avatarImageUrl: string
+    avatarCloseImageUrl?: string
     avatarIcon: string
     avatarIconColor: string
 
@@ -97,6 +98,7 @@ export function getWidgetConfig(chatbot: ChatbotConfig, theme?: any): WidgetConf
     const avatarStyle = c.widgetAvatarStyle || 'circle'
     const avatarType = c.widgetAvatarType || c.avatarType || 'icon'
     const avatarImageUrl = c.widgetAvatarImageUrl || c.avatarImageUrl || ''
+    const avatarCloseImageUrl = c.widgetCloseImageUrl || ''
     const avatarIcon = c.widgetAvatarIcon || c.avatarIcon || 'Bot'
 
     // 2. Colors
@@ -198,6 +200,7 @@ export function getWidgetConfig(chatbot: ChatbotConfig, theme?: any): WidgetConf
         avatarStyle,
         avatarType,
         avatarImageUrl,
+        avatarCloseImageUrl,
         avatarIcon,
         avatarIconColor,
 

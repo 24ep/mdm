@@ -9,11 +9,12 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const spaceIds = searchParams.get('spaceIds')?.split(',') || []
-  const spaceId = searchParams.get('spaceId') // For backward compatibility
+  const spaceIdsParam = searchParams.get('spaceIds') || searchParams.get('space_ids')
+  const spaceIds = spaceIdsParam?.split(',') || []
+  const spaceId = searchParams.get('spaceId') || searchParams.get('space_id')
   const status = searchParams.get('status')
   const priority = searchParams.get('priority')
-  const assignedTo = searchParams.get('assignedTo')
+  const assignedTo = searchParams.get('assignedTo') || searchParams.get('assigned_to')
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '50')
   const projectId = searchParams.get('projectId')
@@ -195,22 +196,35 @@ async function postHandler(request: NextRequest) {
     status,
     priority,
     dueDate,
+    due_date,
     startDate,
+    start_date,
     assignedTo,
-    spaceIds, // Now supports multiple spaces
-    spaceId, // For backward compatibility
+    assigned_to,
+    spaceIds,
+    space_ids,
+    spaceId,
+    space_id,
     tags,
     estimate,
     attributes,
-    parentId
+    parentId,
+    parent_id
   } = body
+
+  const finalDueDate = dueDate || due_date
+  const finalStartDate = startDate || start_date
+  const finalAssignedTo = assignedTo || assigned_to
+  const finalSpaceIdsInput = spaceIds || space_ids
+  const finalSpaceIdInput = spaceId || space_id
+  const finalParentId = parentId || parent_id
 
   if (!title) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   }
 
   // Support both spaceIds array and single spaceId
-  const finalSpaceIds = spaceIds && spaceIds.length > 0 ? spaceIds : (spaceId ? [spaceId] : [])
+  const finalSpaceIds = finalSpaceIdsInput && finalSpaceIdsInput.length > 0 ? finalSpaceIdsInput : (finalSpaceIdInput ? [finalSpaceIdInput] : [])
 
   if (finalSpaceIds.length === 0) {
     return NextResponse.json({ error: 'spaceId or spaceIds is required' }, { status: 400 })
@@ -227,18 +241,18 @@ async function postHandler(request: NextRequest) {
       description: description || null,
       status: status || 'BACKLOG',
       priority: priority || 'MEDIUM',
-      dueDate: dueDate ? new Date(dueDate) : null,
-      startDate: startDate ? new Date(startDate) : null,
+      dueDate: finalDueDate ? new Date(finalDueDate) : null,
+      startDate: finalStartDate ? new Date(finalStartDate) : null,
       createdBy: session.user.id,
       estimate: estimate || null,
-      parentId: parentId || null,
+      parentId: finalParentId || null,
       spaces: {
         create: finalSpaceIds.map((sid: string) => ({
           spaceId: sid
         }))
       },
-      assignees: assignedTo && assignedTo.length > 0 ? {
-        create: assignedTo.map((userId: string) => ({
+      assignees: finalAssignedTo && finalAssignedTo.length > 0 ? {
+        create: finalAssignedTo.map((userId: string) => ({
           userId,
           role: 'ASSIGNEE'
         }))

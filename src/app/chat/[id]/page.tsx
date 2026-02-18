@@ -11,6 +11,7 @@ import { ChatKitRenderer } from './components/ChatKitRenderer'
 import { ChatSidebar } from './components/ChatSidebar'
 import { ChatContent } from './components/ChatContent'
 import { ChatHeader } from './components/ChatHeader'
+import { GetStartedScreen } from './components/GetStartedScreen'
 import { ThreadSelector } from './components/ThreadSelector'
 import { AnimatePresence } from 'framer-motion'
 import { useChatMessages } from './hooks/useChatMessages'
@@ -42,6 +43,18 @@ export default function ChatPage() {
   console.log('[ChatPage] Search Params:', searchParams.toString(), 'isEmbed:', isEmbed, 'isPwaOnly:', isPwaOnly);
   const urlDeploymentType = searchParams.get('deploymentType') || searchParams.get('type')
   const isPreview = searchParams.get('preview') === 'true'
+  const urlLocale = searchParams.get('locale') || searchParams.get('lang')
+  
+  // Content Overrides for Multi-language support
+  const urlGreeting = searchParams.get('greeting') || searchParams.get('opener')
+  const urlPlaceholder = searchParams.get('placeholder')
+  const urlPrompts = [
+    searchParams.get('prompt1'),
+    searchParams.get('prompt2'),
+    searchParams.get('prompt3'),
+    searchParams.get('prompt4'),
+  ].filter(Boolean) as string[]
+
   const chatbotId = params?.id as string
   const [previewDeploymentType, setPreviewDeploymentType] = useState<'popover' | 'fullpage' | 'popup-center'>(
     (urlDeploymentType === 'popover' || urlDeploymentType === 'popup-center') ? urlDeploymentType : 'fullpage'
@@ -49,6 +62,7 @@ export default function ChatPage() {
   const [isOpen, setIsOpen] = useState<boolean>(urlDeploymentType === 'fullpage' || (!urlDeploymentType && !isEmbed))
   const [isInIframe, setIsInIframe] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [getStartedDismissed, setGetStartedDismissed] = useState(false)
   const [messageFeedback, setMessageFeedback] = useState<Record<string, 'liked' | 'disliked' | null>>({})
   const [input, setInput] = useState('')
   const [currentTranscript, setCurrentTranscript] = useState('') // Separate state for voice transcript display
@@ -124,6 +138,10 @@ export default function ChatPage() {
     chatbotId,
     previewDeploymentType,
     isInIframe,
+    locale: urlLocale,
+    greeting: urlGreeting,
+    placeholder: urlPlaceholder,
+    prompts: urlPrompts.length > 0 ? urlPrompts : null,
     onChatbotLoaded: (loadedChatbot) => {
       // Dismiss the server-injected loading screen
       const loader = document.getElementById('pwa-loading-overlay')
@@ -375,6 +393,29 @@ export default function ChatPage() {
     }
     // If not initial load (i.e., config update), preserve current isOpen state
   }, [chatbot, previewDeploymentType, isNativeChatKitMode, isEmbed])
+
+  // Inject greeting message for popover/popup-center modes
+  // This ensures the greeting is shown even if the user hasn't sent a message yet
+  useEffect(() => {
+    if (!chatbot || messages.length > 0 || isNativeChatKitMode) return
+
+    // Limit to popover/popup-center modes
+    // Fullpage mode handles history/greetings via useChatHistory/useAgentThread logic usually
+    // But for popover, we often start fresh or want an immediate greeting
+    const isPopover = previewDeploymentType === 'popover' || previewDeploymentType === 'popup-center'
+    
+    if (isPopover) {
+       const greeting = chatbot.openaiAgentSdkGreeting || chatbot.conversationOpener
+       if (greeting) {
+         setMessages([{
+           id: 'greeting-' + Date.now(),
+           role: 'assistant',
+           content: greeting,
+           timestamp: new Date()
+         }])
+       }
+    }
+  }, [chatbot, previewDeploymentType, isNativeChatKitMode, messages.length])
 
   // Notify parent window about open/close state for iframe resizing
   // SKIP this for native ChatKit in embed mode - ChatKitWrapper handles its own resize messages
@@ -684,6 +725,18 @@ export default function ChatPage() {
     )
   }
 
+  const renderContent = () => {
+    if (chatbot.getStartedEnabled && !getStartedDismissed && !messages.length) {
+      return (
+        <GetStartedScreen 
+          chatbot={chatbot} 
+          onStart={() => setGetStartedDismissed(true)} 
+        />
+      )
+    }
+    return renderChatContent()
+  }
+
   // isPreview is now defined earlier in the component (around line 336)
   // This is used by the layout routing logic below
   if (effectiveDeploymentType === 'fullpage' && !isInIframe && !isPreview) {
@@ -716,7 +769,7 @@ export default function ChatPage() {
         shouldRenderChatKit={!!shouldRenderChatKit}
         handleClose={handleClose}
       >
-        {renderChatContent()}
+        {renderContent()}
       </FullPageChatLayout>
     )
   }
@@ -760,12 +813,12 @@ export default function ChatPage() {
       {isNativeChatKit && (
         <>
           {/* PWA Banner for native popover mode (Only if NOT host website mode, which has its own fixed banner) */}
-          {((chatbot as any).pwaInstallScope !== 'website') && (
-            <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} isPreview={isPreview} />
-          )}
-          {renderChatContent()}
-        </>
-      )}
+            {((chatbot as any).pwaInstallScope !== 'website') && (
+              <PWAInstallBanner chatbot={chatbot} isMobile={isMobile} isPreview={isPreview} />
+            )}
+            {renderContent()}
+          </>
+        )}
 
       {/* Widget launcher button - Ensure it is clickable */}
       {shouldShowWidgetButton && (
@@ -798,7 +851,7 @@ export default function ChatPage() {
             handleClose={handleClose}
             onClearSession={() => setMessages([])}
           >
-            {renderChatContent()}
+            {renderContent()}
           </WidgetChatContainer>
         )}
       </AnimatePresence>

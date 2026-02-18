@@ -9,8 +9,8 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const rawSpaceId = searchParams.get('space_id')
-  const dataModelId = searchParams.get('data_model_id')
+  const rawSpaceId = searchParams.get('space_id') || searchParams.get('spaceId')
+  const dataModelId = searchParams.get('data_model_id') || searchParams.get('dataModelId')
 
   if (!rawSpaceId) return NextResponse.json({ error: 'space_id is required' }, { status: 400 })
   
@@ -76,72 +76,107 @@ async function postHandler(request: NextRequest) {
   const body = await request.json()
   const {
     space_id,
+    spaceId: sId,
     data_model_id,
+    dataModelId: dmId,
     external_connection_id,
+    externalConnectionId: ecId,
     name,
     description,
-    schedule_type = 'MANUAL',
+    schedule_type,
+    scheduleType: sType,
     schedule_config,
-    sync_strategy = 'FULL_REFRESH',
+    scheduleConfig: sConfig,
+    sync_strategy,
+    syncStrategy: syStrategy,
     incremental_key,
+    incrementalKey: iKey,
     incremental_timestamp_column,
-    clear_existing_data = true,
+    incrementalTimestampColumn: iTimestampColumn,
+    clear_existing_data,
+    clearExistingData: cExistingData,
     source_query,
+    sourceQuery: sQuery,
     data_mapping,
+    dataMapping: dMapping,
     max_records_per_sync,
+    maxRecordsPerSync: mRecordsPerSync,
     rate_limit_per_minute,
-    is_active = true,
-    notify_on_success = false,
-    notify_on_failure = true,
-    notification_emails = []
+    rateLimitPerMinute: rLimitPerMinute,
+    is_active,
+    isActive: iActive,
+    notify_on_success,
+    notifyOnSuccess: nOnSuccess,
+    notify_on_failure,
+    notifyOnFailure: nOnFailure,
+    notification_emails,
+    notificationEmails: nEmails
   } = body
 
-    if (!space_id || !data_model_id || !external_connection_id || !name) {
-      return NextResponse.json({ 
-        error: 'space_id, data_model_id, external_connection_id, and name are required' 
-      }, { status: 400 })
-    }
+  const final_space_id = space_id || sId
+  const final_data_model_id = data_model_id || dmId
+  const final_external_connection_id = external_connection_id || ecId
+  const final_schedule_type = schedule_type || sType || 'MANUAL'
+  const final_schedule_config = schedule_config || sConfig
+  const final_sync_strategy = sync_strategy || syStrategy || 'FULL_REFRESH'
+  const final_incremental_key = incremental_key || iKey
+  const final_incremental_timestamp_column = incremental_timestamp_column || iTimestampColumn
+  const final_clear_existing_data = clear_existing_data !== undefined ? clear_existing_data : (cExistingData !== undefined ? cExistingData : true)
+  const final_source_query = source_query || sQuery
+  const final_data_mapping = data_mapping || dMapping
+  const final_max_records_per_sync = max_records_per_sync || mRecordsPerSync
+  const final_rate_limit_per_minute = rate_limit_per_minute || rLimitPerMinute
+  const final_is_active = is_active !== undefined ? is_active : (iActive !== undefined ? iActive : true)
+  const final_notify_on_success = notify_on_success !== undefined ? notify_on_success : (nOnSuccess !== undefined ? nOnSuccess : false)
+  const final_notify_on_failure = notify_on_failure !== undefined ? notify_on_failure : (nOnFailure !== undefined ? nOnFailure : true)
+  const final_notification_emails = notification_emails || nEmails || []
 
-    // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
-    const normalizedSpaceId = space_id.split(':')[0]
-    
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(normalizedSpaceId)) {
-      return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
-    }
+  if (!final_space_id || !final_data_model_id || !final_external_connection_id || !name) {
+    return NextResponse.json({ 
+      error: 'space_id, data_model_id, external_connection_id, and name are required' 
+    }, { status: 400 })
+  }
 
-    // Check access
-    const { rows: access } = await query(
-      'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
-      [normalizedSpaceId, session.user.id]
-    )
-    if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
+  const normalizedSpaceId = final_space_id.split(':')[0]
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(normalizedSpaceId)) {
+    return NextResponse.json({ error: 'Invalid space_id format' }, { status: 400 })
+  }
 
-    // Calculate next run time
-    const nextRunAt = calculateNextRunTime(schedule_type, schedule_config)
+  // Check access
+  const { rows: access } = await query(
+    'SELECT 1 FROM space_members WHERE space_id = $1::uuid AND user_id = $2::uuid',
+    [normalizedSpaceId, session.user.id]
+  )
+  if (access.length === 0) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { rows } = await query(
-      `INSERT INTO public.data_sync_schedules
-        (space_id, data_model_id, external_connection_id, name, description,
-         schedule_type, schedule_config, sync_strategy, incremental_key,
-         incremental_timestamp_column, clear_existing_data, source_query,
-         data_mapping, max_records_per_sync, rate_limit_per_minute,
-         is_active, notify_on_success, notify_on_failure, notification_emails,
-         next_run_at, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
-       RETURNING *`,
-      [
-        normalizedSpaceId, data_model_id, external_connection_id, name, description,
-        schedule_type, schedule_config ? JSON.stringify(schedule_config) : null, sync_strategy,
-        incremental_key || null, incremental_timestamp_column || null,
-        clear_existing_data, source_query || null,
-        data_mapping ? JSON.stringify(data_mapping) : null,
-        max_records_per_sync || null, rate_limit_per_minute || null,
-        is_active, notify_on_success, notify_on_failure, notification_emails || [],
-        nextRunAt, session.user.id
-      ]
-    )
+  // Calculate next run time
+  const nextRunAt = calculateNextRunTime(final_schedule_type, final_schedule_config)
+
+  const { rows } = await query(
+    `INSERT INTO public.data_sync_schedules
+      (space_id, data_model_id, external_connection_id, name, description,
+        schedule_type, schedule_config, sync_strategy, incremental_key,
+        incremental_timestamp_column, clear_existing_data, source_query,
+        data_mapping, max_records_per_sync, rate_limit_per_minute,
+        is_active, notify_on_success, notify_on_failure, notification_emails,
+        next_run_at, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+      RETURNING *`,
+    [
+      normalizedSpaceId, final_data_model_id, final_external_connection_id, name, description,
+      final_schedule_type, final_schedule_config ? JSON.stringify(final_schedule_config) : null, final_sync_strategy,
+      final_incremental_key || null, final_incremental_timestamp_column || null,
+      final_clear_existing_data, final_source_query || null,
+      final_data_mapping ? JSON.stringify(final_data_mapping) : null,
+      final_max_records_per_sync || null, final_rate_limit_per_minute || null,
+      final_is_active, final_notify_on_success, final_notify_on_failure, final_notification_emails,
+      nextRunAt, session.user.id
+    ]
+  )
 
   return NextResponse.json({ schedule: rows[0] }, { status: 201 })
 }

@@ -46,6 +46,7 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                   <SelectItem value="circle">Circle</SelectItem>
                   <SelectItem value="square">Square</SelectItem>
                   <SelectItem value="circle-with-label">Circle with Label</SelectItem>
+                  <SelectItem value="custom">Custom / Image Only</SelectItem>
                 </SelectContent>
               </Select>
             </FormRow>
@@ -60,11 +61,12 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                 <SelectContent>
                   <SelectItem value="icon">Icon</SelectItem>
                   <SelectItem value="image">Image</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                 </SelectContent>
               </Select>
             </FormRow>
 
-            {((formData as any).widgetAvatarType === 'image' || (!(formData as any).widgetAvatarType && formData.avatarType === 'image')) ? (
+            {((formData as any).widgetAvatarType === 'image' || (!(formData as any).widgetAvatarType && formData.avatarType === 'image')) && (
               <FormRow label="Avatar Image" description="Upload a custom image for the widget button">
                   <div className="space-y-4">
                     <div className="flex gap-4 items-start">
@@ -143,18 +145,103 @@ export function WidgetButtonSection({ formData, setFormData }: WidgetButtonSecti
                             className="w-full"
                             onClick={() => document.getElementById('avatar-upload')?.click()}
                           >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload Image
+                            <Icons.Upload className="h-4 w-4 mr-2" />
+                            Upload Trigger Image
                           </Button>
                         </div>
                         <p className="text-[10px] text-muted-foreground">
-                          Recommended size: 256x256px. Max 5MB.
+                          Recommended size: 256x256px. Shown when the chat is <strong>closed</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Close State Image (shown when chat is open) */}
+                    <div className="flex gap-4 items-start pt-2 border-t border-dashed">
+                      {(formData as any).widgetCloseImageUrl && (
+                        <div className="relative group">
+                          <img
+                            src={(formData as any).widgetCloseImageUrl}
+                            alt="Widget close avatar preview"
+                            className="h-20 w-20 object-cover border rounded-full bg-white shadow-sm"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, widgetCloseImageUrl: '' } as any)}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Icons.X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={(formData as any).widgetCloseImageUrl || ''}
+                          onChange={(e) => setFormData({ ...formData, widgetCloseImageUrl: e.target.value } as any)}
+                          placeholder="https://example.com/close-avatar.png"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            id="close-avatar-upload"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+
+                              const loadingToast = toast.loading('Uploading close avatar...')
+
+                              try {
+                                const formDataUpload = new FormData()
+                                formDataUpload.append('image', file)
+
+                                const response = await fetch('/api/upload/widget-avatar', {
+                                  method: 'POST',
+                                  body: formDataUpload,
+                                })
+
+                                if (!response.ok) throw new Error('Upload failed')
+
+                                const data = await response.json()
+                                
+                                setFormData({ 
+                                  ...formData, 
+                                  widgetCloseImageUrl: data.url 
+                                } as any)
+                                
+                                toast.success('Close avatar uploaded successfully', { id: loadingToast })
+                              } catch (error) {
+                                console.error('Upload error:', error)
+                                toast.error('Failed to upload close avatar', { id: loadingToast })
+                              } finally {
+                                e.target.value = ''
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full"
+                            onClick={() => document.getElementById('close-avatar-upload')?.click()}
+                          >
+                            <Icons.Upload className="h-4 w-4 mr-2" />
+                            Upload Close Image
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Recommended size: 256x256px. Shown when the chat is <strong>open</strong>.
                         </p>
                       </div>
                     </div>
                   </div>
               </FormRow>
-            ) : (
+            )}
+
+            {formData.widgetAvatarStyle !== 'custom' && ((formData as any).widgetAvatarType === 'icon' || (!(formData as any).widgetAvatarType && (formData.avatarType === 'icon' || !formData.avatarType))) && (
               <FormRow label="Avatar Icon" description="Select bot avatar icon">
                 <Popover>
                   <PopoverTrigger asChild>

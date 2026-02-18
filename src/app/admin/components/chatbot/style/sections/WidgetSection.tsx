@@ -56,6 +56,7 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                     <SelectItem value="circle">Circle</SelectItem>
                     <SelectItem value="square">Square</SelectItem>
                     <SelectItem value="circle-with-label">Label</SelectItem>
+                    <SelectItem value="custom">Custom / Image Only</SelectItem>
                   </SelectContent>
                 </Select>
               </FormRow>
@@ -246,56 +247,145 @@ export function WidgetSection({ formData, setFormData, chatkitOptions }: Section
                   </Popover>
                 </FormRow>
               ) : (
-                <FormRow label="Avatar Image" description="Custom widget avatar image">
-                  <div className="space-y-2">
-                    <Input
-                      value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
-                      onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
-                      placeholder="https://example.com/avatar.png"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full h-8 text-xs"
-                        onClick={() => {
-                          const input = document.getElementById('widget-avatar-upload') as HTMLInputElement
-                          input?.click()
-                        }}
-                      >
-                        <Icons.Upload className="h-3.5 w-3.5 mr-1.5" />
-                        Upload Image
-                      </Button>
-                      <input
-                        id="widget-avatar-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (!file) return
-                          const reader = new FileReader()
-                          reader.onload = (ev) => {
-                            const url = ev.target?.result as string
-                            setFormData({ ...formData, widgetAvatarImageUrl: url } as any)
-                          }
-                          reader.readAsDataURL(file)
-                        }}
-                      />
-                    </div>
-                    {((formData as any).widgetAvatarImageUrl || formData.avatarImageUrl) && (
-                      <div className="mt-2 flex justify-center">
-                        <img
-                          src={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl}
-                          alt="Widget avatar preview"
-                          className="h-16 w-16 object-cover border rounded-full bg-white shadow-sm"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none'
-                          }}
+                <FormRow label="Avatar Image" description="Upload custom images for the widget button">
+                  <div className="space-y-4">
+                    {/* Trigger Image (shown when chat is closed) */}
+                    <div className="flex gap-4 items-start">
+                      {((formData as any).widgetAvatarImageUrl || formData.avatarImageUrl) && (
+                        <div className="relative group">
+                          <img
+                            src={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl}
+                            alt="Widget avatar preview"
+                            className="h-20 w-20 object-cover border rounded-full bg-white shadow-sm"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, widgetAvatarImageUrl: '' } as any)}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Icons.X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={(formData as any).widgetAvatarImageUrl || formData.avatarImageUrl || ''}
+                          onChange={(e) => setFormData({ ...formData, widgetAvatarImageUrl: e.target.value } as any)}
+                          placeholder="https://example.com/avatar.png"
                         />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            id="widget-avatar-upload-main"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              const formDataUpload = new FormData()
+                              formDataUpload.append('image', file)
+                              try {
+                                const response = await fetch('/api/upload/widget-avatar', {
+                                  method: 'POST',
+                                  body: formDataUpload,
+                                })
+                                if (response.ok) {
+                                  const data = await response.json()
+                                  setFormData({ ...formData, widgetAvatarImageUrl: data.url } as any)
+                                }
+                              } catch (err) {
+                                console.error('Upload failed', err)
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full text-xs h-8"
+                            onClick={() => document.getElementById('widget-avatar-upload-main')?.click()}
+                          >
+                            <Icons.Upload className="h-3.5 w-3.5 mr-1.5" />
+                            Upload Trigger Image
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Recommended size: 256x256px. Shown when the chat is <strong>closed</strong>.
+                        </p>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Close Image (shown when chat is open) */}
+                    <div className="flex gap-4 items-start pt-2 border-t border-dashed">
+                      {(formData as any).widgetCloseImageUrl && (
+                        <div className="relative group">
+                          <img
+                            src={(formData as any).widgetCloseImageUrl}
+                            alt="Widget close preview"
+                            className="h-20 w-20 object-cover border rounded-full bg-white shadow-sm"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, widgetCloseImageUrl: '' } as any)}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Icons.X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={(formData as any).widgetCloseImageUrl || ''}
+                          onChange={(e) => setFormData({ ...formData, widgetCloseImageUrl: e.target.value } as any)}
+                          placeholder="https://example.com/close-avatar.png"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            id="widget-close-upload-main"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              const formDataUpload = new FormData()
+                              formDataUpload.append('image', file)
+                              try {
+                                const response = await fetch('/api/upload/widget-avatar', {
+                                  method: 'POST',
+                                  body: formDataUpload,
+                                })
+                                if (response.ok) {
+                                  const data = await response.json()
+                                  setFormData({ ...formData, widgetCloseImageUrl: data.url } as any)
+                                }
+                              } catch (err) {
+                                console.error('Upload failed', err)
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full text-xs h-8"
+                            onClick={() => document.getElementById('widget-close-upload-main')?.click()}
+                          >
+                            <Icons.Upload className="h-3.5 w-3.5 mr-1.5" />
+                            Upload Close Image
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Recommended size: 256x256px. Shown when the chat is <strong>open</strong>.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </FormRow>
 

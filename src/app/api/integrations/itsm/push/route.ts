@@ -15,22 +15,25 @@ async function postHandler(request: NextRequest) {
   const { session } = authResult
 
   const body = await request.json()
-  const { ticket_id, space_id, syncComments } = body
+  const { ticket_id, ticketId, space_id, spaceId, syncComments } = body
+  
+  const finalTicketId = ticket_id || ticketId
+  const finalSpaceId = space_id || spaceId
 
-  if (!ticket_id || !space_id) {
+  if (!finalTicketId || !finalSpaceId) {
     return NextResponse.json(
-      { error: 'ticket_id and space_id are required' },
+      { error: 'ticketId and spaceId are required' },
       { status: 400 }
     )
   }
 
   // Check access
-  const accessResult = await requireSpaceAccess(space_id, session.user.id!)
+  const accessResult = await requireSpaceAccess(finalSpaceId, session.user.id!)
   if (!accessResult.success) return accessResult.response
 
     // Get ticket
     const ticket = await db.ticket.findUnique({
-      where: { id: ticket_id },
+      where: { id: finalTicketId },
       include: {
         assignees: {
           include: {
@@ -74,7 +77,7 @@ async function postHandler(request: NextRequest) {
          AND deleted_at IS NULL
          AND is_active = true
        LIMIT 1`,
-      [space_id]
+      [finalSpaceId]
     )
 
     if (configRows.length === 0) {
@@ -178,7 +181,7 @@ async function postHandler(request: NextRequest) {
     }
 
     await db.ticket.update({
-      where: { id: ticket_id },
+      where: { id: finalTicketId },
       data: { metadata: updatedMetadata }
     })
 
@@ -202,7 +205,7 @@ async function postHandler(request: NextRequest) {
     await createAuditLog({
       action: existingTicketId ? 'UPDATE' : 'CREATE',
       entityType: 'ticket_itsm_sync',
-      entityId: ticket_id,
+      entityId: finalTicketId,
       userId: session.user.id,
       newValue: JSON.stringify({
         itsmTicketId: result.ticketId,

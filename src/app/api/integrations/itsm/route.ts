@@ -13,7 +13,7 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('space_id')
+  const spaceId = searchParams.get('space_id') || searchParams.get('spaceId')
 
   if (!spaceId) {
     return NextResponse.json(
@@ -77,6 +77,7 @@ async function postHandler(request: NextRequest) {
   const body = await request.json()
   const { 
     space_id, 
+    spaceId,
     baseUrl, 
     provider, 
     apiKey, 
@@ -89,7 +90,9 @@ async function postHandler(request: NextRequest) {
     name 
   } = body
 
-  if (!space_id || !baseUrl || !provider) {
+  const finalSpaceId = space_id || spaceId
+
+  if (!finalSpaceId || !baseUrl || !provider) {
     return NextResponse.json(
       { error: 'space_id, baseUrl, and provider are required' },
       { status: 400 }
@@ -97,7 +100,7 @@ async function postHandler(request: NextRequest) {
   }
 
   // Check access
-  const accessResult = await requireSpaceAccess(space_id, session.user.id!)
+  const accessResult = await requireSpaceAccess(finalSpaceId, session.user.id!)
   if (!accessResult.success) return accessResult.response
 
     // Validate auth based on provider
@@ -181,7 +184,7 @@ async function postHandler(request: NextRequest) {
          AND name LIKE '%ITSM%'
          AND deleted_at IS NULL
        LIMIT 1`,
-      [space_id]
+      [finalSpaceId]
     )
 
     if (existingRows.length > 0) {
@@ -216,7 +219,7 @@ async function postHandler(request: NextRequest) {
           api_auth_username, api_auth_password, is_active, config, created_by, created_at, updated_at)
          VALUES ($1, 'api', $2, $3, $4, $5, $6, $7, true, $8, $9, NOW(), NOW())`,
         [
-          space_id,
+          finalSpaceId,
           name || `${provider} Integration`,
           baseUrl,
           authType || 'apikey',

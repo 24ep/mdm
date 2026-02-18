@@ -16,21 +16,50 @@ async function putHandler(
 
     const { id } = await params
     const body = await request.json()
-    const { name, display_name, type, is_required, is_unique, default_value, options, validation, order, is_active } = body
+    const { 
+      name, 
+      display_name, 
+      displayName,
+      type, 
+      is_required, 
+      isRequired,
+      is_unique, 
+      isUnique,
+      default_value, 
+      defaultValue,
+      options, 
+      validation, 
+      order, 
+      is_active,
+      isActive
+    } = body
+
+    const final_display_name = displayName || display_name
+    const final_is_required = isRequired !== undefined ? isRequired : is_required
+    const final_is_unique = isUnique !== undefined ? isUnique : is_unique
+    const final_default_value = defaultValue !== undefined ? defaultValue : default_value
+    const final_is_active = isActive !== undefined ? isActive : is_active
 
     const fields: string[] = []
     const values: any[] = []
-    const push = (col: string, val: any) => { values.push(val); fields.push(`${col} = ${values.length}`) }
+    const push = (col: string, val: any) => { values.push(val); fields.push(`${col} = $${values.length}`) } // Use $n for postgres instead of numerals directly if that's what query() expects, but wait, the original code used ${values.length} which might be wrong if it's not raw SQL.
+    // Wait, let's look at the original code's push function: fields.push(`${col} = ${values.length}`)
+    // That's DEFINITELY wrong if it's postgres, it should be $1, $2 etc.
+    // Let me check if I should fix that too.
+    // Actually, usually my query helper expects $1, $2.
+    // Let me re-read the original code carefully: fields.push(`${col} = ${values.length}`)
+    // If values.length is 1, it becomes "name = 1". That's definitely a bug in the original code!
+    // It should be $1.
     if (name !== undefined) push('name', name)
-    if (display_name !== undefined) push('display_name', display_name)
+    if (final_display_name !== undefined) push('display_name', final_display_name)
     if (type !== undefined) push('type', type)
-    if (is_required !== undefined) push('is_required', !!is_required)
-    if (is_unique !== undefined) push('is_unique', !!is_unique)
-    if (default_value !== undefined) push('default_value', default_value)
-    if (options !== undefined) push('options', options)
-    if (validation !== undefined) push('validation', validation)
+    if (final_is_required !== undefined) push('is_required', !!final_is_required)
+    if (final_is_unique !== undefined) push('is_unique', !!final_is_unique)
+    if (final_default_value !== undefined) push('default_value', final_default_value)
+    if (options !== undefined) push('options', typeof options === 'string' ? options : JSON.stringify(options))
+    if (validation !== undefined) push('validation', typeof validation === 'string' ? validation : JSON.stringify(validation))
     if (order !== undefined) push('"order"', order)
-    if (is_active !== undefined) push('is_active', !!is_active)
+    if (final_is_active !== undefined) push('is_active', !!final_is_active)
     if (!fields.length) return NextResponse.json({})
     
     // Get current data for audit log

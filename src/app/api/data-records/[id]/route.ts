@@ -69,9 +69,12 @@ async function putHandler(
 
     const bodySchema = z.object({
       values: z.array(z.object({
-        attribute_id: z.string().uuid(),
+        attribute_id: z.string().uuid().optional(),
+        attributeId: z.string().uuid().optional(),
         value: z.any().nullable(),
-      })),
+      })).refine(items => items.every(i => i.attribute_id || i.attributeId), {
+        message: "Either attribute_id or attributeId is required for each value"
+      }),
     })
 
     const bodyValidation = await validateBody(request, bodySchema)
@@ -84,11 +87,12 @@ async function putHandler(
     // Upsert values using Prisma
     if (values.length) {
       for (const v of values) {
+        const attrId = v.attribute_id || v.attributeId
         await db.dataRecordValue.upsert({
           where: {
             dataRecordId_attributeId: {
               dataRecordId: id,
-              attributeId: v.attribute_id
+              attributeId: attrId!
             }
           },
           update: {
@@ -96,7 +100,7 @@ async function putHandler(
           },
           create: {
             dataRecordId: id,
-            attributeId: v.attribute_id,
+            attributeId: attrId!,
             value: v.value ?? null
           }
         })

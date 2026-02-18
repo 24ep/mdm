@@ -108,19 +108,22 @@ async function putHandler(
       values.push(body.status)
       paramIndex++
     }
-    if (body.connectionConfig !== undefined) {
+    const connectionConfig = body.connectionConfig ?? body.connection_config
+    if (connectionConfig !== undefined) {
       updates.push(`connection_config = $${paramIndex}`)
-      values.push(JSON.stringify(body.connectionConfig))
+      values.push(JSON.stringify(connectionConfig))
       paramIndex++
     }
-    if (body.healthStatus !== undefined) {
+    const healthStatus = body.healthStatus ?? body.health_status
+    if (healthStatus !== undefined) {
       updates.push(`health_status = $${paramIndex}`)
-      values.push(JSON.stringify(body.healthStatus))
+      values.push(JSON.stringify(healthStatus))
       paramIndex++
     }
-    if (body.lastHealthCheck !== undefined) {
+    const lastHealthCheck = body.lastHealthCheck ?? body.last_health_check
+    if (lastHealthCheck !== undefined) {
       updates.push(`last_health_check = $${paramIndex}`)
-      values.push(body.lastHealthCheck ? new Date(body.lastHealthCheck) : null)
+      values.push(lastHealthCheck ? new Date(lastHealthCheck) : null)
       paramIndex++
     }
 

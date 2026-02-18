@@ -17,7 +17,9 @@ async function postHandler(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { email, name, password, role, isActive, defaultSpaceId, spaces } = body
+    const { email, name, password, role, isActive, is_active, defaultSpaceId, default_space_id, spaces } = body
+    const finalIsActive = isActive !== undefined ? isActive : (is_active !== undefined ? is_active : true)
+    const finalDefaultSpaceId = defaultSpaceId || default_space_id
 
     // Validate required fields
     if (!email || !name || !password) {
@@ -64,7 +66,7 @@ async function postHandler(request: NextRequest) {
           name,
           password: hashedPassword,
           role: userRole,
-          isActive: isActive !== undefined ? isActive : true,
+          isActive: finalIsActive,
           allowedLoginMethods: body.allowedLoginMethods || [],
           // created_at and updated_at are usually handled by @default(now()) and @updatedAt
         }
@@ -132,7 +134,7 @@ async function getHandler(request: NextRequest) {
   const search = searchParams.get('search') || ''
   const role = searchParams.get('role') || ''
   const active = searchParams.get('active') || ''
-  const spaceId = searchParams.get('spaceId') || ''
+  const spaceId = searchParams.get('spaceId') || searchParams.get('space_id') || ''
 
   const offset = (page - 1) * limit
 

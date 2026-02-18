@@ -147,15 +147,22 @@ async function putHandler(
       status: z.string().optional(),
       priority: z.string().optional(),
       dueDate: z.string().datetime().optional().nullable(),
+      due_date: z.string().datetime().optional().nullable(),
       startDate: z.string().datetime().optional().nullable(),
+      start_date: z.string().datetime().optional().nullable(),
       assignedTo: z.string().uuid().optional().nullable(),
+      assigned_to: z.string().uuid().optional().nullable(),
       labels: z.array(z.string()).optional(),
       estimate: z.number().optional(),
       attributes: z.array(z.any()).optional(),
       projectId: z.string().uuid().optional().nullable(),
+      project_id: z.string().uuid().optional().nullable(),
       moduleId: z.string().uuid().optional().nullable(),
+      module_id: z.string().uuid().optional().nullable(),
       milestoneId: z.string().uuid().optional().nullable(),
+      milestone_id: z.string().uuid().optional().nullable(),
       releaseId: z.string().uuid().optional().nullable(),
+      release_id: z.string().uuid().optional().nullable(),
     })
     
     const bodyValidation = await validateBody(request, bodySchema)
@@ -169,16 +176,31 @@ async function putHandler(
       status,
       priority,
       dueDate,
+      due_date,
       startDate,
+      start_date,
       assignedTo,
+      assigned_to,
       labels,
       estimate,
       attributes,
       projectId,
+      project_id,
       moduleId,
+      module_id,
       milestoneId,
-      releaseId
+      milestone_id,
+      releaseId,
+      release_id
     } = bodyValidation.data
+
+    const finalDueDate = dueDate !== undefined ? dueDate : due_date
+    const finalStartDate = startDate !== undefined ? startDate : start_date
+    const finalAssignedTo = assignedTo !== undefined ? assignedTo : assigned_to
+    const finalProjectId = projectId !== undefined ? projectId : project_id
+    const finalModuleId = moduleId !== undefined ? moduleId : module_id
+    const finalMilestoneId = milestoneId !== undefined ? milestoneId : milestone_id
+    const finalReleaseId = releaseId !== undefined ? releaseId : release_id
 
     // Check if ticket exists and user has access
     const existingTicket = await db.ticket.findUnique({
@@ -211,15 +233,15 @@ async function putHandler(
       }
     }
     if (priority !== undefined) updateData.priority = priority
-    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null
-    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null
-    if (assignedTo !== undefined) updateData.assignedTo = assignedTo || null
+    if (finalDueDate !== undefined) updateData.dueDate = finalDueDate ? new Date(finalDueDate) : null
+    if (finalStartDate !== undefined) updateData.startDate = finalStartDate ? new Date(finalStartDate) : null
+    if (finalAssignedTo !== undefined) updateData.assignedTo = finalAssignedTo || null
     if (labels !== undefined) updateData.labels = labels
     if (estimate !== undefined) updateData.estimate = estimate
-    if (projectId !== undefined) updateData.projectId = projectId || null
-    if (moduleId !== undefined) updateData.moduleId = moduleId || null
-    if (milestoneId !== undefined) updateData.milestoneId = milestoneId || null
-    if (releaseId !== undefined) updateData.releaseId = releaseId || null
+    if (finalProjectId !== undefined) updateData.projectId = finalProjectId || null
+    if (finalModuleId !== undefined) updateData.moduleId = finalModuleId || null
+    if (finalMilestoneId !== undefined) updateData.milestoneId = finalMilestoneId || null
+    if (finalReleaseId !== undefined) updateData.releaseId = finalReleaseId || null
 
     // Update ticket
     const ticket = await db.ticket.update({

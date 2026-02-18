@@ -28,10 +28,10 @@ async function getHandler(request: NextRequest) {
     const category = searchParams.get('category')
     const status = searchParams.get('status')
     const verified = searchParams.get('verified')
-    const serviceType = searchParams.get('serviceType')
+    const serviceType = searchParams.get('serviceType') || searchParams.get('service_type')
     const source = searchParams.get('source') // 'hub' or 'installed' or 'all'
-    const spaceId = searchParams.get('spaceId') // Filter by installed plugins in space
-    const installedOnly = searchParams.get('installedOnly') === 'true' // Only show installed plugins
+    const spaceId = searchParams.get('spaceId') || searchParams.get('space_id') // Filter by installed plugins in space
+    const installedOnly = (searchParams.get('installedOnly') || searchParams.get('installed_only')) === 'true' // Only show installed plugins
 
     // If source is 'hub', fetch from plugin hub
     if (source === 'hub' || process.env.USE_PLUGIN_HUB === 'true') {
@@ -298,21 +298,46 @@ async function postHandler(request: NextRequest) {
       version,
       provider,
       providerUrl,
+      provider_url,
       category,
       capabilities,
       apiBaseUrl,
+      api_base_url,
       apiAuthType,
+      api_auth_type,
       apiAuthConfig,
+      api_auth_config,
       uiType,
+      ui_type,
       uiConfig,
+      ui_config,
       webhookSupported,
+      webhook_supported,
       webhookEvents,
+      webhook_events,
       iconUrl,
+      icon_url: icon_url_body,
       screenshots,
       documentationUrl,
+      documentation_url,
       supportUrl,
+      support_url,
       pricingInfo,
+      pricing_info
     } = body
+
+    const finalProviderUrl = providerUrl || provider_url
+    const finalApiBaseUrl = apiBaseUrl || api_base_url
+    const finalApiAuthType = apiAuthType || api_auth_type
+    const finalApiAuthConfig = apiAuthConfig || api_auth_config
+    const finalUiType = uiType || ui_type
+    const finalUiConfig = uiConfig || ui_config
+    const finalWebhookSupported = webhookSupported !== undefined ? webhookSupported : webhook_supported
+    const finalWebhookEvents = webhookEvents || webhook_events
+    const finalIconUrl = iconUrl || icon_url_body
+    const finalDocumentationUrl = documentationUrl || documentation_url
+    const finalSupportUrl = supportUrl || support_url
+    const finalPricingInfo = pricingInfo || pricing_info
 
     if (!name || !slug || !version || !provider || !category) {
       return NextResponse.json(
@@ -352,21 +377,21 @@ async function postHandler(request: NextRequest) {
         description || null,
         version,
         provider,
-        providerUrl || null,
+        finalProviderUrl || null,
         category,
         capabilities ? JSON.stringify(capabilities) : '{}',
-        apiBaseUrl || null,
-        apiAuthType || null,
-        apiAuthConfig ? JSON.stringify(apiAuthConfig) : '{}',
-        uiType || null,
-        uiConfig ? JSON.stringify(uiConfig) : '{}',
-        webhookSupported || false,
-        webhookEvents || [],
-        iconUrl || null,
+        finalApiBaseUrl || null,
+        finalApiAuthType || null,
+        finalApiAuthConfig ? JSON.stringify(finalApiAuthConfig) : '{}',
+        finalUiType || null,
+        finalUiConfig ? JSON.stringify(finalUiConfig) : '{}',
+        finalWebhookSupported || false,
+        finalWebhookEvents || [],
+        finalIconUrl || null,
         screenshots || [],
-        documentationUrl || null,
-        supportUrl || null,
-        pricingInfo ? JSON.stringify(pricingInfo) : null,
+        finalDocumentationUrl || null,
+        finalSupportUrl || null,
+        finalPricingInfo ? JSON.stringify(finalPricingInfo) : null,
       ]
     )
 

@@ -528,8 +528,8 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig, chatkitOptions?: an
     width: (chatbot as any).widgetSize || '60px',
     height: (chatbot as any).widgetSize || '60px',
     borderRadius: borderRadius,
-    border: `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
-    boxShadow: boxShadow,
+    border: widgetAvatarStyle === 'custom' ? 'none' : `${(chatbot as any).widgetBorderWidth || '0px'} solid ${(chatbot as any).widgetBorderColor || 'transparent'}`,
+    boxShadow: widgetAvatarStyle === 'custom' ? 'none' : boxShadow,
     zIndex: ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) >= Z_INDEX.chatWidget
       ? ((chatbot as any).widgetZIndex || Z_INDEX.chatWidget) + 1
       : Z_INDEX.chatWidgetWindow, // Higher than popover to stay on top
@@ -540,10 +540,17 @@ export function getWidgetButtonStyle(chatbot: ChatbotConfig, chatkitOptions?: an
     overflow: 'hidden',
   }
 
-  // Apply glassmorphism effect
-  if (blurAmount > 0) {
+  // Apply glassmorphism effect - hide for custom
+  if (blurAmount > 0 && widgetAvatarStyle !== 'custom') {
     baseStyle.backdropFilter = `blur(${blurAmount}px)`
     baseStyle.WebkitBackdropFilter = `blur(${blurAmount}px)`
+  }
+
+  // Skip background for custom style
+  if (widgetAvatarStyle === 'custom') {
+    baseStyle.backgroundColor = 'transparent'
+    baseStyle.backgroundImage = 'none'
+    return baseStyle
   }
 
   // Check if it's an image URL (starts with url(, http://, https://, or /)

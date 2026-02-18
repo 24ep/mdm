@@ -13,7 +13,7 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('space_id')
+  const spaceId = searchParams.get('space_id') || searchParams.get('spaceId')
 
   if (!spaceId) {
     return NextResponse.json(
@@ -74,9 +74,10 @@ async function postHandler(request: NextRequest) {
   const { session } = authResult
 
   const body = await request.json()
-  const { space_id, baseUrl, apiKey, username, password, authType, customHeaders, name, customEndpoints } = body
+  const { space_id, spaceId, baseUrl, apiKey, username, password, authType, customHeaders, name, customEndpoints } = body
+  const finalSpaceId = space_id || spaceId
 
-  if (!space_id || !baseUrl) {
+  if (!finalSpaceId || !baseUrl) {
     return NextResponse.json(
       { error: 'space_id and baseUrl are required' },
       { status: 400 }
@@ -84,7 +85,7 @@ async function postHandler(request: NextRequest) {
   }
 
   // Check access
-  const accessResult = await requireSpaceAccess(space_id, session.user.id!)
+  const accessResult = await requireSpaceAccess(finalSpaceId, session.user.id!)
   if (!accessResult.success) return accessResult.response
 
     // Validate auth based on type
@@ -157,7 +158,7 @@ async function postHandler(request: NextRequest) {
          AND name LIKE '%ESM Portal%'
          AND deleted_at IS NULL
        LIMIT 1`,
-      [space_id]
+      [finalSpaceId]
     )
 
     if (existingRows.length > 0) {
@@ -192,7 +193,7 @@ async function postHandler(request: NextRequest) {
           api_auth_username, api_auth_password, is_active, config, created_by, created_at, updated_at)
          VALUES ($1, 'api', $2, $3, $4, $5, $6, $7, true, $8, $9, NOW(), NOW())`,
         [
-          space_id,
+          finalSpaceId,
           name || 'ESM Portal Integration',
           baseUrl,
           authType || 'apikey',

@@ -134,9 +134,9 @@ export function IconPicker({ value, onChange, placeholder = "Search icons...", g
       {filtered.length === 0 ? (
         <div className="text-center text-xs text-muted-foreground py-6 border rounded-md">No icons found</div>
       ) : grouped && groupedIcons && Array.isArray(groupedIcons) && groupedIcons.length > 0 ? (
-        <div className="flex border rounded-md overflow-hidden" style={{ height: 330 }}>
+        <div className="flex border rounded-md overflow-hidden bg-background" style={{ height: 'calc(min(70vh, 450px))' }}>
           {/* Left: Category list */}
-          <div className="w-64 border-r overflow-auto p-2 bg-gray-50">
+          <div className="w-1/3 min-w-[120px] max-w-[200px] border-r overflow-auto p-2 bg-muted/30">
             <ul className="space-y-1">
               {groupedIcons?.map(([category, items]) => {
                 if (!items || !Array.isArray(items)) return null

@@ -8,7 +8,7 @@ async function getHandler(request: NextRequest) {
   if (!authResult.success) return authResult.response
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('spaceId')
+  const spaceId = searchParams.get('spaceId') || searchParams.get('space_id')
   const status = searchParams.get('status')
 
   const where: any = {
@@ -73,9 +73,13 @@ async function postHandler(request: NextRequest) {
   const { session } = authResult
 
   const body = await request.json()
-  const { name, description, status, startDate, endDate, spaceId, metadata } = body
+  const { name, description, status, startDate, start_date, endDate, end_date, spaceId, space_id, metadata } = body
+  
+  const finalStartDate = startDate || start_date
+  const finalEndDate = endDate || end_date
+  const finalSpaceId = spaceId || space_id
 
-  if (!name || !spaceId) {
+  if (!name || !finalSpaceId) {
     return NextResponse.json(
       { error: 'Name and spaceId are required' },
       { status: 400 }
@@ -83,7 +87,7 @@ async function postHandler(request: NextRequest) {
   }
 
   // Check if user has access to the space
-  const accessResult = await requireSpaceAccess(spaceId, session.user.id!)
+  const accessResult = await requireSpaceAccess(finalSpaceId, session.user.id!)
   if (!accessResult.success) return accessResult.response
 
     const project = await db.project.create({
@@ -91,9 +95,9 @@ async function postHandler(request: NextRequest) {
         name,
         description,
         status: status || 'PLANNING',
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        spaceId,
+        startDate: finalStartDate ? new Date(finalStartDate) : null,
+        endDate: finalEndDate ? new Date(finalEndDate) : null,
+        spaceId: finalSpaceId,
         createdBy: session.user.id,
         metadata: metadata || {}
       },

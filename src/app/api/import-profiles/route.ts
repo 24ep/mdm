@@ -22,7 +22,9 @@ async function getHandler(request: NextRequest) {
     return queryValidation.response
   }
     
-    const { dataModel, isPublic, importType } = queryValidation.data
+    const { searchParams } = new URL(request.url)
+    const dataModel = queryValidation.data.dataModel || searchParams.get('data_model') || searchParams.get('dataModel')
+    const { isPublic, importType } = queryValidation.data
     logger.apiRequest('GET', '/api/import-profiles', { userId: session.user.id, dataModel, importType })
 
     // Build where clause for filtering using Prisma
@@ -87,26 +89,25 @@ async function postHandler(request: NextRequest) {
     return bodyValidation.response
   }
     
-    const { 
-      name, 
-      description, 
-      dataModel, 
-      fileTypes, 
-      headerRow = 1, 
-      dataStartRow = 2, 
-      chunkSize = 1000, 
-      maxItems, 
-      importType, 
-      primaryKeyAttribute, 
-      dateFormat = 'YYYY-MM-DD', 
-      timeFormat = 'HH:mm:ss', 
-      booleanFormat = 'true/false', 
-      attributeMapping = {}, 
-      attributeOptions = {}, 
-      isPublic = false, 
-      sharing,
-      spaceId
-    } = bodyValidation.data
+    const data = bodyValidation.data
+    const name = data.name
+    const description = data.description
+    const dataModel = data.dataModel
+    const fileTypes = data.fileTypes
+    const headerRow = data.headerRow
+    const dataStartRow = data.dataStartRow
+    const chunkSize = data.chunkSize
+    const maxItems = data.maxItems
+    const importType = data.importType
+    const primaryKeyAttribute = data.primaryKeyAttribute
+    const dateFormat = data.dateFormat
+    const timeFormat = data.timeFormat
+    const booleanFormat = data.booleanFormat
+    const attributeMapping = data.attributeMapping
+    const attributeOptions = data.attributeOptions
+    const isPublic = data.isPublic
+    const sharing = data.sharing
+    const spaceId = data.spaceId
     logger.apiRequest('POST', '/api/import-profiles', { userId: session.user.id, name, dataModel, importType })
 
     // Create the import profile using Prisma

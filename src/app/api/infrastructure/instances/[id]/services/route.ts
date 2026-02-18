@@ -76,11 +76,11 @@ async function postHandler(
     const { 
       name, 
       type, 
-      serviceConfig, 
+      serviceConfig = body.service_config, 
       endpoints, 
-      healthCheckUrl,
-      managementPluginId,
-      managementConfig
+      healthCheckUrl = body.health_check_url,
+      managementPluginId = body.management_plugin_id,
+      managementConfig = body.management_config
     } = body
 
     if (!name || !type) {

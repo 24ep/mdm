@@ -470,7 +470,7 @@ const PopoverContent = React.forwardRef<
     <div
       ref={contentRef}
       className={cn(
-        "min-w-[8rem] rounded-md border border-border p-1 text-popover-foreground shadow-lg outline-none backdrop-blur-xl",
+        "rounded-md border border-border text-popover-foreground shadow-lg outline-none backdrop-blur-xl flex flex-col overflow-hidden",
         className
       )}
       style={{
@@ -478,21 +478,23 @@ const PopoverContent = React.forwardRef<
         zIndex: Z_INDEX.portalDropdown, 
         top: `${finalPosition.top}px`,
         left: `${finalPosition.left}px`,
-        maxHeight: '80vh',
-        overflowY: 'auto',
+        maxHeight: 'calc(100vh - 32px)', // Ensure it doesn't touch screen edges
         visibility: 'visible',
         opacity: 1,
-        display: 'block',
+        display: 'flex',
+        flexDirection: 'column',
         pointerEvents: 'auto',
         transform: 'none',
-        backgroundColor: getPopoverBg(), // Reduced opacity (50%) for more transparency
+        backgroundColor: getPopoverBg(),
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        ...props.style, // Merge with props.style but our styles take precedence for visibility
+        ...props.style,
       }}
       {...(Object.fromEntries(Object.entries(props).filter(([key]) => key !== 'style')))}
     >
-      {children}
+      <div className="overflow-y-auto overflow-x-hidden flex-1 p-1">
+        {children}
+      </div>
     </div>
   )
 

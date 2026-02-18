@@ -30,6 +30,7 @@ export function LocaleSection({ formData, setFormData, chatkitOptions }: Section
               <SelectItem value="de">German</SelectItem>
               <SelectItem value="ja">Japanese</SelectItem>
               <SelectItem value="zh">Chinese</SelectItem>
+              <SelectItem value="th">Thai</SelectItem>
             </SelectContent>
           </Select>
         </FormRow>

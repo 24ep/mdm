@@ -19,15 +19,16 @@ async function getHandler(request: NextRequest) {
     page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
     limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(1000)).optional().default(10),
     search: z.string().optional().default(''),
-    space_id: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()),
+    space_id: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()).or(z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional())),
+    spaceId: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()),
   }))
 
   if (!queryValidation.success) {
     return queryValidation.response
   }
 
-  const { page, limit, search = '', space_id } = queryValidation.data
-  let spaceId = space_id
+  const { page, limit, search = '', space_id, spaceId: sId } = queryValidation.data
+  let spaceId = space_id || sId
 
   if (!spaceId) {
     // Fallback to user's default space
@@ -122,19 +123,28 @@ async function postHandler(request: NextRequest) {
   const bodyValidation = await validateBody(request, z.object({
     name: z.string().min(1, 'Name is required'),
     display_name: z.string().optional(),
+    displayName: z.string().optional(),
     description: z.string().optional(),
-    space_ids: z.array(commonSchemas.id).min(1, 'At least one space ID is required'),
+    space_ids: z.array(commonSchemas.id).optional(),
+    spaceIds: z.array(commonSchemas.id).optional(),
   }))
 
   if (!bodyValidation.success) {
     return bodyValidation.response
   }
 
-  const { name, description, space_ids } = bodyValidation.data
-  logger.apiRequest('POST', '/api/data-models', { userId: session.user.id, name, spaceIds: space_ids })
+  const { name, description, space_ids, spaceIds, displayName } = bodyValidation.data
+  const finalSpaceIds = spaceIds || space_ids || []
+  const finalDisplayName = displayName || bodyValidation.data.display_name
+  
+  if (finalSpaceIds.length === 0) {
+    return NextResponse.json({ error: 'At least one space ID is required' }, { status: 400 })
+  }
+
+  logger.apiRequest('POST', '/api/data-models', { userId: session.user.id, name, spaceIds: finalSpaceIds })
 
   // Check if user has access to all spaces
-  const accessResult = await requireAnySpaceAccess(space_ids, session.user.id!)
+  const accessResult = await requireAnySpaceAccess(finalSpaceIds, session.user.id!)
   if (!accessResult.success) return accessResult.response
 
   // Create the data model with ID generation
@@ -142,6 +152,7 @@ async function postHandler(request: NextRequest) {
                        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING *`
   const { rows } = await query(insertSql, [
     name,
+    finalDisplayName || name,
     description ?? null,
     session.user.id,
     true,
@@ -151,7 +162,7 @@ async function postHandler(request: NextRequest) {
   const dataModel = rows[0]
 
   // Associate the data model with all specified spaces
-  for (const spaceId of space_ids) {
+  for (const spaceId of finalSpaceIds) {
     await query(
       'INSERT INTO public.data_model_spaces (id, data_model_id, space_id, created_at, updated_at) VALUES (gen_random_uuid(), $1, $2, NOW(), NOW())',
       [dataModel.id, spaceId]

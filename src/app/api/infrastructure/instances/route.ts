@@ -173,9 +173,10 @@ async function postHandler(request: NextRequest) {
       host,
       port,
       protocol,
-      connectionType,
-      connectionConfig,
-      spaceId,
+      // Handle both camelCase and snake_case for compatibility
+      connectionType = body.connection_type,
+      connectionConfig = body.connection_config,
+      spaceId = body.space_id,
       tags,
     } = body
 

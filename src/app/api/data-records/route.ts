@@ -15,7 +15,8 @@ async function getHandler(request: NextRequest) {
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
-      data_model_id: commonSchemas.id,
+      data_model_id: commonSchemas.id.optional(),
+      dataModelId: commonSchemas.id.optional(),
       page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
       limit: z.string().optional().transform((val) => parseInt(val || '20')).pipe(z.number().int().positive().max(100)).optional().default(20),
       sort_by: z.string().optional(),
@@ -26,7 +27,18 @@ async function getHandler(request: NextRequest) {
       return queryValidation.response
     }
     
-    const { data_model_id: dataModelId, page, limit = 20, sort_by: sortBy, sort_direction: sortDirectionRaw } = queryValidation.data
+    const { 
+      data_model_id, 
+      dataModelId: dmId, 
+      page, 
+      limit = 20, 
+      sort_by: sortBy, 
+      sort_direction: sortDirectionRaw 
+    } = queryValidation.data
+    const dataModelId = data_model_id || dmId
+    if (!dataModelId) {
+      return NextResponse.json({ error: 'data_model_id is required' }, { status: 400 })
+    }
     logger.apiRequest('GET', '/api/data-records', { userId: session.user.id, dataModelId, page, limit })
 
     const offset = (page - 1) * limit
@@ -340,9 +352,11 @@ async function postHandler(request: NextRequest) {
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
-      data_model_id: commonSchemas.id,
+      data_model_id: commonSchemas.id.optional(),
+      dataModelId: commonSchemas.id.optional(),
       values: z.array(z.object({
-        attribute_id: commonSchemas.id,
+        attribute_id: commonSchemas.id.optional(),
+        attributeId: commonSchemas.id.optional(),
         value: z.any().optional().nullable(),
       })),
     }))
@@ -351,7 +365,19 @@ async function postHandler(request: NextRequest) {
       return bodyValidation.response
     }
     
-    const { data_model_id, values } = bodyValidation.data
+    const data_model_id = bodyValidation.data.data_model_id || bodyValidation.data.dataModelId
+    if (!data_model_id) {
+      return NextResponse.json({ error: 'data_model_id is required' }, { status: 400 })
+    }
+    const values = bodyValidation.data.values.map(v => ({
+      attribute_id: v.attribute_id || v.attributeId,
+      value: v.value
+    }))
+    
+    // Ensure all values have attribute_id
+    if (values.some(v => !v.attribute_id)) {
+      return NextResponse.json({ error: 'attribute_id is required for all values' }, { status: 400 })
+    }
     logger.apiRequest('POST', '/api/data-records', { userId: session.user.id, dataModelId: data_model_id, valuesCount: values.length })
 
     const { rows: recordRows } = await query(

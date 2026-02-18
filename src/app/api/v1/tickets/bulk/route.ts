@@ -19,7 +19,12 @@ async function postHandler(request: NextRequest) {
     // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
-    const { operation, ticketIds, data } = body
+    const { 
+      operation, 
+      ticketIds = body.ticket_ids, 
+      data 
+    } = body
+    const assigneeId = data?.assigneeId || data?.assignee_id
 
     if (!operation || !ticketIds || !Array.isArray(ticketIds) || ticketIds.length === 0) {
       return NextResponse.json(
@@ -151,7 +156,7 @@ async function postHandler(request: NextRequest) {
             `INSERT INTO ticket_assignees (id, ticket_id, user_id, created_at)
              VALUES (gen_random_uuid(), $1, $2, NOW())
              ON CONFLICT (ticket_id, user_id) DO NOTHING`,
-            [ticketId, data.assigneeId]
+            [ticketId, assigneeId]
           )
         }
 

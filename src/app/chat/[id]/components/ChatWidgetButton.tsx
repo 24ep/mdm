@@ -44,6 +44,11 @@ export function ChatWidgetButton({
             activeBorderRadius = isOpen ? '50%' : (config.labelBorderRadius || '50%');
         } else if (config.avatarStyle === 'circle') {
             activeBorderRadius = '50%';
+        } else if (config.avatarStyle === 'custom') {
+             // For custom, default to 0 if not set, but user might want rounded corners on their image. 
+             // Actually, usually 'custom' means "I uploaded a shaped PNG", so border radius might clip it.
+             // But let's respect the user's border radius if they set one, else 0.
+             activeBorderRadius = (widgetButtonStyle as any).borderRadius || '0px';
         } else {
             activeBorderRadius = config.borderRadius || (widgetButtonStyle as any).borderRadius || '8px';
         }
@@ -55,7 +60,10 @@ export function ChatWidgetButton({
         const boxShadow = (widgetButtonStyle.boxShadow as string) || 'none'
 
         // Determine avatar image/icon size
-        const avatarSize = config.avatarStyle === 'circle-with-label' ? '24px' : '60%'
+        let avatarSize = config.avatarStyle === 'circle-with-label' ? '24px' : '60%'
+        if (config.avatarStyle === 'custom') {
+            avatarSize = '100%' // Fill the container
+        }
 
         // Base object - strictly avoid shorthand vs longhand conflicts here for React
         const style: any = {
@@ -64,14 +72,14 @@ export function ChatWidgetButton({
             borderRadius: activeBorderRadius,
             // Use CSS variables for !important overrides in the <style> tag
             '--widget-border-radius': activeBorderRadius,
-            '--widget-bg-color': bgColor,
+            '--widget-bg-color': config.avatarStyle === 'custom' ? 'transparent' : bgColor, // Default to transparent for custom
             '--widget-bg-image': bgImage,
             '--widget-bg-size': widgetButtonStyle.backgroundSize || 'cover',
             '--widget-bg-pos': widgetButtonStyle.backgroundPosition || 'center',
             '--widget-bg-repeat': widgetButtonStyle.backgroundRepeat || 'no-repeat',
-            '--widget-border-width': borderWidth,
+            '--widget-border-width': config.avatarStyle === 'custom' ? '0px' : borderWidth, // Default no border for custom
             '--widget-border-color': borderColor,
-            '--widget-box-shadow': boxShadow,
+            '--widget-box-shadow': config.avatarStyle === 'custom' ? 'none' : boxShadow, // Default no shadow for custom (unless they want it?)
             '--avatar-size': avatarSize,
             '--widget-padding-top': config.paddingTop || config.paddingY || config.padding || '0px',
             '--widget-padding-right': config.paddingRight || config.paddingX || config.padding || '0px',
@@ -172,10 +180,34 @@ export function ChatWidgetButton({
                 data-widget-button="true"
             >
             {isOpen ? (
-                <X className="h-6 w-6" style={{ color: config.avatarIconColor }} />
+                config.avatarCloseImageUrl ? (
+                    <img
+                        src={config.avatarCloseImageUrl}
+                        alt="Close Chat"
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                ) : (
+                    <X className="h-6 w-6" style={{ color: config.avatarIconColor }} />
+                )
             ) : (
                 (() => {
                     const renderIcon = () => {
+                        if (config.avatarType === 'none' && config.avatarStyle !== 'custom') return null
+                        
+                        // Handle Custom Style - Use Image URL or Placeholder
+                        if (config.avatarStyle === 'custom') {
+                             if (config.avatarImageUrl) {
+                                return (
+                                    <img
+                                        src={config.avatarImageUrl}
+                                        alt="Chat"
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} // Contain to see full shape
+                                    />
+                                )
+                             }
+                             return <Bot style={{ color: config.avatarIconColor }} /> // Fallback
+                        }
+
                         if (config.avatarType === 'image' && config.avatarImageUrl) {
                             return (
                                 <img

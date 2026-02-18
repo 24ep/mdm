@@ -40,9 +40,21 @@ export async function POST(request: NextRequest) {
     if (forbidden) return forbidden
 
     const body = await request.json()
-    const { templateName, level, customName, customDescription } = body
+    const { 
+      templateName, 
+      template_name,
+      level, 
+      customName, 
+      custom_name,
+      customDescription,
+      custom_description 
+    } = body
 
-    if (!templateName || !level) {
+    const finalTemplateName = templateName || template_name
+    const finalCustomName = customName || custom_name
+    const finalCustomDescription = customDescription || custom_description
+
+    if (!finalTemplateName || !level) {
       return NextResponse.json(
         { error: 'templateName and level are required' },
         { status: 400 },
@@ -51,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const templates = level === 'global' ? GLOBAL_ROLES : SPACE_ROLES
     const template = templates.find(
-      (t) => t.id === templateName || t.name === templateName,
+      (t) => t.id === finalTemplateName || t.name === finalTemplateName,
     )
 
     if (!template) {
@@ -74,8 +86,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create role from template
-    const roleName = customName || `${template.name}_custom`
-    const roleDescription = customDescription || template.description
+    const roleName = finalCustomName || `${template.name}_custom`
+    const roleDescription = finalCustomDescription || template.description
 
     const { rows: newRole } = await query(
       `INSERT INTO roles (name, description, level, is_system)

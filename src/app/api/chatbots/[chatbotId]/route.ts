@@ -127,15 +127,15 @@ async function putHandler(
     showCitations,
     deploymentType,
     widgetBackgroundColor,
-    isPublished,
-    currentVersion,
-    spaceId,
+    isPublished = body.is_published,
+    currentVersion = body.current_version,
+    spaceId = body.space_id,
     customEmbedDomain,
     domainAllowlist,
-    chatkitAgentId, // Explicitly extract
-    chatkitApiKey, // Explicitly extract
-    chatkitOptions, // Explicitly extract
-    engineType, // Explicitly extract
+    chatkitAgentId = body.chatkit_agent_id, // Explicitly extract
+    chatkitApiKey = body.chatkit_api_key, // Explicitly extract
+    chatkitOptions = body.chatkit_options, // Explicitly extract
+    engineType = body.engine_type, // Explicitly extract
     // IMPORTANT: Extract and discard internal/system fields to prevent them from
     // being included in versionConfig, which would cause circular references or
     // invalid JSON in the version config. These fields come from the frontend

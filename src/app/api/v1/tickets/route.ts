@@ -236,8 +236,8 @@ async function postHandler(request: NextRequest) {
     dueDate,
     startDate,
     estimate,
-    spaceId,
-    assignedTo,
+    spaceId = body.space_id,
+    assignedTo = body.assigned_to,
   } = body
 
   if (!title) {

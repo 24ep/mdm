@@ -29,9 +29,10 @@ async function patchHandler(
       values.push(body.status)
       paramIndex++
     }
-    if (body.serviceConfig !== undefined) {
+    const serviceConfig = body.serviceConfig ?? body.service_config
+    if (serviceConfig !== undefined) {
       updates.push(`service_config = $${paramIndex}`)
-      values.push(JSON.stringify(body.serviceConfig))
+      values.push(JSON.stringify(serviceConfig))
       paramIndex++
     }
     if (body.endpoints !== undefined) {
@@ -39,9 +40,10 @@ async function patchHandler(
       values.push(JSON.stringify(body.endpoints))
       paramIndex++
     }
-    if (body.healthCheckUrl !== undefined) {
+    const healthCheckUrl = body.healthCheckUrl ?? body.health_check_url
+    if (healthCheckUrl !== undefined) {
       updates.push(`health_check_url = $${paramIndex}`)
-      values.push(body.healthCheckUrl)
+      values.push(healthCheckUrl)
       paramIndex++
     }
 

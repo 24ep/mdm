@@ -19,7 +19,12 @@ async function postHandler(request: NextRequest) {
     // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
-    const { operation, dashboardIds, data } = body
+    const { 
+      operation, 
+      dashboardIds = body.dashboard_ids, 
+      data 
+    } = body
+    const isActive = data?.isActive !== undefined ? data.isActive : data?.is_active
 
     if (!operation || !dashboardIds || !Array.isArray(dashboardIds) || dashboardIds.length === 0) {
       return NextResponse.json(
@@ -64,7 +69,7 @@ async function postHandler(request: NextRequest) {
         break
 
       case 'update_status':
-        if (data?.isActive === undefined) {
+        if (isActive === undefined) {
           return NextResponse.json(
             { error: 'isActive is required for update_status operation' },
             { status: 400 }
@@ -82,7 +87,7 @@ async function postHandler(request: NextRequest) {
              AND dp.user_id = $3
              AND dp.permission = 'edit'
            ))`,
-          [data.isActive, dashboardIds, session.user.id]
+          [isActive, dashboardIds, session.user.id]
         )
         affectedCount = result.rowCount || 0
         break

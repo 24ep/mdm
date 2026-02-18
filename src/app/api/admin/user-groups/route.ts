@@ -9,7 +9,7 @@ async function getHandler(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
-    const includeMembers = searchParams.get('includeMembers') === 'true'
+    const includeMembers = searchParams.get('includeMembers') === 'true' || searchParams.get('include_members') === 'true'
     const flat = searchParams.get('flat') === 'true'
 
     const groups = await db.userGroup.findMany({
@@ -40,7 +40,7 @@ async function getHandler(request: NextRequest) {
       updatedAt: group.updatedAt,
       memberCount: group._count.members,
       childCount: group._count.children,
-      members: includeMembers ? group.members.map(m => ({
+      members: includeMembers ? (group.members as any[]).map(m => ({
         id: m.id,
         role: m.role,
         userId: m.user.id,
@@ -85,7 +85,9 @@ async function postHandler(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { name, description, parentId, sortOrder, metadata } = body
+    const { name, description, parentId, parent_id, sortOrder, sort_order, metadata } = body
+    const finalParentId = parentId || parent_id
+    const finalSortOrder = sortOrder !== undefined ? sortOrder : (sort_order !== undefined ? sort_order : 0)
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
@@ -111,8 +113,8 @@ async function postHandler(request: NextRequest) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
-        parentId: parentId || null,
-        sortOrder: sortOrder || 0,
+        parentId: finalParentId || null,
+        sortOrder: finalSortOrder,
         metadata: metadata || {}
       },
       include: {

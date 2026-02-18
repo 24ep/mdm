@@ -20,9 +20,9 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const searchParams = request.nextUrl.searchParams
-  const collectionId = searchParams.get('collectionId')
-  const spaceId = searchParams.get('spaceId')
-  const parentId = searchParams.get('parentId')
+  const collectionId = searchParams.get('collectionId') || searchParams.get('collection_id')
+  const spaceId = searchParams.get('spaceId') || searchParams.get('space_id')
+  const parentId = searchParams.get('parentId') || searchParams.get('parent_id')
   const search = searchParams.get('search')
 
   const page = parseInt(searchParams.get('page') || '1')
@@ -193,11 +193,37 @@ async function postHandler(request: NextRequest) {
 
   const body = await request.json()
   console.log('[API] POST /documents payload:', body)
-  const { collectionId, spaceId, title, content, contentHtml, parentId, isTemplate, isPublic, isPinned, order } = body
+  const { 
+    collectionId, 
+    collection_id,
+    spaceId, 
+    space_id,
+    title, 
+    content, 
+    contentHtml, 
+    content_html,
+    parentId, 
+    parent_id,
+    isTemplate, 
+    is_template,
+    isPublic, 
+    is_public,
+    isPinned, 
+    is_pinned,
+    order 
+  } = body
+
+  const finalCollectionId = collectionId || collection_id
+  const finalSpaceId = spaceId || space_id
+  const finalContentHtml = contentHtml || content_html
+  const finalParentId = parentId || parent_id
+  const finalIsTemplate = isTemplate !== undefined ? isTemplate : is_template
+  const finalIsPublic = isPublic !== undefined ? isPublic : is_public
+  const finalIsPinned = isPinned !== undefined ? isPinned : is_pinned
 
   console.log('[API] User:', session.user.id)
 
-  if (!collectionId || !title || !title.trim()) {
+  if (!finalCollectionId || !title || !title.trim()) {
     return NextResponse.json(
       { error: 'collectionId and title are required' },
       { status: 400 }
@@ -205,18 +231,18 @@ async function postHandler(request: NextRequest) {
   }
 
   // Get the isolated schema for Knowledge Base
-  const schema = await getKnowledgeSchema(spaceId)
+  const schema = await getKnowledgeSchema(finalSpaceId)
 
   // Check if user has write access to collection
   const memberCheck = await query(
     `SELECT role FROM ${schema}.knowledge_collection_members
      WHERE collection_id::text = $1 AND user_id::text = $2`,
-    [collectionId, session.user.id]
+    [finalCollectionId, session.user.id]
   )
 
   const collectionCheck = await query(
     `SELECT created_by, is_private FROM ${schema}.knowledge_collections WHERE id::text = $1 AND deleted_at IS NULL`,
-    [collectionId]
+    [finalCollectionId]
   )
 
   if (collectionCheck.rows.length === 0) {
@@ -233,12 +259,12 @@ async function postHandler(request: NextRequest) {
 
   // Get max order for parent
   let documentOrder = order
-  if (!documentOrder && parentId) {
+  if (!documentOrder && finalParentId) {
     const orderResult = await query(
       `SELECT COALESCE(MAX("order"), 0) + 1 as next_order
        FROM ${schema}.knowledge_documents
        WHERE collection_id::text = $1 AND parent_id::text = $2 AND deleted_at IS NULL`,
-      [collectionId, parentId]
+      [finalCollectionId, finalParentId]
     )
     documentOrder = orderResult.rows[0]?.next_order || 0
   } else if (!documentOrder) {
@@ -246,7 +272,7 @@ async function postHandler(request: NextRequest) {
       `SELECT COALESCE(MAX("order"), 0) + 1 as next_order
        FROM ${schema}.knowledge_documents
        WHERE collection_id::text = $1 AND parent_id IS NULL AND deleted_at IS NULL`,
-      [collectionId]
+      [finalCollectionId]
     )
     documentOrder = orderResult.rows[0]?.next_order || 0
   }
@@ -260,14 +286,14 @@ async function postHandler(request: NextRequest) {
         gen_random_uuid(), $1::uuid, $2, $3, $4, $5::uuid, $6, $7, $8, $9, $10::uuid, NOW(), NOW()
       ) RETURNING *`,
     [
-      collectionId,
+      finalCollectionId,
       title.trim(),
       content || '',
-      contentHtml || null,
-      parentId || null,
-      isTemplate || false,
-      isPublic || false,
-      isPinned || false,
+      finalContentHtml || null,
+      finalParentId || null,
+      finalIsTemplate || false,
+      finalIsPublic || false,
+      finalIsPinned || false,
       documentOrder,
       session.user.id,
     ]

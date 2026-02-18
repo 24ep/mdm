@@ -143,9 +143,12 @@ async function putHandler(
       metadata
     } = validationResult.data
     
-    // Get is_active from body directly as it may not be in the schema
+    // Get fallbacks from body directly
     const bodyData = bodyValidation.data as any
-    const is_active = bodyData.is_active
+    const final_category_id = category_id || bodyData.categoryId
+    const final_folder_id = folder_id || bodyData.folderId
+    const final_embed_url = embed_url || bodyData.embedUrl
+    const is_active = bodyData.is_active !== undefined ? bodyData.is_active : bodyData.isActive
 
     const sql = `
       UPDATE public.reports
@@ -174,12 +177,12 @@ async function putHandler(
     const result = await query(sql, [
       name || null,
       description || null,
-      category_id || null,
-      folder_id || null,
+      final_category_id || null,
+      final_folder_id || null,
       owner || null,
       link || null,
       workspace || null,
-      embed_url || null,
+      final_embed_url || null,
       metadata ? JSON.stringify(metadata) : null,
       is_active !== undefined ? is_active : null,
       id,

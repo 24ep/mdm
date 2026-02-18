@@ -47,11 +47,67 @@ async function postHandler(request: NextRequest) {
 
   const body = await request.json()
   const { 
-    space_id: rawSpaceId, name, connection_type = 'database', db_type, host, port, database, username, password, options, is_active,
+    space_id: s_id, 
+    spaceId: sId,
+    name, 
+    connection_type,
+    connectionType,
+    db_type, 
+    dbType,
+    host, 
+    port, 
+    database, 
+    username, 
+    password, 
+    options, 
+    is_active,
+    isActive,
     // API fields
-    api_url, api_method, api_headers, api_auth_type, api_auth_token, api_auth_username, api_auth_password,
-    api_auth_apikey_name, api_auth_apikey_value, api_body, api_response_path, api_pagination_type, api_pagination_config
+    api_url, 
+    apiUrl,
+    api_method, 
+    apiMethod,
+    api_headers, 
+    apiHeaders,
+    api_auth_type, 
+    apiAuthType,
+    api_auth_token, 
+    apiAuthToken,
+    api_auth_username, 
+    apiAuthUsername,
+    api_auth_password, 
+    apiAuthPassword,
+    api_auth_apikey_name, 
+    apiAuthApiKeyName,
+    api_auth_apikey_value, 
+    apiAuthApiKeyValue,
+    api_body, 
+    apiBody,
+    api_response_path, 
+    apiResponsePath,
+    api_pagination_type, 
+    apiPaginationType,
+    api_pagination_config,
+    apiPaginationConfig
   } = body
+
+  const rawSpaceId = s_id || sId
+  const final_connection_type = connectionType || connection_type || 'database'
+  const final_db_type = dbType || db_type
+  const final_api_url = apiUrl || api_url
+  const final_api_method = apiMethod || api_method
+  const final_api_headers = apiHeaders || api_headers
+  const final_api_auth_type = apiAuthType || api_auth_type
+  const final_api_auth_token = apiAuthToken || api_auth_token
+  const final_api_auth_username = apiAuthUsername || api_auth_username
+  const final_api_auth_password = apiAuthPassword || api_auth_password
+  const final_api_auth_apikey_name = apiAuthApiKeyName || api_auth_apikey_name
+  const final_api_auth_apikey_value = apiAuthApiKeyValue || api_auth_apikey_value
+  const final_api_body = apiBody || api_body
+  const final_api_response_path = apiResponsePath || api_response_path
+  const final_api_pagination_type = apiPaginationType || api_pagination_type
+  const final_api_pagination_config = apiPaginationConfig || api_pagination_config
+  const final_is_active = isActive !== undefined ? isActive : is_active
 
   if (!rawSpaceId || !name) {
     return NextResponse.json({ error: 'space_id and name are required' }, { status: 400 })
@@ -67,12 +123,12 @@ async function postHandler(request: NextRequest) {
   }
 
   // Validate based on connection type
-  if (connection_type === 'api') {
-    if (!api_url) {
+  if (final_connection_type === 'api') {
+    if (!final_api_url) {
       return NextResponse.json({ error: 'api_url is required for API connections' }, { status: 400 })
     }
   } else {
-    if (!db_type || !host) {
+    if (!final_db_type || !host) {
       return NextResponse.json({ error: 'db_type and host are required for database connections' }, { status: 400 })
     }
   }
@@ -126,12 +182,12 @@ async function postHandler(request: NextRequest) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
        RETURNING *`,
       [
-        space_id, name, connection_type, db_type || 'api', api_url, api_method || 'GET',
-        api_headers ? JSON.stringify(api_headers) : null, api_auth_type || 'none',
+        space_id, name, final_connection_type, final_db_type || 'api', final_api_url, final_api_method || 'GET',
+        final_api_headers ? JSON.stringify(final_api_headers) : null, final_api_auth_type || 'none',
         storedAuthToken, api_auth_username || null, storedAuthPassword,
-        api_auth_apikey_name || null, storedApiKeyValue,
-        api_body || null, api_response_path || null, api_pagination_type || null,
-        api_pagination_config ? JSON.stringify(api_pagination_config) : null, is_active ?? true
+        final_api_auth_apikey_name || null, storedApiKeyValue,
+        final_api_body || null, final_api_response_path || null, final_api_pagination_type || null,
+        final_api_pagination_config ? JSON.stringify(final_api_pagination_config) : null, final_is_active ?? true
       ]
     )
     
@@ -207,7 +263,7 @@ async function postHandler(request: NextRequest) {
         (space_id, name, connection_type, db_type, host, port, database, username, password, options, is_active)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        RETURNING *`,
-      [space_id, name, connection_type, db_type, host, port ?? null, database ?? null, username ?? null, storedPassword, options ? JSON.stringify(options) : null, is_active ?? true]
+      [space_id, name, final_connection_type, final_db_type, host, port ?? null, database ?? null, username ?? null, storedPassword, options ? JSON.stringify(options) : null, final_is_active ?? true]
     )
     
     // Update Vault path with actual connection ID if using Vault
@@ -246,7 +302,8 @@ async function putHandler(request: NextRequest) {
   const { session } = authResult
 
   const body = await request.json()
-  const { id, space_id: rawSpaceId, ...updates } = body
+  const { id, space_id: s_id, spaceId, ...updates } = body
+  const rawSpaceId = s_id || spaceId
   if (!id || !rawSpaceId) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
 
   // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")
@@ -346,8 +403,30 @@ async function putHandler(request: NextRequest) {
   const fields: string[] = []
   const params: any[] = []
   let idx = 1
+
+  // Map camelCase to snake_case for database columns
+  const fieldMapping: Record<string, string> = {
+    connectionType: 'connection_type',
+    dbType: 'db_type',
+    isActive: 'is_active',
+    apiUrl: 'api_url',
+    apiMethod: 'api_method',
+    apiHeaders: 'api_headers',
+    apiAuthType: 'api_auth_type',
+    apiAuthToken: 'api_auth_token',
+    apiAuthUsername: 'api_auth_username',
+    apiAuthPassword: 'api_auth_password',
+    apiAuthApiKeyName: 'api_auth_apikey_name',
+    apiAuthApiKeyValue: 'api_auth_apikey_value',
+    apiBody: 'api_body',
+    apiResponsePath: 'api_response_path',
+    apiPaginationType: 'api_pagination_type',
+    apiPaginationConfig: 'api_pagination_config'
+  }
+
   for (const [key, value] of Object.entries(processedUpdates)) {
-    fields.push(`${key} = $${idx++}`)
+    const dbColumn = fieldMapping[key] || key
+    fields.push(`${dbColumn} = $${idx++}`)
     params.push(value)
   }
   params.push(id)
@@ -368,7 +447,7 @@ async function deleteHandler(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
-  const rawSpaceId = searchParams.get('space_id')
+  const rawSpaceId = searchParams.get('space_id') || searchParams.get('spaceId')
   if (!id || !rawSpaceId) return NextResponse.json({ error: 'id and space_id are required' }, { status: 400 })
   
   // Normalize space_id: strip any colon suffix (e.g., "uuid:1" -> "uuid")

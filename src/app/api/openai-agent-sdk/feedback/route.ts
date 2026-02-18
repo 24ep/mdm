@@ -11,15 +11,15 @@ async function postHandler(request: NextRequest) {
 
     const body = await request.json()
     const { 
-      agentId, 
-      apiKey, 
-      messageId,
+      agentId = body.agent_id, 
+      apiKey = body.api_key, 
+      messageId = body.message_id,
       feedback, // 'liked' | 'disliked' | null
-      messageContent,
-      conversationContext,
-      chatbotId,
-      threadId,
-      traceId, // Optional: Langfuse trace ID if available
+      messageContent = body.message_content,
+      conversationContext = body.conversation_context,
+      chatbotId = body.chatbot_id,
+      threadId = body.thread_id,
+      traceId = body.trace_id, // Optional: Langfuse trace ID if available
     } = body
 
     if (!agentId || !apiKey || !messageId) {

@@ -22,7 +22,7 @@ async function getHandler(request: NextRequest) {
     // TODO: Add requireSpaceAccess check if spaceId is available
 
     const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('spaceId')
+    const spaceId = searchParams.get('spaceId') || searchParams.get('space_id')
     const searchQuery = searchParams.get('search')
     
     // Parse pagination
@@ -183,7 +183,15 @@ async function postHandler(request: NextRequest) {
     // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
-    const { name, description, sourceType, sourceId, spaceId, url, embedUrl } = body
+    const { 
+      name, 
+      description, 
+      sourceType = body.source_type, 
+      sourceId = body.source_id, 
+      spaceId = body.space_id, 
+      url, 
+      embedUrl = body.embed_url 
+    } = body
 
     if (!name || !sourceType) {
       return NextResponse.json(

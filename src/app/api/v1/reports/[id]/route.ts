@@ -122,9 +122,9 @@ async function putHandler(
       values.push(body.url)
       paramIndex++
     }
-    if (body.embedUrl !== undefined) {
+    if (body.embedUrl !== undefined || body.embed_url !== undefined) {
       updates.push(`embed_url = $${paramIndex}`)
-      values.push(body.embedUrl)
+      values.push(body.embedUrl !== undefined ? body.embedUrl : body.embed_url)
       paramIndex++
     }
 

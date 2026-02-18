@@ -17,7 +17,9 @@ async function postHandler(request: NextRequest) {
       )
     }
 
-    const { bucket, key, expiresIn } = await request.json()
+    const body = await request.json()
+    const { bucket, key, expiresIn, expires_in } = body
+    const finalExpiresIn = expiresIn || expires_in
 
     if (!bucket || !key) {
       return NextResponse.json(
@@ -38,13 +40,13 @@ async function postHandler(request: NextRequest) {
     const presignedUrl = await generatePresignedDownloadUrl(
       bucket,
       key,
-      expiresIn || 300 // 5 minutes default
+      finalExpiresIn || 300 // 5 minutes default
     )
 
     return NextResponse.json({
       success: true,
       presignedUrl,
-      expiresIn: expiresIn || 300,
+      expiresIn: finalExpiresIn || 300,
     })
   } catch (error) {
     console.error('Error generating presigned URL:', error)

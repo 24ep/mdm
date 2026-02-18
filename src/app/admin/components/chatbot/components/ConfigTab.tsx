@@ -12,7 +12,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Check, ChevronsUpDown, MessageSquare, Zap, Upload, Mic, Settings, Users, Megaphone } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Accordion } from '@/components/ui/accordion'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { X } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { Chatbot } from '../types'
@@ -23,7 +23,8 @@ import {
   ModelPickerSection,
   PersonaPickerSection,
   StartScreenSection,
-  ComposerSection
+  ComposerSection,
+  GetStartedSection
 } from '../style/sections'
 
 interface ConfigTabProps {
@@ -451,11 +452,36 @@ export function ConfigTab({ formData, setFormData }: ConfigTabProps) {
                 Configure ChatKit-specific features and options.
               </p>
               <Accordion type="single" collapsible value={accordionValue} onValueChange={(value) => setAccordionValue(typeof value === 'string' ? value : value[0] || '')}>
-                <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                <AccordionItem value="getstarted" className="border-b px-4">
+                  <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                    Get Started Screen
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 pb-6">
+                    <GetStartedSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="startScreen" className="border-b px-4">
+                  <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                    Start Screen
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 pb-6">
+                    <StartScreenSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                  </AccordionContent>
+                </AccordionItem>
+
                 <ThreadItemActionsSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
                 <DisclaimerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
                 <ModelPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
-                <PersonaPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                
+                <AccordionItem value="personaPicker" className="border-b px-4">
+                  <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                    Persona Picker
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-4 pb-6">
+                    <PersonaPickerSection formData={formData} setFormData={setFormData} chatkitOptions={chatkitOptions} />
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             </TabsContent>
           )}

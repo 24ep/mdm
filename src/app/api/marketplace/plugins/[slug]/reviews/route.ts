@@ -55,8 +55,8 @@ export async function GET(
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '20')
   const offset = (page - 1) * limit
-  const sortBy = searchParams.get('sortBy') || 'created_at'
-  const sortOrder = searchParams.get('sortOrder') || 'desc'
+  const sortBy = searchParams.get('sortBy') || searchParams.get('sort_by') || 'created_at'
+  const sortOrder = searchParams.get('sortOrder') || searchParams.get('sort_order') || 'desc'
 
   // Get reviews
   const reviewsQuery = `
@@ -194,7 +194,8 @@ export async function POST(
   }
 
   const body = await request.json()
-  const { rating, title, comment, spaceId } = body
+  const { rating, title, comment, spaceId, space_id } = body
+  const finalSpaceId = spaceId || space_id
 
   // Validate rating
   if (!rating || rating < 1 || rating > 5) {
@@ -226,7 +227,7 @@ export async function POST(
         rating,
         title || null,
         comment || null,
-        spaceId || null,
+        finalSpaceId || null,
         existingReview.rows[0].id,
       ]
     )
@@ -271,7 +272,7 @@ export async function POST(
       [
         serviceId,
         session.user.id,
-        spaceId || null,
+        finalSpaceId || null,
         rating,
         title || null,
         comment || null,

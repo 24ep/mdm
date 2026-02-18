@@ -35,13 +35,13 @@ async function getHandler(request: NextRequest) {
     const sources = searchParams.get('sources')?.split(',').filter(Boolean) || []
     const events = searchParams.get('events')?.split(',').filter(Boolean) || []
     const positions = searchParams.get('positions')?.split(',').filter(Boolean) || []
-    const businessProfiles = searchParams.get('business_profiles')?.split(',').filter(Boolean) || []
+    const businessProfiles = (searchParams.get('businessProfiles') || searchParams.get('business_profiles'))?.split(',').filter(Boolean) || []
     const titles = searchParams.get('titles')?.split(',').filter(Boolean) || []
-    const callStatuses = searchParams.get('call_statuses')?.split(',').filter(Boolean) || []
+    const callStatuses = (searchParams.get('callStatuses') || searchParams.get('call_statuses'))?.split(',').filter(Boolean) || []
     
     // Date filters
-    const dateFrom = searchParams.get('date_from') || ''
-    const dateTo = searchParams.get('date_to') || ''
+    const dateFrom = searchParams.get('dateFrom') || searchParams.get('date_from') || ''
+    const dateTo = searchParams.get('dateTo') || searchParams.get('date_to') || ''
     
     // Column-specific filters
     const name = searchParams.get('name') || ''
@@ -52,8 +52,8 @@ async function getHandler(request: NextRequest) {
     const source = searchParams.get('source') || ''
     const industry = searchParams.get('industry') || ''
     const statusFilter = statusParam || ''
-    const lastContactFrom = searchParams.get('last_contact_from') || ''
-    const lastContactTo = searchParams.get('last_contact_to') || ''
+    const lastContactFrom = searchParams.get('lastContactFrom') || searchParams.get('last_contact_from') || ''
+    const lastContactTo = searchParams.get('lastContactTo') || searchParams.get('last_contact_to') || ''
     
     logger.apiRequest('GET', '/api/customers', { userId: session.user.id, page, limit, search })
 
@@ -241,18 +241,28 @@ async function postHandler(request: NextRequest) {
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
-      first_name: z.string().min(1, 'First name is required'),
-      last_name: z.string().min(1, 'Last name is required'),
+      first_name: z.string().optional(),
+      firstName: z.string().optional(),
+      last_name: z.string().optional(),
+      lastName: z.string().optional(),
       email: z.string().email().optional(),
       phone: z.string().optional(),
       company_id: commonSchemas.id.optional(),
+      companyId: commonSchemas.id.optional(),
       source_id: commonSchemas.id.optional(),
+      sourceId: commonSchemas.id.optional(),
       industry_id: commonSchemas.id.optional(),
+      industryId: commonSchemas.id.optional(),
       event_id: commonSchemas.id.optional(),
+      eventId: commonSchemas.id.optional(),
       position_id: commonSchemas.id.optional(),
+      positionId: commonSchemas.id.optional(),
       business_profile_id: commonSchemas.id.optional(),
+      businessProfileId: commonSchemas.id.optional(),
       title_id: commonSchemas.id.optional(),
+      titleId: commonSchemas.id.optional(),
       call_workflow_status_id: commonSchemas.id.optional(),
+      callWorkflowStatusId: commonSchemas.id.optional(),
     }))
     
     if (!bodyValidation.success) {
@@ -261,19 +271,48 @@ async function postHandler(request: NextRequest) {
     
     const {
       first_name,
+      firstName,
       last_name,
+      lastName,
       email,
       phone,
       company_id,
+      companyId,
       source_id,
+      sourceId,
       industry_id,
+      industryId,
       event_id,
+      eventId,
       position_id,
+      positionId,
       business_profile_id,
+      businessProfileId,
       title_id,
+      titleId,
       call_workflow_status_id,
+      callWorkflowStatusId,
     } = bodyValidation.data
-    logger.apiRequest('POST', '/api/customers', { userId: session.user.id, first_name, last_name, email })
+
+    const finalFirstName = first_name || firstName
+    const finalLastName = last_name || lastName
+    const finalCompanyId = company_id || companyId
+    const finalSourceId = source_id || sourceId
+    const finalIndustryId = industry_id || industryId
+    const finalEventId = event_id || eventId
+    const finalPositionId = position_id || positionId
+    const finalBusinessProfileId = business_profile_id || businessProfileId
+    const finalTitleId = title_id || titleId
+    const finalCallWorkflowStatusId = call_workflow_status_id || callWorkflowStatusId
+
+    if (!finalFirstName || !finalLastName) {
+      return NextResponse.json(
+        { error: 'First name and last name are required' },
+        { status: 400 }
+      )
+    }
+
+    logger.apiRequest('POST', '/api/customers', { userId: session.user.id, first_name: finalFirstName, last_name: finalLastName, email })
 
     if (email) {
       const { rows: existing } = await query(
@@ -300,18 +339,18 @@ async function postHandler(request: NextRequest) {
     `
 
     const params = [
-      first_name,
-      last_name,
+      finalFirstName,
+      finalLastName,
       email,
       phone,
-      company_id,
-      source_id,
-      industry_id,
-      event_id,
-      position_id,
-      business_profile_id,
-      title_id,
-      call_workflow_status_id,
+      finalCompanyId,
+      finalSourceId,
+      finalIndustryId,
+      finalEventId,
+      finalPositionId,
+      finalBusinessProfileId,
+      finalTitleId,
+      finalCallWorkflowStatusId,
     ]
 
     const { rows } = await query(insertSql, params)

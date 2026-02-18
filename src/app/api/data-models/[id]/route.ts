@@ -68,16 +68,25 @@ async function putHandler(
   const bodySchema = z.object({
     name: z.string().min(1).optional(),
     display_name: z.string().min(1).optional(),
+    displayName: z.string().min(1).optional(),
     description: z.string().optional().nullable(),
     is_active: z.boolean().optional(),
+    isActive: z.boolean().optional(),
     icon: z.string().optional().nullable(),
     sort_order: z.number().int().optional(),
+    sortOrder: z.number().int().optional(),
     is_pinned: z.boolean().optional(),
+    isPinned: z.boolean().optional(),
     source_type: z.string().optional().nullable(),
+    sourceType: z.string().optional().nullable(),
     external_connection_id: z.string().uuid().optional().nullable(),
+    externalConnectionId: z.string().uuid().optional().nullable(),
     external_schema: z.string().optional().nullable(),
+    externalSchema: z.string().optional().nullable(),
     external_table: z.string().optional().nullable(),
+    externalTable: z.string().optional().nullable(),
     external_primary_key: z.string().optional().nullable(),
+    externalPrimaryKey: z.string().optional().nullable(),
     slug: z.string().optional(),
   })
 
@@ -86,7 +95,23 @@ async function putHandler(
     return addSecurityHeaders(bodyValidation.response)
   }
 
-  const { name, display_name, description, is_active, icon, sort_order, is_pinned, source_type, external_connection_id, external_schema, external_table, external_primary_key, slug: slugInput } = bodyValidation.data
+  const { 
+    name, 
+    description, 
+    icon, 
+    slug: slugInput 
+  } = bodyValidation.data
+  
+  const display_name = bodyValidation.data.displayName ?? bodyValidation.data.display_name
+  const is_active = bodyValidation.data.isActive ?? bodyValidation.data.is_active
+  const sort_order = bodyValidation.data.sortOrder ?? bodyValidation.data.sort_order
+  const is_pinned = bodyValidation.data.isPinned ?? bodyValidation.data.is_pinned
+  const source_type = bodyValidation.data.sourceType ?? bodyValidation.data.source_type
+  const external_connection_id = bodyValidation.data.externalConnectionId ?? bodyValidation.data.external_connection_id
+  const external_schema = bodyValidation.data.externalSchema ?? bodyValidation.data.external_schema
+  const external_table = bodyValidation.data.externalTable ?? bodyValidation.data.external_table
+  const external_primary_key = bodyValidation.data.externalPrimaryKey ?? bodyValidation.data.external_primary_key
+
   let slug = slugInput
 
   if (!name && !display_name && description === undefined && is_active === undefined && icon === undefined && sort_order === undefined && is_pinned === undefined && source_type === undefined && external_connection_id === undefined && external_schema === undefined && external_table === undefined && external_primary_key === undefined && slug === undefined) {
@@ -97,6 +122,7 @@ async function putHandler(
   const values: any[] = []
   let idx = 1
   if (name !== undefined) { fields.push(`name = $${idx++}`); values.push(name) }
+  if (display_name !== undefined) { fields.push(`display_name = $${idx++}`); values.push(display_name) }
   if (description !== undefined) { fields.push(`description = $${idx++}`); values.push(description) }
   if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(!!is_active) }
   if (icon !== undefined) { fields.push(`icon = $${idx++}`); values.push(icon) }

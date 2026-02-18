@@ -114,8 +114,8 @@ async function putHandler(
       dueDate,
       startDate,
       estimate,
-      spaceId,
-      assignedTo,
+      spaceId = body.space_id,
+      assignedTo = body.assigned_to,
     } = body
 
     // Check permission

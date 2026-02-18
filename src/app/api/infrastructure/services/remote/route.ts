@@ -17,10 +17,10 @@ async function postHandler(request: NextRequest) {
     const { 
       name, 
       type, 
-      managementPluginId, 
-      managementConfig, 
+      managementPluginId = body.management_plugin_id, 
+      managementConfig = body.management_config, 
       endpoints,
-      spaceId 
+      spaceId = body.space_id
     } = body
 
     if (!name || !type) {

@@ -14,7 +14,8 @@ async function getHandler(request: NextRequest) {
 
     // Validate query parameters
     const queryValidation = validateQuery(request, z.object({
-      data_model_id: commonSchemas.id,
+      data_model_id: commonSchemas.id.optional(),
+      dataModelId: commonSchemas.id.optional(),
       page: z.string().optional().transform((val) => parseInt(val || '1')).pipe(z.number().int().positive()).optional().default(1),
       limit: z.string().optional().transform((val) => parseInt(val || '20')).pipe(z.number().int().positive().max(100)).optional().default(20),
     }))
@@ -23,7 +24,16 @@ async function getHandler(request: NextRequest) {
       return addSecurityHeaders(queryValidation.response)
     }
     
-    const { data_model_id: dataModelId, page, limit = 20 } = queryValidation.data
+    const { 
+      data_model_id, 
+      dataModelId: dmId, 
+      page, 
+      limit = 20 
+    } = queryValidation.data
+    const dataModelId = data_model_id || dmId
+    if (!dataModelId) {
+      return NextResponse.json({ error: 'data_model_id is required' }, { status: 400 })
+    }
     logger.apiRequest('GET', '/api/data-models/attributes', { userId: session.user.id, dataModelId, page, limit })
 
     const offset = (page - 1) * limit
@@ -72,23 +82,49 @@ async function postHandler(request: NextRequest) {
 
     // Validate request body
     const bodyValidation = await validateBody(request, z.object({
-      data_model_id: commonSchemas.id,
+      data_model_id: commonSchemas.id.optional(),
+      dataModelId: commonSchemas.id.optional(),
       name: z.string().min(1, 'Name is required'),
-      display_name: z.string().min(1, 'Display name is required'),
+      display_name: z.string().optional(),
+      displayName: z.string().optional(),
       type: z.string().min(1, 'Type is required'),
-      is_required: z.boolean().optional().default(false),
-      is_unique: z.boolean().optional().default(false),
+      is_required: z.boolean().optional(),
+      isRequired: z.boolean().optional(),
+      is_unique: z.boolean().optional(),
+      isUnique: z.boolean().optional(),
       default_value: z.any().optional().nullable(),
+      defaultValue: z.any().optional().nullable(),
       options: z.any().optional().nullable(),
       validation: z.any().optional().nullable(),
-      order: z.number().int().nonnegative().optional().default(0),
+      order: z.number().int().nonnegative().optional(),
     }))
     
     if (!bodyValidation.success) {
       return addSecurityHeaders(bodyValidation.response)
     }
     
-    const { data_model_id, name, display_name, type, is_required = false, is_unique = false, default_value, options, validation, order = 0 } = bodyValidation.data
+    const { 
+      name, 
+      type, 
+      options, 
+      validation, 
+      order: orderInput 
+    } = bodyValidation.data
+    
+    const data_model_id = bodyValidation.data.data_model_id || bodyValidation.data.dataModelId
+    if (!data_model_id) {
+       return NextResponse.json({ error: 'data_model_id is required' }, { status: 400 })
+    }
+    
+    const display_name = bodyValidation.data.displayName || bodyValidation.data.display_name
+    if (!display_name) {
+      return NextResponse.json({ error: 'Display name is required' }, { status: 400 })
+    }
+    
+    const is_required = bodyValidation.data.isRequired ?? bodyValidation.data.is_required ?? false
+    const is_unique = bodyValidation.data.isUnique ?? bodyValidation.data.is_unique ?? false
+    const default_value = bodyValidation.data.defaultValue ?? bodyValidation.data.default_value
+    const order = orderInput ?? 0
     logger.apiRequest('POST', '/api/data-models/attributes', { userId: session.user.id, dataModelId: data_model_id, name })
 
     // Map type to uppercase for database enum

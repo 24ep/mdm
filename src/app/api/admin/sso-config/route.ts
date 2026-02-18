@@ -101,6 +101,15 @@ async function putHandler(request: NextRequest) {
       )
     }
 
+    // Resolve final values with fallbacks
+    const googleEnabled = config.googleEnabled !== undefined ? config.googleEnabled : config.google_enabled
+    const azureEnabled = config.azureEnabled !== undefined ? config.azureEnabled : config.azure_enabled
+    const googleClientId = config.googleClientId || config.google_client_id
+    const googleClientSecret = config.googleClientSecret || config.google_client_secret
+    const azureTenantId = config.azureTenantId || config.azure_tenant_id
+    const azureClientId = config.azureClientId || config.azure_client_id
+    const azureClientSecret = config.azureClientSecret || config.azure_client_secret
+
     const secretsManager = getSecretsManager()
     const useVault = secretsManager.getBackend() === 'vault'
     const auditContext = createAuditContext(request, session.user, 'SSO configuration update')
@@ -129,18 +138,18 @@ async function putHandler(request: NextRequest) {
     }
 
     // Prepare configurations
-    const googleSecret = await processSecretStorage('googleClientSecret', config.googleClientSecret)
-    const azureSecret = await processSecretStorage('azureClientSecret', config.azureClientSecret)
+    const gSecret = await processSecretStorage('googleClientSecret', googleClientSecret)
+    const aSecret = await processSecretStorage('azureClientSecret', azureClientSecret)
 
     const googleConfig = {
-      clientId: config.googleClientId,
-      clientSecret: googleSecret
+      clientId: googleClientId,
+      clientSecret: gSecret
     }
 
     const azureConfig = {
-      tenantId: config.azureTenantId,
-      clientId: config.azureClientId,
-      clientSecret: azureSecret
+      tenantId: azureTenantId,
+      clientId: azureClientId,
+      clientSecret: aSecret
     }
 
     // Upsert Google Auth
@@ -149,7 +158,7 @@ async function putHandler(request: NextRequest) {
        VALUES ($1, $2, $3, NOW())
        ON CONFLICT (type) WHERE deleted_at IS NULL 
        DO UPDATE SET config = $2, is_enabled = $3, updated_at = NOW()`,
-      ['google-auth', JSON.stringify(googleConfig), config.googleEnabled || false]
+      ['google-auth', JSON.stringify(googleConfig), googleEnabled || false]
     )
 
     // Upsert Azure AD
@@ -158,7 +167,7 @@ async function putHandler(request: NextRequest) {
        VALUES ($1, $2, $3, NOW())
        ON CONFLICT (type) WHERE deleted_at IS NULL
        DO UPDATE SET config = $2, is_enabled = $3, updated_at = NOW()`,
-      ['azure-ad', JSON.stringify(azureConfig), config.azureEnabled || false]
+      ['azure-ad', JSON.stringify(azureConfig), azureEnabled || false]
     )
 
     // Note: The original implementation did not seem to enforce a unique constraint on 'type' in schema.prisma 
@@ -183,15 +192,15 @@ async function putHandler(request: NextRequest) {
       }
     }
 
-    await upsertIntegration('google-auth', googleConfig, config.googleEnabled || false)
-    await upsertIntegration('azure-ad', azureConfig, config.azureEnabled || false)
+    await upsertIntegration('google-auth', googleConfig, googleEnabled || false)
+    await upsertIntegration('azure-ad', azureConfig, azureEnabled || false)
 
     await createAuditLog({
       action: 'UPDATE',
       entityType: 'SSOConfiguration',
       entityId: 'system',
       oldValue: { action: 'updated sso config via platform_integrations' }, // Simplified for brevity
-      newValue: { googleEnabled: config.googleEnabled, azureEnabled: config.azureEnabled },
+      newValue: { googleEnabled: googleEnabled, azureEnabled: azureEnabled },
       userId: session.user.id,
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown'

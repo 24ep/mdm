@@ -19,7 +19,7 @@ async function postHandler(request: NextRequest) {
     // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
-    const { operation, workflowIds, data } = body
+    const { operation, workflowIds = body.workflow_ids, data } = body
 
     if (!operation || !workflowIds || !Array.isArray(workflowIds) || workflowIds.length === 0) {
       return NextResponse.json(

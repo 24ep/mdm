@@ -483,9 +483,9 @@ async function getHandler(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('query') || undefined
-  const nodeTypesParam = searchParams.get('nodeTypes')
-  const spaceId = searchParams.get('spaceId') || undefined
-  const projectId = searchParams.get('projectId') || undefined
+  const nodeTypesParam = searchParams.get('nodeTypes') || searchParams.get('node_types')
+  const spaceId = searchParams.get('spaceId') || searchParams.get('space_id') || undefined
+  const projectId = searchParams.get('projectId') || searchParams.get('project_id') || undefined
   const depth = parseInt(searchParams.get('depth') || '2')
   const limit = parseInt(searchParams.get('limit') || '100')
   

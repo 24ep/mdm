@@ -130,6 +130,13 @@ export interface ChatbotConfig {
   shadowBlur: string
   conversationOpener: string
   showStartConversation?: boolean // Show/hide the start conversation message
+  // Get Started Screen
+  getStartedEnabled?: boolean
+  getStartedIcon?: string
+  getStartedTitle?: string
+  getStartedSubtitle?: string
+  getStartedDescription?: string
+  getStartedButtonText?: string
   // Start Screen Prompts (for Agent SDK and other engines)
   startScreenPrompts?: Array<{ label?: string; prompt: string; icon?: string }> // Quick prompt buttons shown when chat starts
   // Start Screen Prompts Styling
@@ -282,6 +289,7 @@ export interface ChatbotConfig {
   widgetZIndex?: number
   showNotificationBadge?: boolean
   notificationBadgeColor?: string
+  widgetCloseImageUrl?: string
   chatWindowWidth?: string
   chatWindowHeight?: string
   chatWindowBackgroundBlur?: number // Blur percentage (0-100) for glassmorphism effect

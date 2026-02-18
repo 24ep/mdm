@@ -13,7 +13,7 @@ async function getHandler(request: NextRequest) {
     const { session } = authResult
 
     const { searchParams } = new URL(request.url)
-    const spaceId = searchParams.get('space_id') || undefined
+    const spaceId = searchParams.get('spaceId') || searchParams.get('space_id') || undefined
 
     const schedules = await getAllSchedules(spaceId)
 

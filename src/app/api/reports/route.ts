@@ -19,6 +19,7 @@ async function getHandler(request: NextRequest) {
   const queryValidation = validateQuery(request, z.object({
     source: z.string().optional(),
     space_id: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()),
+    spaceId: z.string().optional().transform((val) => val ? val.split(':')[0] : undefined).pipe(commonSchemas.id.optional()),
     search: z.string().optional().default(''),
     category_id: commonSchemas.id.optional(),
     status: z.string().optional(),
@@ -30,7 +31,8 @@ async function getHandler(request: NextRequest) {
     return queryValidation.response
   }
 
-  const { source, space_id: spaceId, search = '', category_id: categoryId, status, date_from: dateFrom, date_to: dateTo } = queryValidation.data
+  const { source, space_id, spaceId: querySpaceId, search = '', category_id: categoryId, status, date_from: dateFrom, date_to: dateTo } = queryValidation.data
+  const spaceId = space_id || querySpaceId
   logger.apiRequest('GET', '/api/reports', { userId: session.user.id, source, spaceId, search })
 
   const params: any[] = [session.user.id]
@@ -142,13 +144,17 @@ async function postHandler(request: NextRequest) {
     description: z.string().optional(),
     source: z.string().min(1, 'Source is required'),
     category_id: commonSchemas.id.optional(),
+    categoryId: commonSchemas.id.optional(),
     folder_id: commonSchemas.id.optional(),
+    folderId: commonSchemas.id.optional(),
     owner: z.string().optional(),
     link: z.string().url().optional(),
     workspace: z.string().optional(),
     embed_url: z.string().url().optional(),
+    embedUrl: z.string().url().optional(),
     metadata: z.any().optional(),
-    space_ids: z.array(commonSchemas.id).optional().default([]),
+    space_ids: z.array(commonSchemas.id).optional(),
+    spaceIds: z.array(commonSchemas.id).optional(),
   }))
 
   if (!bodyValidation.success) {
@@ -160,14 +166,24 @@ async function postHandler(request: NextRequest) {
     description,
     source,
     category_id,
+    categoryId,
     folder_id,
+    folderId,
     owner,
     link,
     workspace,
     embed_url,
+    embedUrl,
     metadata,
-    space_ids = []
+    space_ids,
+    spaceIds
   } = bodyValidation.data
+
+  const final_category_id = category_id || categoryId
+  const final_folder_id = folder_id || folderId
+  const final_embed_url = embed_url || embedUrl
+  const final_space_ids = space_ids || spaceIds || []
+
   logger.apiRequest('POST', '/api/reports', { userId: session.user.id, name, source })
 
   const insertSql = `
@@ -183,12 +199,12 @@ async function postHandler(request: NextRequest) {
     name,
     description || null,
     source,
-    category_id || null,
-    folder_id || null,
+    final_category_id || null,
+    final_folder_id || null,
     owner || null,
     link || null,
     workspace || null,
-    embed_url || null,
+    final_embed_url || null,
     metadata ? JSON.stringify(metadata) : null,
     session.user.id,
     true,
@@ -201,8 +217,8 @@ async function postHandler(request: NextRequest) {
   auditLogger.reportCreated(report.id, { source: source })
 
   // Associate with spaces
-  if (space_ids && space_ids.length > 0) {
-    for (const spaceId of space_ids) {
+  if (final_space_ids && final_space_ids.length > 0) {
+    for (const spaceId of final_space_ids) {
       await query(
         'INSERT INTO report_spaces (report_id, space_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [report.id, spaceId]

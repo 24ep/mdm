@@ -21,7 +21,29 @@ async function putHandler(
 
     const { id } = await params
     const body = await request.json()
-    const { name, email, role, isActive, spaces } = body
+    const { 
+      name, 
+      email, 
+      role, 
+      isActive, 
+      is_active, 
+      spaces, 
+      requiresPasswordChange, 
+      requires_password_change,
+      lockoutUntil,
+      lockout_until,
+      groupIds,
+      group_ids,
+      allowedLoginMethods,
+      allowed_login_methods
+    } = body
+
+    const finalIsActive = isActive !== undefined ? isActive : is_active
+    const finalRequiresPasswordChange = requiresPasswordChange !== undefined ? requiresPasswordChange : requires_password_change
+    const finalLockoutUntil = lockoutUntil !== undefined ? lockoutUntil : lockout_until
+    const finalGroupIds = groupIds || group_ids
+    const finalAllowedLoginMethods = allowedLoginMethods || allowed_login_methods
+
 
     const sets: string[] = []
     const values: any[] = []
@@ -34,16 +56,16 @@ async function putHandler(
       values.push(email)
       sets.push(`email = $${values.length}`)
     }
-    if (typeof isActive === 'boolean') {
-      values.push(isActive)
+    if (typeof finalIsActive === 'boolean') {
+      values.push(finalIsActive)
       sets.push(`is_active = $${values.length}::boolean`)
     }
-    if (typeof body.requiresPasswordChange === 'boolean') {
-      values.push(body.requiresPasswordChange)
+    if (typeof finalRequiresPasswordChange === 'boolean') {
+      values.push(finalRequiresPasswordChange)
       sets.push(`requires_password_change = $${values.length}::boolean`)
     }
-    if (body.lockoutUntil === null || typeof body.lockoutUntil === 'string') {
-      const val = body.lockoutUntil ? new Date(body.lockoutUntil) : null
+    if (finalLockoutUntil === null || typeof finalLockoutUntil === 'string') {
+      const val = finalLockoutUntil ? new Date(finalLockoutUntil) : null
       values.push(val)
       sets.push(`lockout_until = $${values.length}`)
     }
@@ -56,8 +78,8 @@ async function putHandler(
       sets.push(`role = $${values.length}`)
     }
 
-    if (body.allowedLoginMethods !== undefined) {
-      values.push(body.allowedLoginMethods)
+    if (finalAllowedLoginMethods !== undefined) {
+      values.push(finalAllowedLoginMethods)
       sets.push(`allowed_login_methods = $${values.length}::text[]`)
     }
 
@@ -93,11 +115,10 @@ async function putHandler(
     }
 
     // Handle group assignments if provided
-    const { groupIds } = body
-    if (groupIds && Array.isArray(groupIds)) {
+    if (finalGroupIds && Array.isArray(finalGroupIds)) {
       await query('DELETE FROM user_group_members WHERE user_id = $1::uuid', [id])
 
-      for (const groupId of groupIds) {
+      for (const groupId of finalGroupIds) {
         if (groupId) {
           await query(
             'INSERT INTO user_group_members (user_id, group_id, role) VALUES ($1::uuid, $2::uuid, $3)',

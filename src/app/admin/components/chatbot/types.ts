@@ -292,6 +292,13 @@ export interface Chatbot {
   // Config
   conversationOpener: string
   showStartConversation?: boolean // Show/hide the start conversation message
+  // Get Started Screen
+  getStartedEnabled?: boolean
+  getStartedIcon?: string
+  getStartedTitle?: string
+  getStartedSubtitle?: string
+  getStartedDescription?: string
+  getStartedButtonText?: string
   // Start Screen Prompts (for Agent SDK and other engines)
   startScreenPrompts?: Array<{ label?: string; prompt: string; icon?: string }> // Quick prompt buttons shown when chat starts
   // Start Screen Prompts Styling
@@ -332,7 +339,7 @@ export interface Chatbot {
   domainAllowlist?: string // Comma-separated list of allowed domains for security allowlist
   embedCode?: string
   // Widget styling (for popover)
-  widgetAvatarStyle: 'circle' | 'square' | 'circle-with-label'
+  widgetAvatarStyle: 'circle' | 'square' | 'circle-with-label' | 'custom'
   widgetPosition: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center' | 'top-center'
   widgetSize: string
   widgetBackgroundColor: string
@@ -348,7 +355,11 @@ export interface Chatbot {
   widgetLabelShowIcon?: boolean // Show icon next to label
   widgetLabelIconPosition?: 'left' | 'right' // Icon position relative to label
   // Widget behavior
-  widgetAnimation: 'none' | 'fade' | 'slide' | 'bounce'
+  widgetAnimation?: 'none' | 'fade' | 'slide' | 'bounce'
+  widgetAnimationEntry?: 'fade' | 'slide-up' | 'slide-side' | 'scale'
+  widgetAnimationExit?: 'slide-down' | 'scale' | 'fade' | 'slide-side'
+  widgetAnimationDuration?: number // seconds
+  widgetAnimationType?: 'spring' | 'tween'
   widgetAutoShow?: boolean // Deprecated in favor of widgetAutoShowDesktop
   widgetAutoShowDesktop?: boolean // Default true
   widgetAutoShowMobile?: boolean // Default false
@@ -358,6 +369,7 @@ export interface Chatbot {
   widgetZIndex: number
   showNotificationBadge: boolean
   notificationBadgeColor: string
+  widgetCloseImageUrl?: string
   popoverPosition?: 'top' | 'left' // Position of popover relative to widget: 'top' = above widget, 'left' = to the left of widget
   widgetPopoverMargin?: string // Margin/spacing between widget button and popover window
   widgetPadding?: string // Padding of widget button
@@ -502,7 +514,7 @@ export interface Chatbot {
   // File Upload Layout
   fileUploadLayout?: 'attach-first' | 'input-first'
   // Avatar (Bot/Assistant)
-  avatarType?: 'icon' | 'image'
+  avatarType?: 'icon' | 'image' | 'none'
   avatarIcon?: string
   avatarIconColor?: string
   avatarBackgroundColor?: string

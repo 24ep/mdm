@@ -18,6 +18,7 @@ async function getHandler(request: NextRequest) {
       limit: z.string().optional().transform((val) => parseInt(val || '10')).pipe(z.number().int().positive().max(100)).optional().default(10),
       search: z.string().optional().default(''),
       space_id: commonSchemas.id.optional(),
+      spaceId: commonSchemas.id.optional(),
       type: z.string().optional().default(''),
       visibility: z.string().optional().default(''),
     }))
@@ -26,7 +27,8 @@ async function getHandler(request: NextRequest) {
       return queryValidation.response
     }
     
-    const { page, limit = 10, search = '', space_id: spaceId, type = '', visibility = '' } = queryValidation.data
+    const { page, limit = 10, search = '', space_id, spaceId: querySpaceId, type = '', visibility = '' } = queryValidation.data
+    const spaceId = space_id || querySpaceId
     logger.apiRequest('GET', '/api/dashboards', { userId: session.user.id, page, limit, search })
 
     const offset = (page - 1) * limit
@@ -126,15 +128,24 @@ async function postHandler(request: NextRequest) {
       description: z.string().optional(),
       type: z.string().optional().default('CUSTOM'),
       visibility: z.enum(['PRIVATE', 'PUBLIC', 'SHARED']).optional().default('PRIVATE'),
-      space_ids: z.array(commonSchemas.id).min(1, 'At least one space ID is required'),
-      refresh_rate: z.number().int().positive().optional().default(300),
-      is_realtime: z.boolean().optional().default(false),
-      background_color: z.string().optional().default('#ffffff'),
-      font_family: z.string().optional().default('Inter'),
-      font_size: z.number().int().positive().optional().default(14),
-      grid_size: z.number().int().positive().optional().default(12),
-      layout_config: z.any().optional().default({}),
-      style_config: z.any().optional().default({}),
+      space_ids: z.array(commonSchemas.id).optional(),
+      spaceIds: z.array(commonSchemas.id).optional(),
+      refresh_rate: z.number().int().positive().optional(),
+      refreshRate: z.number().int().positive().optional(),
+      is_realtime: z.boolean().optional(),
+      isRealtime: z.boolean().optional(),
+      background_color: z.string().optional(),
+      backgroundColor: z.string().optional(),
+      font_family: z.string().optional(),
+      fontFamily: z.string().optional(),
+      font_size: z.number().int().positive().optional(),
+      fontSize: z.number().int().positive().optional(),
+      grid_size: z.number().int().positive().optional(),
+      gridSize: z.number().int().positive().optional(),
+      layout_config: z.any().optional(),
+      layoutConfig: z.any().optional(),
+      style_config: z.any().optional(),
+      styleConfig: z.any().optional(),
     }))
     
     if (!bodyValidation.success) {
@@ -146,20 +157,44 @@ async function postHandler(request: NextRequest) {
       description, 
       type = 'CUSTOM',
       visibility = 'PRIVATE',
-      space_ids = [],
-      refresh_rate = 300,
-      is_realtime = false,
-      background_color = '#ffffff',
-      font_family = 'Inter',
-      font_size = 14,
-      grid_size = 12,
-      layout_config = {},
-      style_config = {}
+      space_ids,
+      spaceIds,
+      refresh_rate,
+      refreshRate,
+      is_realtime,
+      isRealtime,
+      background_color,
+      backgroundColor,
+      font_family,
+      fontFamily,
+      font_size,
+      fontSize,
+      grid_size,
+      gridSize,
+      layout_config,
+      layoutConfig,
+      style_config,
+      styleConfig
     } = bodyValidation.data
+
+    const final_space_ids = space_ids || spaceIds
+    if (!final_space_ids || final_space_ids.length === 0) {
+      return NextResponse.json({ error: 'At least one space ID is required' }, { status: 400 })
+    }
+
+    const final_refresh_rate = refresh_rate !== undefined ? refresh_rate : (refreshRate !== undefined ? refreshRate : 300)
+    const final_is_realtime = is_realtime !== undefined ? is_realtime : (isRealtime !== undefined ? isRealtime : false)
+    const final_background_color = background_color || backgroundColor || '#ffffff'
+    const final_font_family = font_family || fontFamily || 'Inter'
+    const final_font_size = font_size !== undefined ? font_size : (fontSize !== undefined ? fontSize : 14)
+    const final_grid_size = grid_size !== undefined ? grid_size : (gridSize !== undefined ? gridSize : 12)
+    const final_layout_config = layout_config || layoutConfig || {}
+    const final_style_config = style_config || styleConfig || {}
+
     logger.apiRequest('POST', '/api/dashboards', { userId: session.user.id, name, type, visibility })
 
     // Check if user has access to all spaces
-    const accessResult = await requireAnySpaceAccess(space_ids, session.user.id!)
+    const accessResult = await requireAnySpaceAccess(final_space_ids, session.user.id!)
     if (!accessResult.success) return accessResult.response
 
     // Generate public link if visibility is PUBLIC
@@ -187,22 +222,22 @@ async function postHandler(request: NextRequest) {
       visibility,
       false, // is_default
       true,  // is_active
-      refresh_rate,
-      is_realtime,
+      final_refresh_rate,
+      final_is_realtime,
       publicLink,
-      background_color,
-      font_family,
-      font_size,
-      grid_size,
-      JSON.stringify(layout_config),
-      JSON.stringify(style_config),
+      final_background_color,
+      final_font_family,
+      final_font_size,
+      final_grid_size,
+      JSON.stringify(final_layout_config),
+      JSON.stringify(final_style_config),
       session.user.id
     ])
 
     const dashboard = rows[0]
 
     // Associate the dashboard with spaces
-    for (const spaceId of space_ids) {
+    for (const spaceId of final_space_ids) {
       await query(
         'INSERT INTO dashboard_spaces (dashboard_id, space_id) VALUES ($1, $2)',
         [dashboard.id, spaceId]

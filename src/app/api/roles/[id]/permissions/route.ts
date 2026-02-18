@@ -26,7 +26,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     logger.apiRequest('PUT', `/api/roles/${id}/permissions`)
 
     const bodySchema = z.object({
-      permissionIds: z.array(z.string().uuid()),
+      permissionIds: z.array(z.string().uuid()).optional(),
+      permission_ids: z.array(z.string().uuid()).optional(),
+    }).refine(data => data.permissionIds || data.permission_ids, {
+      message: "Either permissionIds or permission_ids must be provided",
     })
 
     const bodyValidation = await validateBody(request, bodySchema)
@@ -34,18 +37,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return addSecurityHeaders(bodyValidation.response)
     }
 
-    const { permissionIds } = bodyValidation.data
+    const { permissionIds, permission_ids } = bodyValidation.data
+    const finalPermissionIds = permissionIds || permission_ids!
 
     // Use simple transactional sequence
     await query('BEGIN')
     await query('DELETE FROM public.role_permissions WHERE role_id = $1', [id])
-    for (const pid of permissionIds) {
+    for (const pid of finalPermissionIds) {
       await query('INSERT INTO public.role_permissions (role_id, permission_id) VALUES ($1, $2)', [id, pid])
     }
     await query('COMMIT')
     const duration = Date.now() - startTime
     logger.apiResponse('PUT', `/api/roles/${id}/permissions`, 200, duration, {
-      permissionCount: permissionIds.length
+      permissionCount: finalPermissionIds.length
     })
     return addSecurityHeaders(NextResponse.json({ success: true }))
   } catch (error) {

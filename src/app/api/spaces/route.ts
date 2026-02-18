@@ -104,7 +104,8 @@ async function postHandler(request: NextRequest) {
       name: z.string().min(1, 'Space name is required'),
       description: z.string().optional(),
       slug: z.string().optional(),
-      is_default: z.boolean().optional().default(false),
+      is_default: z.boolean().optional(),
+      isDefault: z.boolean().optional(),
       tags: z.array(z.string()).optional().default([]),
     }))
 
@@ -112,7 +113,8 @@ async function postHandler(request: NextRequest) {
       return bodyValidation.response
     }
 
-    const { name, description, slug, is_default = false, tags = [] } = bodyValidation.data
+    const { name, description, slug, is_default, isDefault, tags = [] } = bodyValidation.data
+    const finalIsDefault = is_default !== undefined ? is_default : (isDefault !== undefined ? isDefault : false)
     logger.apiRequest('POST', '/api/spaces', { userId: session.user.id, name })
 
     const spaceSlug = slug?.trim() || name.toLowerCase().replace(/\s+/g, '-')
@@ -206,6 +208,10 @@ async function postHandler(request: NextRequest) {
 
     console.log('[POST /api/spaces] Insert SQL:', insertSql)
     console.log('[POST /api/spaces] Query params:', queryParams)
+
+    // Replace is_default in queryParams with finalIsDefault
+    // Looking at the SQLs, $4 is always is_default
+    queryParams[3] = finalIsDefault
 
     const { rows } = await query(insertSql, queryParams)
 

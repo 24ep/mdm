@@ -134,39 +134,75 @@ async function putHandler(
       type: z.string().optional(),
       visibility: z.enum(['PRIVATE', 'PUBLIC', 'SHARED']).optional(),
       space_ids: z.array(commonSchemas.id).optional(),
+      spaceIds: z.array(commonSchemas.id).optional(),
       refresh_rate: z.number().int().positive().optional(),
+      refreshRate: z.number().int().positive().optional(),
       is_realtime: z.boolean().optional(),
+      isRealtime: z.boolean().optional(),
       background_color: z.string().optional(),
+      backgroundColor: z.string().optional(),
       background_image: z.string().optional(),
+      backgroundImage: z.string().optional(),
       font_family: z.string().optional(),
+      fontFamily: z.string().optional(),
       font_size: z.number().int().positive().optional(),
+      fontSize: z.number().int().positive().optional(),
       grid_size: z.number().int().positive().optional(),
+      gridSize: z.number().int().positive().optional(),
       layout_config: z.any().optional(),
+      layoutConfig: z.any().optional(),
       style_config: z.any().optional(),
+      styleConfig: z.any().optional(),
       is_default: z.boolean().optional(),
+      isDefault: z.boolean().optional(),
     }))
     
     if (!bodyValidation.success) {
       return bodyValidation.response
     }
     
+    const data = bodyValidation.data
     const {
       name,
       description,
       type,
       visibility,
       space_ids,
+      spaceIds,
       refresh_rate,
+      refreshRate,
       is_realtime,
+      isRealtime,
       background_color,
+      backgroundColor,
       background_image,
+      backgroundImage,
       font_family,
+      fontFamily,
       font_size,
+      fontSize,
       grid_size,
+      gridSize,
       layout_config,
+      layoutConfig,
       style_config,
-      is_default
-    } = bodyValidation.data
+      styleConfig,
+      is_default,
+      isDefault
+    } = data
+
+    const final_space_ids = space_ids || spaceIds
+    const final_refresh_rate = refresh_rate !== undefined ? refresh_rate : refreshRate
+    const final_is_realtime = is_realtime !== undefined ? is_realtime : isRealtime
+    const final_background_color = background_color || backgroundColor
+    const final_background_image = background_image || backgroundImage
+    const final_font_family = font_family || fontFamily
+    const final_font_size = font_size !== undefined ? font_size : fontSize
+    const final_grid_size = grid_size !== undefined ? grid_size : gridSize
+    const final_layout_config = layout_config || layoutConfig
+    const final_style_config = style_config || styleConfig
+    const final_is_default = is_default !== undefined ? is_default : isDefault
+
     logger.apiRequest('PUT', `/api/dashboards/${id}`, { userId: session.user.id })
 
     // Check if user has permission to edit this dashboard
@@ -226,41 +262,45 @@ async function putHandler(
       updateFields.push(`visibility = $${paramCount++}`)
       updateValues.push(visibility)
     }
-    if (refresh_rate !== undefined) {
+    if (final_refresh_rate !== undefined) {
       updateFields.push(`refresh_rate = $${paramCount++}`)
-      updateValues.push(refresh_rate)
+      updateValues.push(final_refresh_rate)
     }
-    if (is_realtime !== undefined) {
+    if (final_is_realtime !== undefined) {
       updateFields.push(`is_realtime = $${paramCount++}`)
-      updateValues.push(is_realtime)
+      updateValues.push(final_is_realtime)
     }
-    if (background_color !== undefined) {
+    if (final_background_color !== undefined) {
       updateFields.push(`background_color = $${paramCount++}`)
-      updateValues.push(background_color)
+      updateValues.push(final_background_color)
     }
-    if (background_image !== undefined) {
+    if (final_background_image !== undefined) {
       updateFields.push(`background_image = $${paramCount++}`)
-      updateValues.push(background_image)
+      updateValues.push(final_background_image)
     }
-    if (font_family !== undefined) {
+    if (final_font_family !== undefined) {
       updateFields.push(`font_family = $${paramCount++}`)
-      updateValues.push(font_family)
+      updateValues.push(final_font_family)
     }
-    if (font_size !== undefined) {
+    if (final_font_size !== undefined) {
       updateFields.push(`font_size = $${paramCount++}`)
-      updateValues.push(font_size)
+      updateValues.push(final_font_size)
     }
-    if (grid_size !== undefined) {
+    if (final_grid_size !== undefined) {
       updateFields.push(`grid_size = $${paramCount++}`)
-      updateValues.push(grid_size)
+      updateValues.push(final_grid_size)
     }
-    if (layout_config !== undefined) {
+    if (final_layout_config !== undefined) {
       updateFields.push(`layout_config = $${paramCount++}`)
-      updateValues.push(JSON.stringify(layout_config))
+      updateValues.push(JSON.stringify(final_layout_config))
     }
-    if (style_config !== undefined) {
+    if (final_style_config !== undefined) {
       updateFields.push(`style_config = $${paramCount++}`)
-      updateValues.push(JSON.stringify(style_config))
+      updateValues.push(JSON.stringify(final_style_config))
+    }
+    if (final_is_default !== undefined) {
+      updateFields.push(`is_default = $${paramCount++}`)
+      updateValues.push(final_is_default)
     }
     if (publicLink !== null) {
       updateFields.push(`public_link = $${paramCount++}`)
@@ -286,16 +326,16 @@ async function putHandler(
       }
 
       // Update space associations if provided
-      if (space_ids && Array.isArray(space_ids)) {
+      if (final_space_ids && Array.isArray(final_space_ids)) {
         // Check if user has access to all spaces
-        const accessResult = await requireAnySpaceAccess(space_ids, session.user.id!)
+        const accessResult = await requireAnySpaceAccess(final_space_ids, session.user.id!)
         if (!accessResult.success) return accessResult.response
 
         // Remove existing associations
         await query('DELETE FROM dashboard_spaces WHERE dashboard_id = $1', [id])
 
         // Add new associations
-        for (const spaceId of space_ids) {
+        for (const spaceId of final_space_ids) {
           await query(
             'INSERT INTO dashboard_spaces (dashboard_id, space_id) VALUES ($1, $2)',
             [id, spaceId]
@@ -304,7 +344,7 @@ async function putHandler(
       }
 
       // Handle default dashboard setting
-      if (is_default === true) {
+      if (final_is_default === true) {
         const { rows: spaces } = await query(
           'SELECT space_id FROM dashboard_spaces WHERE dashboard_id = $1',
           [id]

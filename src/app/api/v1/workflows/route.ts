@@ -172,7 +172,7 @@ async function postHandler(request: NextRequest) {
     // TODO: Add requireSpaceAccess check if spaceId is available
 
     const body = await request.json()
-    const { name, description, spaceId, status, steps } = body
+    const { name, description, spaceId = body.space_id, status, steps } = body
 
     if (!name) {
       return NextResponse.json(

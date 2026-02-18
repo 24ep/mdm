@@ -481,6 +481,12 @@ export function ChatKitWrapper({
 
       if (chatkitOptions.startScreen.greeting) {
         supportedStartScreen.greeting = chatkitOptions.startScreen.greeting
+      } else {
+        // Fallback to chatbot config greeting if not explicitly set in chatkitOptions
+        const fallbackGreeting = chatbot.openaiAgentSdkGreeting || chatbot.conversationOpener
+        if (fallbackGreeting) {
+          supportedStartScreen.greeting = fallbackGreeting
+        }
       }
 
       if (chatkitOptions.startScreen.prompts && chatkitOptions.startScreen.prompts.length > 0) {

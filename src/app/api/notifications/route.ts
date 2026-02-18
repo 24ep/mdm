@@ -153,15 +153,19 @@ async function postHandler(request: NextRequest) {
   logger.apiRequest('POST', '/api/notifications', { userId: session.user.id });
 
   const bodySchema = z.object({
-    user_id: commonSchemas.id,
+    user_id: commonSchemas.id.optional(),
+    userId: commonSchemas.id.optional(),
     type: z.string().min(1),
     title: z.string().min(1),
     message: z.string().min(1),
     priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('MEDIUM'),
     data: z.any().optional(),
     action_url: z.string().url().optional(),
+    actionUrl: z.string().url().optional(),
     action_label: z.string().optional(),
+    actionLabel: z.string().optional(),
     expires_at: z.string().datetime().optional().nullable(),
+    expiresAt: z.string().datetime().optional().nullable(),
   });
 
   const bodyValidation = await validateBody(request, bodySchema);
@@ -171,20 +175,33 @@ async function postHandler(request: NextRequest) {
 
   const {
     user_id,
+    userId,
     type,
     title,
     message,
     priority = 'MEDIUM',
     data,
     action_url,
+    actionUrl,
     action_label,
+    actionLabel,
     expires_at,
+    expiresAt,
   } = bodyValidation.data;
+
+  const finalUserId = user_id || userId;
+  const finalActionUrl = action_url || actionUrl;
+  const finalActionLabel = action_label || actionLabel;
+  const finalExpiresAt = expires_at || expiresAt;
+
+  if (!finalUserId) {
+    return NextResponse.json({ error: 'user_id or userId is required' }, { status: 400 });
+  }
 
   // Check if user has permission to create notifications for this user
   // For now, users can only create notifications for themselves
-  if (user_id !== session.user.id && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
-    logger.warn('Insufficient permissions to create notification', { targetUserId: user_id, userId: session.user.id });
+  if (finalUserId !== session.user.id && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+    logger.warn('Insufficient permissions to create notification', { targetUserId: finalUserId, userId: session.user.id });
     return NextResponse.json(
       { error: 'Insufficient permissions' },
       { status: 403 }
@@ -197,15 +214,15 @@ async function postHandler(request: NextRequest) {
     `;
 
   const { rows } = await query(createNotificationQuery, [
-    user_id,
+    finalUserId,
     type,
     title,
     message,
     priority,
     data ? JSON.stringify(data) : null,
-    action_url,
-    action_label,
-    expires_at,
+    finalActionUrl || null,
+    finalActionLabel || null,
+    finalExpiresAt || null,
   ]);
 
   const notificationId = rows[0].notification_id;

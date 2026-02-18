@@ -124,7 +124,13 @@ const SelectContent = React.forwardRef<
   }
 >(({ className, children, position = "popper", ...props }, ref) => {
   const context = React.useContext(SelectContext)
-  const [positionState, setPositionState] = React.useState<{ top: number; left: number; width: number } | null>(null)
+  const [positionState, setPositionState] = React.useState<{ 
+    top?: number; 
+    bottom?: number; 
+    left: number; 
+    width: number;
+    maxHeight: number;
+  } | null>(null)
   const contentRef = React.useRef<HTMLDivElement>(null)
 
   React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement)
@@ -132,11 +138,28 @@ const SelectContent = React.forwardRef<
   React.useEffect(() => {
     if (context?.open && context.triggerRef.current) {
       const rect = context.triggerRef.current.getBoundingClientRect()
-      setPositionState({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      })
+      const spaceBelow = window.innerHeight - rect.bottom - 16
+      const spaceAbove = rect.top - 16
+      
+      // If space below is less than 160px and there's more space above, open upwards
+      const shouldOpenUp = spaceBelow < 160 && spaceAbove > spaceBelow
+      const maxHeight = Math.min(shouldOpenUp ? spaceAbove : spaceBelow, 500)
+
+      if (shouldOpenUp) {
+        setPositionState({
+          bottom: window.innerHeight - rect.top + 4,
+          left: rect.left,
+          width: rect.width,
+          maxHeight
+        })
+      } else {
+        setPositionState({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+          maxHeight
+        })
+      }
     } else {
       setPositionState(null)
     }
@@ -179,23 +202,27 @@ const SelectContent = React.forwardRef<
       ref={contentRef}
       data-component="select-content"
       className={cn(
-        `relative ${SCROLLABLE_HEIGHTS.SMALL} min-w-[8rem] rounded-md border border-border bg-card text-popover-foreground shadow-lg outline-none backdrop-blur-xl`,
+        "fixed rounded-md border border-border bg-card text-popover-foreground shadow-lg outline-none backdrop-blur-xl flex flex-col overflow-hidden",
         className
       )}
       style={{
-        position: "fixed",
-        zIndex: Z_INDEX.portalDropdown + 50, // Slightly higher than generic portal content
-        top: `${positionState.top}px`,
+        zIndex: Z_INDEX.portalDropdown + 50,
+        top: positionState.top !== undefined ? `${positionState.top}px` : 'auto',
+        bottom: positionState.bottom !== undefined ? `${positionState.bottom}px` : 'auto',
         left: `${positionState.left}px`,
         width: position === "popper" ? `${positionState.width}px` : "auto",
         minWidth: position === "popper" ? `${positionState.width}px` : "8rem",
         maxWidth: position === "popper" ? `${positionState.width}px` : "none",
+        maxHeight: `${positionState.maxHeight}px`,
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}
       {...props}
     >
-      <div className="p-1" style={{ width: position === "popper" ? `${positionState.width}px` : "auto" }}>
+      <div 
+        className="p-1 overflow-y-auto overflow-x-hidden h-full" 
+        style={{ width: position === "popper" ? `${positionState.width}px` : "auto" }}
+      >
         {children}
       </div>
     </div>

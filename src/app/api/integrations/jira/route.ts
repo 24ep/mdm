@@ -13,7 +13,7 @@ async function getHandler(request: NextRequest) {
   const { session } = authResult
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('space_id')
+  const spaceId = searchParams.get('space_id') || searchParams.get('spaceId')
 
   if (!spaceId) {
     return NextResponse.json(
@@ -71,9 +71,10 @@ async function postHandler(request: NextRequest) {
   const { session } = authResult
 
   const body = await request.json()
-  const { space_id, baseUrl, email, apiToken, projectKey, name } = body
+  const { space_id, spaceId, baseUrl, email, apiToken, projectKey, name } = body
+  const finalSpaceId = space_id || spaceId
 
-  if (!space_id || !baseUrl || !email || !apiToken) {
+  if (!finalSpaceId || !baseUrl || !email || !apiToken) {
     return NextResponse.json(
       { error: 'space_id, baseUrl, email, and apiToken are required' },
       { status: 400 }
@@ -81,7 +82,7 @@ async function postHandler(request: NextRequest) {
   }
 
   // Check access
-  const accessResult = await requireSpaceAccess(space_id, session.user.id!)
+  const accessResult = await requireSpaceAccess(finalSpaceId, session.user.id!)
   if (!accessResult.success) return accessResult.response
 
     // Test connection first
@@ -130,7 +131,7 @@ async function postHandler(request: NextRequest) {
          AND name LIKE '%Jira%'
          AND deleted_at IS NULL
        LIMIT 1`,
-      [space_id]
+      [finalSpaceId]
     )
 
     if (existingRows.length > 0) {
@@ -151,7 +152,7 @@ async function postHandler(request: NextRequest) {
         `INSERT INTO public.external_connections 
          (space_id, connection_type, name, api_url, api_auth_type, api_auth_apikey_value, api_auth_username, is_active, created_by, created_at, updated_at)
          VALUES ($1, 'api', $2, $3, 'basic', $4, $5, true, $6, NOW(), NOW())`,
-        [space_id, name || 'Jira Integration', baseUrl, storedApiToken, storedEmail, session.user.id]
+        [finalSpaceId, name || 'Jira Integration', baseUrl, storedApiToken, storedEmail, session.user.id]
       )
     }
 

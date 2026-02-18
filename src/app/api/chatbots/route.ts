@@ -101,7 +101,7 @@ async function getHandler(request: NextRequest) {
   // TODO: Add requireSpaceAccess check if spaceId is available
 
   const { searchParams } = new URL(request.url)
-  const spaceId = searchParams.get('spaceId')
+  const spaceId = searchParams.get('spaceId') || searchParams.get('space_id')
   const isPublished = searchParams.get('isPublished')
 
   const where: any = {
@@ -185,7 +185,7 @@ async function postHandler(request: NextRequest) {
     name,
     website,
     description,
-    engineType,
+    engineType = body.engine_type,
     apiEndpoint,
     apiAuthType,
     apiAuthValue,
@@ -209,7 +209,7 @@ async function postHandler(request: NextRequest) {
     voiceUIStyle,
     deploymentType,
     currentVersion,
-    spaceId,
+    spaceId = body.space_id,
     customEmbedDomain,
     domainAllowlist,
     selectedModelId,

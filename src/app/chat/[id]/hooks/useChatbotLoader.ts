@@ -8,6 +8,10 @@ interface UseChatbotLoaderOptions {
   chatbotId: string
   previewDeploymentType: 'popover' | 'fullpage' | 'popup-center'
   isInIframe: boolean
+  locale?: string | null
+  greeting?: string | null
+  placeholder?: string | null
+  prompts?: string[] | null
   onChatbotLoaded?: (chatbot: ChatbotConfig) => void
 }
 
@@ -15,6 +19,10 @@ export function useChatbotLoader({
   chatbotId,
   previewDeploymentType,
   isInIframe,
+  locale,
+  greeting,
+  placeholder,
+  prompts,
   onChatbotLoaded,
 }: UseChatbotLoaderOptions) {
   const [chatbot, setChatbot] = useState<ChatbotConfig | null>(null)
@@ -40,7 +48,50 @@ export function useChatbotLoader({
       }
     }
     // Merge: clean defaults first, then loaded chatbot values take precedence
-    return { ...cleanDefaults, ...loadedChatbot } as ChatbotConfig
+    const merged = { ...cleanDefaults, ...loadedChatbot } as ChatbotConfig
+
+    // Apply URL locale override if provided
+    if (locale) {
+      merged.chatkitOptions = {
+        ...(merged.chatkitOptions || {}),
+        locale: locale
+      }
+    }
+
+    // Apply Content Overrides
+    if (greeting) {
+      merged.openaiAgentSdkGreeting = greeting
+      merged.conversationOpener = greeting
+      if (merged.chatkitOptions) {
+        merged.chatkitOptions.startScreen = {
+          ...(merged.chatkitOptions.startScreen || {}),
+          greeting: greeting
+        }
+      }
+    }
+
+    if (placeholder) {
+      merged.openaiAgentSdkPlaceholder = placeholder
+      if (merged.chatkitOptions) {
+        merged.chatkitOptions.composer = {
+          ...(merged.chatkitOptions.composer || {}),
+          placeholder: placeholder
+        }
+      }
+    }
+
+    if (prompts && prompts.length > 0) {
+      const formattedPrompts = prompts.map(p => ({ label: p, prompt: p }))
+      merged.startScreenPrompts = formattedPrompts
+      if (merged.chatkitOptions) {
+        merged.chatkitOptions.startScreen = {
+          ...(merged.chatkitOptions.startScreen || {}),
+          prompts: formattedPrompts
+        }
+      }
+    }
+
+    return merged
   }
 
   // Update emulator config when chatbot loads with persisted settings
@@ -108,6 +159,48 @@ export function useChatbotLoader({
           const updated = { ...(prev || ({} as any)), ...cfg }
             // Mark that this config came from the editor to ensure styles are applied
             ; (updated as any)._fromEditor = true
+          
+          // Preserve locale override even during editor updates if provided
+          if (locale) {
+            updated.chatkitOptions = {
+              ...(updated.chatkitOptions || {}),
+              locale: locale
+            }
+          }
+
+          // Preserve content overrides
+          if (greeting) {
+            updated.openaiAgentSdkGreeting = greeting
+            updated.conversationOpener = greeting
+            if (updated.chatkitOptions) {
+              updated.chatkitOptions.startScreen = {
+                ...(updated.chatkitOptions.startScreen || {}),
+                greeting: greeting
+              }
+            }
+          }
+
+          if (placeholder) {
+            updated.openaiAgentSdkPlaceholder = placeholder
+            if (updated.chatkitOptions) {
+              updated.chatkitOptions.composer = {
+                ...(updated.chatkitOptions.composer || {}),
+                placeholder: placeholder
+              }
+            }
+          }
+
+          if (prompts && prompts.length > 0) {
+            const formattedPrompts = prompts.map(p => ({ label: p, prompt: p }))
+            updated.startScreenPrompts = formattedPrompts
+            if (updated.chatkitOptions) {
+              updated.chatkitOptions.startScreen = {
+                ...(updated.chatkitOptions.startScreen || {}),
+                prompts: formattedPrompts
+              }
+            }
+          }
+
           return updated
         })
       } else if (data.type === 'emulator-config-update' && data.id === chatbotId) {
@@ -117,7 +210,7 @@ export function useChatbotLoader({
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [chatbotId])
+  }, [chatbotId, locale, greeting, placeholder, prompts])
 
   const loadChatbot = async () => {
     // Helper to set chatbot state, respecting editor config if already received

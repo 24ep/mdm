@@ -15,25 +15,29 @@ async function getHandler(request: NextRequest) {
   // Validate query parameters
   const queryValidation = validateQuery(request, z.object({
     dataModel: z.string().optional(),
+    data_model: z.string().optional(),
     isPublic: z.string().transform((val) => val === 'true').optional(),
+    is_public: z.string().transform((val) => val === 'true').optional(),
   }))
   
   if (!queryValidation.success) {
     return queryValidation.response
   }
     
-    const { dataModel, isPublic } = queryValidation.data
-    logger.apiRequest('GET', '/api/export-profiles', { userId: session.user.id, dataModel })
+    const { dataModel, data_model, isPublic, is_public } = queryValidation.data
+    const finalDataModel = dataModel || data_model
+    const finalIsPublic = isPublic !== undefined ? isPublic : is_public
+    logger.apiRequest('GET', '/api/export-profiles', { userId: session.user.id, dataModel: finalDataModel })
     
     // Build where clause
     const whereClauses: string[] = []
     const params: any[] = []
-    if (dataModel) {
-      params.push(dataModel)
+    if (finalDataModel) {
+      params.push(finalDataModel)
       whereClauses.push(`ep.data_model = $${params.length}`)
     }
-    if (isPublic !== undefined) {
-      params.push(isPublic)
+    if (finalIsPublic !== undefined) {
+      params.push(finalIsPublic)
       whereClauses.push(`ep.is_public = $${params.length}`)
     }
     const whereSql = whereClauses.length ? `WHERE ${whereClauses.join(' AND ')}` : ''
@@ -77,16 +81,26 @@ async function postHandler(request: NextRequest) {
   const bodyValidation = await validateBody(request, z.object({
     name: z.string().min(1, 'Name is required'),
     description: z.string().optional(),
-    dataModel: z.string().min(1, 'Data model is required'),
+    dataModel: z.string().optional(),
+    data_model: z.string().optional(),
     format: z.string().min(1, 'Format is required'),
     columns: z.array(z.any()).optional(),
     filters: z.any().optional(),
-    isPublic: z.boolean().optional().default(false),
+    isPublic: z.boolean().optional(),
+    is_public: z.boolean().optional(),
     sharing: z.any().optional(),
   }))
   
   if (!bodyValidation.success) {
     return bodyValidation.response
+  }
+
+  const { dataModel, data_model, isPublic, is_public } = bodyValidation.data
+  const finalDataModel = dataModel || data_model
+  const finalIsPublic = isPublic !== undefined ? isPublic : (is_public !== undefined ? is_public : false)
+
+  if (!finalDataModel) {
+    return NextResponse.json({ error: 'Data model is required' }, { status: 400 })
   }
   
   logger.apiRequest('POST', '/api/export-profiles', { userId: session.user.id, name: bodyValidation.data.name })
